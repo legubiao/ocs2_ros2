@@ -32,7 +32,18 @@ git clone https://github.com/zhengxiang94/ocs2_robotic_assets.git
 # Clone plane_segmentation_ros2 in ros2_ws/src
 git clone https://github.com/zhengxiang94/plane_segmentation_ros2.git
 ```
+* [grid_map](https://github.com/ANYbotics/grid_map) (jazzy branch)
+```bash
+git clone https://github.com/ANYbotics/grid_map.git
+cd grid_map
+git checkout jazzy
+```
+* rosdep
+```bash
+rosdep install --from-paths src --ignore-src -r -y
+```
 * others
 ```
 sudo apt-get install ros-iron-grid-map-cv ros-iron-grid-map-msgs ros-iron-grid-map-ros ros-iron-grid-map-sdf libmpfr-dev libpcap-dev
 ```
+
