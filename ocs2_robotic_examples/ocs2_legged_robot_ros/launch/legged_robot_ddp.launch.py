@@ -60,7 +60,7 @@ def generate_launch_description():
             package='ocs2_legged_robot_ros',
             executable='legged_robot_ddp_mpc',
             name='legged_robot_ddp_mpc',
-            prefix= "",
+            prefix="",
             output='screen',
             parameters=[
                 {
@@ -106,16 +106,7 @@ def generate_launch_description():
             prefix="gnome-terminal --",
             parameters=[
                 {
-                    'taskFile': launch.substitutions.LaunchConfiguration('taskFile')
-                },
-                {
                     'referenceFile': launch.substitutions.LaunchConfiguration('referenceFile')
-                },
-                {
-                    'urdfFile': launch.substitutions.LaunchConfiguration('urdfFile')
-                },
-                {
-                    'gaitCommandFile': launch.substitutions.LaunchConfiguration('gaitCommandFile')
                 }
             ]
         ),

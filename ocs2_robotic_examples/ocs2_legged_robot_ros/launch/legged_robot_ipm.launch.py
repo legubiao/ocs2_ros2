@@ -61,7 +61,7 @@ def generate_launch_description():
             executable='legged_robot_ipm_mpc',
             name='legged_robot_ipm_mpc',
             output='screen',
-            prefix= "",
+            prefix="",
             parameters=[
                 {
                     'multiplot': launch.substitutions.LaunchConfiguration('multiplot')
@@ -112,19 +112,7 @@ def generate_launch_description():
             prefix="gnome-terminal --",
             parameters=[
                 {
-                    'multiplot': launch.substitutions.LaunchConfiguration('multiplot')
-                },
-                {
-                    'taskFile': launch.substitutions.LaunchConfiguration('taskFile')
-                },
-                {
                     'referenceFile': launch.substitutions.LaunchConfiguration('referenceFile')
-                },
-                {
-                    'urdfFile': launch.substitutions.LaunchConfiguration('urdfFile')
-                },
-                {
-                    'gaitCommandFile': launch.substitutions.LaunchConfiguration('gaitCommandFile')
                 }
             ]
         ),
