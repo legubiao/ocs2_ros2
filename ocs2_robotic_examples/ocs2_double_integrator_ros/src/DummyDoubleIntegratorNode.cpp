@@ -72,6 +72,8 @@ int main(int argc, char** argv) {
   auto doubleIntegratorDummyVisualization = std::make_shared<
       ocs2::double_integrator::DoubleIntegratorDummyVisualization>(node);
 
+  RCLCPP_INFO(node->get_logger(), "DummyDoubleIntegratorNode is running ...");
+
   // Dummy loop
   ocs2::MRT_ROS_Dummy_Loop dummyDoubleIntegrator(
       mrt, doubleIntegratorInterface.mpcSettings().mrtDesiredFrequency_,

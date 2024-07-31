@@ -14,6 +14,7 @@ set(dependencies
   ocs2_robotic_tools
   ocs2_robotic_assets
   Boost
+  ament_index_cpp
 )
 
 find_package(ament_cmake REQUIRED)
@@ -25,6 +26,7 @@ find_package(ocs2_double_integrator REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS
   system

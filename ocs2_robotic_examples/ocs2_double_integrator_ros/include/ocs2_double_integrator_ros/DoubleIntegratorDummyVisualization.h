@@ -33,7 +33,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <sensor_msgs/msg/joint_state.hpp>
 
-#include "ocs2_double_integrator/definitions.h"
 #include "rclcpp/rclcpp.hpp"
 
 namespace ocs2 {
@@ -41,8 +40,7 @@ namespace double_integrator {
 
 class DoubleIntegratorDummyVisualization final : public DummyObserver {
  public:
-  explicit DoubleIntegratorDummyVisualization(
-      const rclcpp::Node::SharedPtr& node);
+  explicit DoubleIntegratorDummyVisualization(rclcpp::Node::SharedPtr node);
 
   ~DoubleIntegratorDummyVisualization() override = default;
 
