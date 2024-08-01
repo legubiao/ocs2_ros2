@@ -29,12 +29,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_sqp/SqpSolver.h"
 
-#include <iomanip>
-#include <iostream>
-#include <numeric>
-
-#include <boost/filesystem.hpp>
-
 #include <ocs2_oc/multiple_shooting/Helpers.h>
 #include <ocs2_oc/multiple_shooting/Initialization.h>
 #include <ocs2_oc/multiple_shooting/MetricsComputation.h>
@@ -42,6 +36,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_oc/multiple_shooting/Transcription.h>
 #include <ocs2_oc/oc_problem/OcpSize.h>
 #include <ocs2_oc/trajectory_adjustment/TrajectorySpreadingHelperFunctions.h>
+
+#include <boost/filesystem.hpp>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <numeric>
 
 namespace ocs2 {
 

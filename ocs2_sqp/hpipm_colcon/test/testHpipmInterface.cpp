@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <gtest/gtest.h>
 
-#include "hpipm_catkin/HpipmInterface.h"
+#include "hpipm_colcon/HpipmInterface.h"
 
 #include <ocs2_core/test/testTools.h>
 #include <ocs2_oc/test/testProblemsGeneration.h>

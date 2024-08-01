@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(blasfeo_catkin)
+project(blasfeo_colcon)
 
 find_package(ament_cmake REQUIRED)
 

@@ -47,10 +47,10 @@ TargetTrajectories commandLineToTargetTrajectories(
                             {vector_t::Zero(INPUT_DIM)});
 }
 
-int main(int argc, char* argv[]) {
+int main(const int argc, char* argv[]) {
   const std::string robotName = "double_integrator";
   rclcpp::init(argc, argv);
-  rclcpp::Node::SharedPtr node =
+  const rclcpp::Node::SharedPtr node =
       rclcpp::Node::make_shared(robotName + "_target");
 
   const scalar_array_t goalLimit{10.0};  // [deltaX]

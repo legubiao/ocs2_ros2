@@ -29,13 +29,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <utility>
-
-#include <ocs2_pinocchio_interface/PinocchioInterface.h>
-
 #include <hpp/fcl/collision_data.h>
-
+#include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <urdf_model/model.h>
+
+#include <utility>
 
 /* Forward declaration of pinocchio geometry types */
 namespace pinocchio {
@@ -52,45 +50,60 @@ class PinocchioGeometryInterface final {
    * @param [in] pinocchioInterface: pinocchio interface of the robot model
    * @param [in] collisionObjectPairs: List of collision object index pairs
    */
-  PinocchioGeometryInterface(const PinocchioInterface& pinocchioInterface,
-                             const std::vector<std::pair<size_t, size_t>>& collisionObjectPairs);
+  PinocchioGeometryInterface(
+      const PinocchioInterface& pinocchioInterface,
+      const std::vector<std::pair<size_t, size_t>>& collisionObjectPairs);
 
   /**
    * Constructor
    *
    * @param [in] pinocchioInterface: pinocchio interface of the robot model
-   * @param [in] collisionLinkPairs: List of collision link pairs by string name. One link can contain multiple colision objects.
-   *                                 In this case, all collision object combinations are added.
+   * @param [in] collisionLinkPairs: List of collision link pairs by string
+   * name. One link can contain multiple colision objects. In this case, all
+   * collision object combinations are added.
    * @param [in] collisionObjectPairs: List of collision object index pairs
    */
-  PinocchioGeometryInterface(const PinocchioInterface& pinocchioInterface,
-                             const std::vector<std::pair<std::string, std::string>>& collisionLinkPairs,
-                             const std::vector<std::pair<size_t, size_t>>& collisionObjectPairs = std::vector<std::pair<size_t, size_t>>());
+  PinocchioGeometryInterface(
+      const PinocchioInterface& pinocchioInterface,
+      const std::vector<std::pair<std::string, std::string>>&
+          collisionLinkPairs,
+      const std::vector<std::pair<size_t, size_t>>& collisionObjectPairs =
+          std::vector<std::pair<size_t, size_t>>());
 
   /**
    * Compute collision pair distances
    *
-   * @note Requires pinocchioInterface with updated joint placements by calling forwardKinematics().
+   * @note Requires pinocchioInterface with updated joint placements by calling
+   * forwardKinematics().
    *
    * @param [in] pinocchioInterface: pinocchio interface of the robot model
-   * @return An array of distances between pairs of collision bodies defined in the constructor.
+   * @return An array of distances between pairs of collision bodies defined in
+   * the constructor.
    */
-  std::vector<hpp::fcl::DistanceResult> computeDistances(const PinocchioInterface& pinocchioInterface) const;
+  std::vector<hpp::fcl::DistanceResult> computeDistances(
+      const PinocchioInterface& pinocchioInterface) const;
 
   /** Get the number of collision pairs */
   size_t getNumCollisionPairs() const;
 
   /** Access the pinocchio geometry model */
   pinocchio::GeometryModel& getGeometryModel() { return *geometryModelPtr_; }
-  const pinocchio::GeometryModel& getGeometryModel() const { return *geometryModelPtr_; }
+  const pinocchio::GeometryModel& getGeometryModel() const {
+    return *geometryModelPtr_;
+  }
 
  private:
   // Construction helpers
-  void buildGeomFromPinocchioInterface(const PinocchioInterface& pinocchioInterface, pinocchio::GeometryModel& geomModel);
-  void addCollisionObjectPairs(const PinocchioInterface& pinocchioInterface,
-                               const std::vector<std::pair<size_t, size_t>>& collisionObjectPairs);
-  void addCollisionLinkPairs(const PinocchioInterface& pinocchioInterface,
-                             const std::vector<std::pair<std::string, std::string>>& collisionLinkPairs);
+  void buildGeomFromPinocchioInterface(
+      const PinocchioInterface& pinocchioInterface,
+      pinocchio::GeometryModel& geomModel);
+  void addCollisionObjectPairs(
+      const PinocchioInterface& pinocchioInterface,
+      const std::vector<std::pair<size_t, size_t>>& collisionObjectPairs);
+  void addCollisionLinkPairs(
+      const PinocchioInterface& pinocchioInterface,
+      const std::vector<std::pair<std::string, std::string>>&
+          collisionLinkPairs);
 
   std::shared_ptr<pinocchio::GeometryModel> geometryModelPtr_;
 };

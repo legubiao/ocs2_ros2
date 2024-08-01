@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
           .automatically_declare_parameters_from_overrides(true));
   // Get node parameters
   std::string referenceFile;
-  node->get_parameter("/referenceFile", referenceFile);
+  node->get_parameter("referenceFile", referenceFile);
 
   loadData::loadCppDataType(referenceFile, "comHeight", comHeight);
   loadData::loadEigenMatrix(referenceFile, "defaultJointState",

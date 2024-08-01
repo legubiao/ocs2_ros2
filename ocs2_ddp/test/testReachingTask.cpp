@@ -132,6 +132,7 @@ INSTANTIATE_TEST_CASE_P(PreJumpDoubleIntegratorReachingTaskCase, PreJumpDoubleIn
                           } else if (info.param == DoubleIntegratorReachingTask::PenaltyType::SmoothAbsolutePenalty) {
                             return std::string("SmoothAbsolutePenalty");
                           }
+                          return std::string("UnknownPenalty");
                         });
 
 /******************************************************************************************************/

@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/Types.h>
 #include <ocs2_core/integration/SensitivityIntegrator.h>
 
-#include <hpipm_catkin/HpipmInterfaceSettings.h>
+#include <hpipm_colcon/HpipmInterfaceSettings.h>
 
 namespace ocs2 {
 namespace ipm {

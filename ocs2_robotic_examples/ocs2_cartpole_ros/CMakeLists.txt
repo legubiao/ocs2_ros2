@@ -15,6 +15,7 @@ set(dependencies
   ocs2_cartpole
   ocs2_robotic_assets
   Boost
+  ament_index_cpp
 )
 
 find_package(ament_cmake REQUIRED)
@@ -26,6 +27,7 @@ find_package(ocs2_ros_interfaces REQUIRED)
 find_package(ocs2_cartpole REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS
   system

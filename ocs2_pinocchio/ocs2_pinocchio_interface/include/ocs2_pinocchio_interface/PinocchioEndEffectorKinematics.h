@@ -29,29 +29,34 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_pinocchio_interface/PinocchioStateInputMapping.h>
 #include <ocs2_robotic_tools/end_effector/EndEffectorKinematics.h>
+
+#include <string>
+#include <vector>
 
 namespace ocs2 {
 
 /**
  * End-effector Kinematics implementation using pinocchio.
  *
- * This class uses caching of computation done on the pinocchio::Data in PinocchiInterface.
- * See in the method documentation which pinocchio functions are required to update pinocchio::Data.
+ * This class uses caching of computation done on the pinocchio::Data in
+ * PinocchiInterface. See in the method documentation which pinocchio functions
+ * are required to update pinocchio::Data.
  *
  * Example:
- *   PinocchioEndEffectorKinematics kinematics(pinocchioInterface, mapping, {"END_EFFECTOR_NAME"});
- *   pinocchio::forwardKinematics(pinocchioInterface.getModel(), pinocchioInterface.getData(), q);
- *   pinocchio::updateFramePlacements(pinocchioInterface.getModel(), pinocchioInterface.getData());
+ *   PinocchioEndEffectorKinematics kinematics(pinocchioInterface, mapping,
+ * {"END_EFFECTOR_NAME"});
+ *   pinocchio::forwardKinematics(pinocchioInterface.getModel(),
+ * pinocchioInterface.getData(), q);
+ *   pinocchio::updateFramePlacements(pinocchioInterface.getModel(),
+ * pinocchioInterface.getData());
  *   kinematics.setPinocchioInterface(pinocchioInterface);
  *   const auto pos = kinematics.getPosition(x);
  */
-class PinocchioEndEffectorKinematics final : public EndEffectorKinematics<scalar_t> {
+class PinocchioEndEffectorKinematics final
+    : public EndEffectorKinematics<scalar_t> {
  public:
   using EndEffectorKinematics<scalar_t>::vector3_t;
   using EndEffectorKinematics<scalar_t>::matrix3x_t;
@@ -62,16 +67,20 @@ class PinocchioEndEffectorKinematics final : public EndEffectorKinematics<scalar
    * @param [in] mapping: mapping from OCS2 to pinocchio state.
    * @param [in] endEffectorIds: array of end effector names.
    */
-  PinocchioEndEffectorKinematics(const PinocchioInterface& pinocchioInterface, const PinocchioStateInputMapping<scalar_t>& mapping,
-                                 std::vector<std::string> endEffectorIds);
+  PinocchioEndEffectorKinematics(
+      const PinocchioInterface& pinocchioInterface,
+      const PinocchioStateInputMapping<scalar_t>& mapping,
+      std::vector<std::string> endEffectorIds);
 
   ~PinocchioEndEffectorKinematics() override = default;
   PinocchioEndEffectorKinematics* clone() const override;
-  PinocchioEndEffectorKinematics& operator=(const PinocchioEndEffectorKinematics&) = delete;
+  PinocchioEndEffectorKinematics& operator=(
+      const PinocchioEndEffectorKinematics&) = delete;
 
   /** Set the pinocchio interface for caching.
    * @note The pinocchio interface must be set before calling the getters.
-   * @param [in] pinocchioInterface: pinocchio interface on which computations are expected. It will keep a pointer for the getters.
+   * @param [in] pinocchioInterface: pinocchio interface on which computations
+   * are expected. It will keep a pointer for the getters.
    */
   void setPinocchioInterface(const PinocchioInterface& pinocchioInterface) {
     pinocchioInterfacePtr_ = &pinocchioInterface;
@@ -92,14 +101,17 @@ class PinocchioEndEffectorKinematics final : public EndEffectorKinematics<scalar
    * @note requires pinocchioInterface to be updated with:
    *       pinocchio::forwardKinematics(model, data, q, v)
    */
-  std::vector<vector3_t> getVelocity(const vector_t& state, const vector_t& input) const override;
+  std::vector<vector3_t> getVelocity(const vector_t& state,
+                                     const vector_t& input) const override;
 
   /** Get the end effector orientation error.
    * @note requires pinocchioInterface to be updated with:
    *       pinocchio::forwardKinematics(model, data, q)
    *       pinocchio::updateFramePlacements(model, data)
    */
-  std::vector<vector3_t> getOrientationError(const vector_t& state, const std::vector<quaternion_t>& referenceOrientations) const override;
+  std::vector<vector3_t> getOrientationError(
+      const vector_t& state,
+      const std::vector<quaternion_t>& referenceOrientations) const override;
 
   /** Get the end effector position linear approximation.
    * @note requires pinocchioInterface to be updated with:
@@ -107,14 +119,15 @@ class PinocchioEndEffectorKinematics final : public EndEffectorKinematics<scalar
    *       pinocchio::updateFramePlacements(model, data)
    *       pinocchio::computeJointJacobians(model, data)
    */
-  std::vector<VectorFunctionLinearApproximation> getPositionLinearApproximation(const vector_t& state) const override;
+  std::vector<VectorFunctionLinearApproximation> getPositionLinearApproximation(
+      const vector_t& state) const override;
 
   /** Get the end effector velocity linear approximation
    * @note requires pinocchioInterface to be updated with:
    *       pinocchio::computeForwardKinematicsDerivatives(model, data, q, v, a)
    */
-  std::vector<VectorFunctionLinearApproximation> getVelocityLinearApproximation(const vector_t& state,
-                                                                                const vector_t& input) const override;
+  std::vector<VectorFunctionLinearApproximation> getVelocityLinearApproximation(
+      const vector_t& state, const vector_t& input) const override;
 
   /** Get the end effector orientation error linear approximation.
    * @note requires pinocchioInterface to be updated with:
@@ -122,8 +135,10 @@ class PinocchioEndEffectorKinematics final : public EndEffectorKinematics<scalar
    *       pinocchio::updateFramePlacements(model, data)
    *       pinocchio::computeJointJacobians(model, data)
    */
-  std::vector<VectorFunctionLinearApproximation> getOrientationErrorLinearApproximation(
-      const vector_t& state, const std::vector<quaternion_t>& referenceOrientations) const override;
+  std::vector<VectorFunctionLinearApproximation>
+  getOrientationErrorLinearApproximation(
+      const vector_t& state,
+      const std::vector<quaternion_t>& referenceOrientations) const override;
 
  private:
   PinocchioEndEffectorKinematics(const PinocchioEndEffectorKinematics& rhs);

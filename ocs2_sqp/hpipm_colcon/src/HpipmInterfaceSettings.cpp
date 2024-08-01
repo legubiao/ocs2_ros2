@@ -27,7 +27,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "hpipm_catkin/HpipmInterfaceSettings.h"
+#include "hpipm_colcon/HpipmInterfaceSettings.h"
 
 #include <ocs2_core/misc/LoadData.h>
 

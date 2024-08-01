@@ -13,8 +13,8 @@
   <depend>ocs2_mpc</depend>
   <depend>ocs2_oc</depend>
   <depend>ocs2_qp_solver</depend>
-  <depend>blasfeo_catkin</depend>
-  <depend>hpipm_catkin</depend>
+  <depend>blasfeo_colcon</depend>
+  <depend>hpipm_colcon</depend>
 
   <export>                               
    <build_type>ament_cmake</build_type>

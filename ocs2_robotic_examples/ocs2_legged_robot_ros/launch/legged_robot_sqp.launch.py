@@ -112,20 +112,8 @@ def generate_launch_description():
             prefix="gnome-terminal --",
             parameters=[
                 {
-                    'multiplot': launch.substitutions.LaunchConfiguration('multiplot')
-                },
-                {
-                    'taskFile': launch.substitutions.LaunchConfiguration('taskFile')
-                },
-                {
                     'referenceFile': launch.substitutions.LaunchConfiguration('referenceFile')
                 },
-                {
-                    'urdfFile': launch.substitutions.LaunchConfiguration('urdfFile')
-                },
-                {
-                    'gaitCommandFile': launch.substitutions.LaunchConfiguration('gaitCommandFile')
-                }
             ]
         ),
         launch_ros.actions.Node(

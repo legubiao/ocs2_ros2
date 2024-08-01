@@ -27,14 +27,15 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
+#include <utility>
+
 #include "ocs2_double_integrator_ros/DoubleIntegratorDummyVisualization.h"
 
-namespace ocs2 {
-namespace double_integrator {
+namespace ocs2::double_integrator {
 
 DoubleIntegratorDummyVisualization::DoubleIntegratorDummyVisualization(
-    const rclcpp::Node::SharedPtr& node)
-    : node_(node),
+    rclcpp::Node::SharedPtr  node)
+    : node_(std::move(node)),
       jointPublisher_(node_->create_publisher<sensor_msgs::msg::JointState>(
           "joint_states", 1)) {}
 
@@ -54,5 +55,4 @@ void DoubleIntegratorDummyVisualization::update(
   jointPublisher_->publish(joint_state);
 }
 
-}  // namespace double_integrator
-}  // namespace ocs2
+}  // namespace ocs2::double_integrator

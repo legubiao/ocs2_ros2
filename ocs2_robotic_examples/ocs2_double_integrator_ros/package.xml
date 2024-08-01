@@ -14,6 +14,7 @@
 
   <build_depend>cmake_clang_tools</build_depend>
 
+  <depend>ament_index_cpp</depend>
   <depend>rclcpp</depend>
   <depend>pybind11_vendor</depend>
 

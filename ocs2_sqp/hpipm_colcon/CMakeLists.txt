@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
-project(hpipm_catkin)
+project(hpipm_colcon)
 
 ## Find ament_cmake macros and libraries
 find_package(ament_cmake REQUIRED)
-find_package(blasfeo_catkin REQUIRED)
+find_package(blasfeo_colcon REQUIRED)
 find_package(ocs2_core REQUIRED)
 find_package(ocs2_oc REQUIRED)
 find_package(ocs2_qp_solver REQUIRED)
@@ -72,7 +72,7 @@ include_directories(
 )
 
 set(dependencies
-  blasfeo_catkin
+  blasfeo_colcon
   ocs2_core
   ocs2_oc
   ocs2_qp_solver
