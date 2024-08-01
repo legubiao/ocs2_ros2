@@ -41,7 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_oc/oc_solver/SolverBase.h>
 #include <ocs2_oc/search_strategy/FilterLinesearch.h>
 
-#include <hpipm_catkin/HpipmInterface.h>
+#include <hpipm_colcon/HpipmInterface.h>
 
 #include "ocs2_ipm/IpmSettings.h"
 #include "ocs2_ipm/IpmSolverStatus.h"

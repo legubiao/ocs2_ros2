@@ -3,4 +3,4 @@ This package contains a multiple-shooting, sequential-quadratic-programming solv
 
 ## Dependencies
 HPIPM is used as solver for the QP subproblems. Both HPIPM and Blasfeo are automatically installed and wrapped into ament_cmake convention 
-in the blasfeo_catkin and hpipm_catkin packages.
+in the blasfeo_colcon and hpipm_colcon packages.

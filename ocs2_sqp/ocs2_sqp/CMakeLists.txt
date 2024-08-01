@@ -7,8 +7,8 @@ set(dependencies
   ocs2_mpc
   ocs2_oc
   ocs2_qp_solver
-  blasfeo_catkin
-  hpipm_catkin
+  blasfeo_colcon
+  hpipm_colcon
   Boost
 )
 
@@ -17,8 +17,8 @@ find_package(ocs2_core REQUIRED)
 find_package(ocs2_mpc REQUIRED)
 find_package(ocs2_oc REQUIRED)
 find_package(ocs2_qp_solver REQUIRED)
-find_package(blasfeo_catkin REQUIRED)
-find_package(hpipm_catkin REQUIRED)
+find_package(blasfeo_colcon REQUIRED)
+find_package(hpipm_colcon REQUIRED)
 find_package(Boost REQUIRED COMPONENTS
   system
   filesystem

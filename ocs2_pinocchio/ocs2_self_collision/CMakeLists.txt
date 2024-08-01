@@ -15,11 +15,11 @@ find_package(ament_cmake REQUIRED)
 find_package(ocs2_core REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)
 find_package(ocs2_pinocchio_interface REQUIRED)
+find_package(urdfdom REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 find_package(pinocchio REQUIRED)
 find_package(hpp-fcl REQUIRED)
-# requires liboctomap-dev and libassimp-dev
 find_package(Boost REQUIRED COMPONENTS
         system
         filesystem
@@ -48,6 +48,19 @@ include_directories(
         ${pinocchio_INCLUDE_DIRS}
         ${hpp-fcl_INCLUDE_DIRS}
 )
+
+execute_process(
+        COMMAND urdfdom-config --version
+        OUTPUT_VARIABLE URDFDOM_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(URDFDOM_VERSION VERSION_LESS "4.0.0")
+    message(STATUS "Configuring for urdfdom version less than 4.0.0")
+else()
+    message(STATUS "Configuring for urdfdom version 4.0.0 or newer")
+    add_definitions(-DNEW_URDFDOM)
+endif()
 
 # ocs2 pinocchio interface library
 add_library(${PROJECT_NAME}

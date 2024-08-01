@@ -26,11 +26,9 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
-
-#include <ocs2_self_collision/PinocchioGeometryInterface.h>
-#include <tinyxml2.h>
-#include <urdf_parser/urdf_parser.h>
 #include <pinocchio/fwd.hpp>
+#include <ocs2_self_collision/PinocchioGeometryInterface.h>
+#include <urdf_parser/urdf_parser.h>
 
 #include <pinocchio/algorithm/geometry.hpp>
 #include <pinocchio/multibody/data.hpp>
@@ -39,14 +37,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
 
-namespace ocs2 {
+#ifdef NEW_URDFDOM
+#include <tinyxml2.h>
+#endif
 
+namespace ocs2 {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
 PinocchioGeometryInterface::PinocchioGeometryInterface(
     const PinocchioInterface& pinocchioInterface,
-    const std::vector<std::pair<size_t, size_t>>& collisionObjectPairs)
+    const std::vector<std::pair<size_t, size_t> >& collisionObjectPairs)
     : geometryModelPtr_(new pinocchio::GeometryModel) {
   buildGeomFromPinocchioInterface(pinocchioInterface, *geometryModelPtr_);
 
@@ -55,8 +56,8 @@ PinocchioGeometryInterface::PinocchioGeometryInterface(
 
 PinocchioGeometryInterface::PinocchioGeometryInterface(
     const PinocchioInterface& pinocchioInterface,
-    const std::vector<std::pair<std::string, std::string>>& collisionLinkPairs,
-    const std::vector<std::pair<size_t, size_t>>& collisionObjectPairs)
+    const std::vector<std::pair<std::string, std::string> >& collisionLinkPairs,
+    const std::vector<std::pair<size_t, size_t> >& collisionObjectPairs)
     : geometryModelPtr_(new pinocchio::GeometryModel) {
   buildGeomFromPinocchioInterface(pinocchioInterface, *geometryModelPtr_);
 
@@ -100,24 +101,35 @@ void PinocchioGeometryInterface::buildGeomFromPinocchioInterface(
         "not contain a urdf model!");
   }
 
+  pinocchio::Model model;
+
   // TODO: Replace with pinocchio function that uses the ModelInterface directly
   // As of 19-04-21 there is no buildGeom that takes a ModelInterface, so we
   // deconstruct the modelInterface into a std::stringstream first
+#ifdef NEW_URDFDOM
   const std::unique_ptr<const tinyxml2::XMLDocument> urdfAsXml(
       exportURDF(*pinocchioInterface.getUrdfModelPtr()));
   tinyxml2::XMLPrinter printer;
   urdfAsXml->Print(&printer);
-  const std::string urdfAsString = printer.CStr();
+  const std::string urdfAsStringStream = printer.CStr();
+#else
+  const std::unique_ptr<const TiXmlDocument> urdfAsXml(
+      urdf::exportURDF(*pinocchioInterface.getUrdfModelPtr()));
+  TiXmlPrinter printer;
+  urdfAsXml->Accept(&printer);
+  const std::stringstream urdfAsStringStream(printer.Str());
+#endif
 
-  pinocchio::urdf::buildGeom(pinocchioInterface.getModel(), urdfAsString,
+  pinocchio::urdf::buildGeom(pinocchioInterface.getModel(), urdfAsStringStream,
                              pinocchio::COLLISION, geomModel);
 }
+
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
 void PinocchioGeometryInterface::addCollisionObjectPairs(
     const PinocchioInterface& pinocchioInterface,
-    const std::vector<std::pair<size_t, size_t>>& collisionObjectPairs) {
+    const std::vector<std::pair<size_t, size_t> >& collisionObjectPairs) {
   for (const auto& pair : collisionObjectPairs) {
     geometryModelPtr_->addCollisionPair(
         pinocchio::CollisionPair{pair.first, pair.second});
@@ -129,7 +141,7 @@ void PinocchioGeometryInterface::addCollisionObjectPairs(
 /******************************************************************************************************/
 void PinocchioGeometryInterface::addCollisionLinkPairs(
     const PinocchioInterface& pinocchioInterface,
-    const std::vector<std::pair<std::string, std::string>>&
+    const std::vector<std::pair<std::string, std::string> >&
         collisionLinkPairs) {
   for (const auto& linkPair : collisionLinkPairs) {
     bool addedPair = false;
@@ -159,5 +171,4 @@ void PinocchioGeometryInterface::addCollisionLinkPairs(
     }
   }
 }
-
 }  // namespace ocs2

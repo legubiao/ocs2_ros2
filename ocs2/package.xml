@@ -27,7 +27,7 @@
   <exec_depend>ocs2_thirdparty</exec_depend>
   <exec_depend>ocs2_raisim</exec_depend>
   <exec_depend>ocs2_mpcnet</exec_depend>
-  <exec_depend>hpipm_catkin</exec_depend>
+  <exec_depend>hpipm_colcon</exec_depend>
 
   <export>                               
    <build_type>ament_cmake</build_type> 

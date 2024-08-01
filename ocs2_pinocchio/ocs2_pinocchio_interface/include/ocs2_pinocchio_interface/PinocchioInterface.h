@@ -29,19 +29,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
+#include <ocs2_core/Types.h>
+#include <ocs2_core/automatic_differentiation/Types.h>
+
 #include <Eigen/Dense>
+#include <cppad/cg.hpp>
 #include <iosfwd>
 #include <memory>
 #include <string>
 #include <type_traits>
 
-#include <ocs2_core/Types.h>
-#include <ocs2_core/automatic_differentiation/Types.h>
-#include <cppad/cg.hpp>
-
 /* Forward declaration of main pinocchio types */
 #include <ocs2_pinocchio_interface/pinocchio_forward_declaration.h>
-
 #include <urdf_model/model.h>
 
 namespace ocs2 {
@@ -59,20 +58,27 @@ using PinocchioInterfaceCppAd = PinocchioInterfaceTpl<ad_scalar_t>;
 template <typename SCALAR>
 class PinocchioInterfaceTpl final {
  public:
-  using Model = pinocchio::ModelTpl<SCALAR, 0, pinocchio::JointCollectionDefaultTpl>;
-  using Data = pinocchio::DataTpl<SCALAR, 0, pinocchio::JointCollectionDefaultTpl>;
-  using JointModel = pinocchio::JointModelTpl<scalar_t, 0, pinocchio::JointCollectionDefaultTpl>;
+  using Model =
+      pinocchio::ModelTpl<SCALAR, 0, pinocchio::JointCollectionDefaultTpl>;
+  using Data =
+      pinocchio::DataTpl<SCALAR, 0, pinocchio::JointCollectionDefaultTpl>;
+  using JointModel =
+      pinocchio::JointModelTpl<scalar_t, 0,
+                               pinocchio::JointCollectionDefaultTpl>;
 
   // Template for conditional compilation using SFINAE
   template <typename T>
-  using EnableIfScalar_t = typename std::enable_if<std::is_same<T, scalar_t>::value, bool>::type;
+  using EnableIfScalar_t =
+      typename std::enable_if<std::is_same<T, scalar_t>::value, bool>::type;
 
   /**
    * Construct from given pinocchio model
    * @param[in] model pinocchio model
    */
-  explicit PinocchioInterfaceTpl(const Model& model, const std::shared_ptr<const ::urdf::ModelInterface> urdfModelPtr =
-                                                         std::shared_ptr<const ::urdf::ModelInterface>());
+  explicit PinocchioInterfaceTpl(
+      const Model& model,
+      const std::shared_ptr<const ::urdf::ModelInterface> urdfModelPtr =
+          std::shared_ptr<const ::urdf::ModelInterface>());
 
   /** Destructor */
   ~PinocchioInterfaceTpl();
@@ -97,13 +103,16 @@ class PinocchioInterfaceTpl final {
   const Data& getData() const { return *robotDataPtr_; }
 
   /** Get the urdf model */
-  const std::shared_ptr<const ::urdf::ModelInterface>& getUrdfModelPtr() const { return urdfModelPtr_; }
+  const std::shared_ptr<const ::urdf::ModelInterface>& getUrdfModelPtr() const {
+    return urdfModelPtr_;
+  }
 
   /** Cast pinocchio interface to CppAD scalar type. */
   template <typename T = SCALAR, EnableIfScalar_t<T> = true>
   PinocchioInterfaceCppAd toCppAd() const;
 
-  friend std::ostream& operator<<(std::ostream& os, const PinocchioInterfaceTpl<scalar_t>& p);
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const PinocchioInterfaceTpl<scalar_t>& p);
 
  private:
   std::shared_ptr<const Model> robotModelPtr_;

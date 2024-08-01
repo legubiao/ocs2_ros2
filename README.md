@@ -8,29 +8,35 @@ OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), 
 
 ## Installation
 ### Prerequisites
-The OCS2 library is written in C++17. It is tested under Ubuntu 24.04 with library versions as provided in the package sources.
+The OCS2 library is written in C++17. It is tested under Ubuntu with library versions as provided in the package sources.
+
+Tested system and ROS2 version:
+* Ubuntu 24.04 ROS2 Jazzy
+* Ubuntu 22.04 ROS2 Humble
 
 ### Dependencies
 * C++ compiler with C++17 support
-* ros2 jazzy
 * Eigen (v3.4)
 * Boost C++ (v1.74)
-* For rigid multi-body dynamics library and self collision support clone Pinocchio into your workspace
+
+### Installation Setps
+* Create a new workspace or clone the project to your workspace
+```bash
+cd ~
+mkdir -p ocs2_ws/src
 ```
-# install pinocchio
-git clone --recurse-submodules https://github.com/zhengxiang94/pinocchio.git
+* Clone the repository
+```bash
+cd ~/ocs2_ws/src
+git clone https://github.com/legubiao/ocs2_ros2
+git submodule update --init --recursive
 ```
-* For various robotic assets used in OCS2 unit tests and the robotic examples
+* rosdep
+```bash
+cd ~/ocs2_ws
+rosdep install --from-paths src --ignore-src -r -y
 ```
-# Clone ocs2_robotic_assets in ros2_ws/src
-git clone https://github.com/zhengxiang94/ocs2_robotic_assets.git
-```
-* plane_segmentation_ros2
-```
-# Clone plane_segmentation_ros2 in ros2_ws/src
-git clone https://github.com/zhengxiang94/plane_segmentation_ros2.git
-```
-* [grid_map](https://github.com/ANYbotics/grid_map) (jazzy branch)
+* [grid_map](https://github.com/ANYbotics/grid_map) (jazzy only 2024.8.1)
 ```bash
 git clone https://github.com/ANYbotics/grid_map.git
 cd grid_map
@@ -38,14 +44,39 @@ git checkout jazzy
 cd ../..
 colcon build --packages-up-to grid_map --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
-* rosdep
+#### Build Examples
+**⚠️ Warning:**
+
+If build without "-DCMAKE_BUILD_TYPE=RelWithDebInfo", the mpc will have poor performance.
+##### [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
+
+* build
 ```bash
-rosdep install --from-paths src --ignore-src -r -y
+colcon build --packages-up-to ocs2_double_integrator_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+```
+* run
+```bash
+cd ~/ocs2_ws
+source install/setup.bash
+ros2 launch ocs2_double_integrator_ros double_integrator.launch.py
 ```
 
-### Build
-* Only build essential for legged_robot example.
+##### [Cartpole](https://leggedrobotics.github.io/ocs2/robotic_examples.html#cartpole)
+
+* build
 ```bash
-# If build without "-DCMAKE_BUILD_TYPE=RelWithDebInfo", the mpc will have poor performance.
+colcon build --packages-up-to ocs2_cartpole_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+```
+* run
+```bash
+cd ~/ocs2_ws
+source install/setup.bash
+ros2 launch ocs2_cartpole_ros cartpole.launch.py
+```
+
+
+
+##### [Legged Robot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#legged-robot)
+```bash
 colcon build --packages-up-to ocs2_legged_robot_ros ocs2_self_collision_visualization --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
