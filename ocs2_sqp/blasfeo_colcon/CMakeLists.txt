@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.14)
 project(blasfeo_colcon)
 
 find_package(ament_cmake REQUIRED)
-
 include(FetchContent)
 
 # Define directories
@@ -25,21 +24,21 @@ set(BLASFEO_EXAMPLES OFF CACHE BOOL "Examples enabled")
 
 # Download & build source
 FetchContent_Declare(blasfeoDownload
-	GIT_REPOSITORY https://github.com/giaf/blasfeo
-	GIT_TAG ae6e2d1dea015862a09990b95905038a756ffc7d
-	UPDATE_COMMAND ""
-	SOURCE_DIR ${BLASFEO_DOWNLOAD_DIR}
-	BINARY_DIR ${BLASFEO_BUILD_DIR}
-	BUILD_COMMAND $(MAKE)
-	INSTALL_COMMAND "$(MAKE) install"
+        GIT_REPOSITORY https://github.com/giaf/blasfeo
+        GIT_TAG ae6e2d1dea015862a09990b95905038a756ffc7d
+        UPDATE_COMMAND ""
+        SOURCE_DIR ${BLASFEO_DOWNLOAD_DIR}
+        BINARY_DIR ${BLASFEO_BUILD_DIR}
+        BUILD_COMMAND $(MAKE)
+        INSTALL_COMMAND "$(MAKE) install"
 )
 FetchContent_MakeAvailable(blasfeoDownload)
 
 # Copy header to where ament_cmake expects them
 file(GLOB_RECURSE HEADERS "${BLASFEO_DOWNLOAD_DIR}/include/*.h")
 foreach(HEADER_FILE ${HEADERS})
-	message(STATUS "FOUND HEADER: " ${HEADER_FILE})
-	file(COPY ${HEADER_FILE} DESTINATION ${BLASFEO_INCLUDE_DIR})
+    message(STATUS "FOUND HEADER: ${HEADER_FILE}")
+    file(COPY ${HEADER_FILE} DESTINATION ${BLASFEO_INCLUDE_DIR})
 endforeach()
 
 # Install the library where ament_cmake expects them
@@ -47,8 +46,6 @@ set_target_properties(blasfeo PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${BLASFEO_LIB_
 
 # Propagate dependencies
 ament_export_include_directories(include)
-ament_export_dependencies(
-	blasfeo
-)
+ament_export_dependencies(blasfeo)
 
 ament_package(CONFIG_EXTRAS "cmake/blasfeo-extras.cmake.in")

@@ -31,8 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/misc/LoadData.h>
 
-namespace ocs2 {
-namespace hpipm_interface {
+
+namespace ocs2::hpipm_interface {
 
 std::ostream& operator<<(std::ostream& stream, const Settings& settings) {
   Settings defaultSettings;
@@ -55,5 +55,4 @@ std::ostream& operator<<(std::ostream& stream, const Settings& settings) {
   return stream;
 }
 
-}  // namespace hpipm_interface
-}  // namespace ocs2
+} // namespace ocs2::hpipm_interface

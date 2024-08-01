@@ -19,13 +19,14 @@ Tested system and ROS2 version:
 * Eigen (v3.4)
 * Boost C++ (v1.74)
 
-### Installation Setps
+### Clone Repositories
 * Create a new workspace or clone the project to your workspace
 ```bash
 cd ~
 mkdir -p ocs2_ws/src
 ```
 * Clone the repository
+
 ```bash
 cd ~/ocs2_ws/src
 git clone https://github.com/legubiao/ocs2_ros2
@@ -38,7 +39,7 @@ rosdep install --from-paths src --ignore-src -r -y
 ```
 
 #### Extra steps for Ubuntu 24.04 ROS2 Jazzy
-Since the grid_map and pinocchio package is not supported in ROS2 Jazzy, you need to build them from source. 
+Since the grid_map package is not released yet in ROS2 Jazzy, you need to build it from source. 
 * [grid_map](https://github.com/ANYbotics/grid_map)
 ```bash
 git clone https://github.com/ANYbotics/grid_map.git
@@ -47,16 +48,11 @@ git checkout jazzy
 cd ../..
 colcon build --packages-up-to grid_map --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
-* [pinocchio](https://github.com/zhengxiang94/pinocchio)
-```bash
-# If pinocchio is installed in the rosdep step, you need to uninstall it first.
-git clone https://github.com/zhengxiang94/pinocchio
-```
-#### Build Examples
+### Build Examples
 **⚠️ Warning:**
 
 If build without "-DCMAKE_BUILD_TYPE=RelWithDebInfo", the mpc will have poor performance.
-##### [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
+#### [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
 
 * build
 ```bash
@@ -69,7 +65,7 @@ source install/setup.bash
 ros2 launch ocs2_double_integrator_ros double_integrator.launch.py
 ```
 
-##### [Cartpole](https://leggedrobotics.github.io/ocs2/robotic_examples.html#cartpole)
+#### [Cartpole](https://leggedrobotics.github.io/ocs2/robotic_examples.html#cartpole)
 
 * build
 ```bash

@@ -1,3 +1,6 @@
 [submodule "ocs2_robotic_assets"]
 	path = ocs2_robotic_assets
 	url = https://github.com/zhengxiang94/ocs2_robotic_assets
+[submodule "pinocchio"]
+	path = pinocchio
+	url = https://github.com/zhengxiang94/pinocchio.git
