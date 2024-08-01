@@ -36,13 +36,21 @@ git submodule update --init --recursive
 cd ~/ocs2_ws
 rosdep install --from-paths src --ignore-src -r -y
 ```
-* [grid_map](https://github.com/ANYbotics/grid_map) (jazzy only 2024.8.1)
+
+#### Extra steps for Ubuntu 24.04 ROS2 Jazzy
+Since the grid_map and pinocchio package is not supported in ROS2 Jazzy, you need to build them from source. 
+* [grid_map](https://github.com/ANYbotics/grid_map)
 ```bash
 git clone https://github.com/ANYbotics/grid_map.git
 cd grid_map
 git checkout jazzy
 cd ../..
 colcon build --packages-up-to grid_map --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+```
+* [pinocchio](https://github.com/zhengxiang94/pinocchio)
+```bash
+# If pinocchio is installed in the rosdep step, you need to uninstall it first.
+git clone https://github.com/zhengxiang94/pinocchio
 ```
 #### Build Examples
 **⚠️ Warning:**
@@ -77,6 +85,11 @@ ros2 launch ocs2_cartpole_ros cartpole.launch.py
 
 
 ##### [Legged Robot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#legged-robot)
+* build
 ```bash
 colcon build --packages-up-to ocs2_legged_robot_ros ocs2_self_collision_visualization --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+```
+* run
+```bash
+ros2 launch ocs2_legged_robot_ros legged_robot_ddp.launch.py
 ```

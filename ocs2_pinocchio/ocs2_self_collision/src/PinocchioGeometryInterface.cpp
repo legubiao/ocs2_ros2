@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
 
-#ifdef NEW_URDFDOM
+#ifdef URDFDOM_VERSION_GT_4
 #include <tinyxml2.h>
 #endif
 
@@ -106,7 +106,7 @@ void PinocchioGeometryInterface::buildGeomFromPinocchioInterface(
   // TODO: Replace with pinocchio function that uses the ModelInterface directly
   // As of 19-04-21 there is no buildGeom that takes a ModelInterface, so we
   // deconstruct the modelInterface into a std::stringstream first
-#ifdef NEW_URDFDOM
+#ifdef URDFDOM_VERSION_GT_4
   const std::unique_ptr<const tinyxml2::XMLDocument> urdfAsXml(
       exportURDF(*pinocchioInterface.getUrdfModelPtr()));
   tinyxml2::XMLPrinter printer;

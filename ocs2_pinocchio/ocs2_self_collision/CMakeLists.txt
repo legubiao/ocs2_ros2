@@ -55,11 +55,10 @@ execute_process(
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-if(URDFDOM_VERSION VERSION_LESS "4.0.0")
-    message(STATUS "Configuring for urdfdom version less than 4.0.0")
-else()
-    message(STATUS "Configuring for urdfdom version 4.0.0 or newer")
-    add_definitions(-DNEW_URDFDOM)
+execute_process(COMMAND pkg-config --modversion urdfdom OUTPUT_VARIABLE URDFDOM_VERSION)
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" URDFDOM_VERSION "${URDFDOM_VERSION}")
+if(URDFDOM_VERSION VERSION_GREATER_EQUAL 4.0.0)
+    add_definitions(-DURDFDOM_VERSION_GT_4)
 endif()
 
 # ocs2 pinocchio interface library
