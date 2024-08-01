@@ -35,8 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <kdl_parser/kdl_parser.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
-namespace ocs2 {
-namespace ballbot {
+namespace ocs2::ballbot {
 
 BallbotDummyVisualization::BallbotDummyVisualization(
     const rclcpp::Node::SharedPtr& node)
@@ -110,5 +109,4 @@ void BallbotDummyVisualization::update(const SystemObservation& observation,
   jointPublisher_->publish(joint_state);
 }
 
-}  // namespace ballbot
-}  // namespace ocs2
+}  // namespace ocs2::ballbot

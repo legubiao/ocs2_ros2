@@ -1,25 +1,35 @@
 # OCS2_ROS2 Toolbox
 
-## Summary
+## 1. Summary
 OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), and features that are not supported at the moment:
 
 * ocs2_mpcnet
 * ocs2_doc
 
-## Installation
-### Prerequisites
+robotic example todolist:
+- [x] Double Integrator
+- [x] Cartpole
+- [x] Ballbot
+- [ ] Quadrotor
+- [ ] Mobile Manipulator
+- [ ] Legged Robot (can run but have problem in visualization)
+
+The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up the IDE.
+
+## 2. Installation
+### 2.1 Prerequisites
 The OCS2 library is written in C++17. It is tested under Ubuntu with library versions as provided in the package sources.
 
 Tested system and ROS2 version:
 * Ubuntu 24.04 ROS2 Jazzy
 * Ubuntu 22.04 ROS2 Humble
 
-### Dependencies
+### 2.2 Dependencies
 * C++ compiler with C++17 support
 * Eigen (v3.4)
 * Boost C++ (v1.74)
 
-### Clone Repositories
+### 2.3 Clone Repositories
 * Create a new workspace or clone the project to your workspace
 ```bash
 cd ~
@@ -38,7 +48,7 @@ cd ~/ocs2_ws
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
-#### Extra steps for Ubuntu 24.04 ROS2 Jazzy
+#### 2.3.1 Extra steps for Ubuntu 24.04 ROS2 Jazzy
 Since the grid_map package is not released yet in ROS2 Jazzy, you need to build it from source. 
 * [grid_map](https://github.com/ANYbotics/grid_map)
 ```bash
@@ -48,39 +58,55 @@ git checkout jazzy
 cd ../..
 colcon build --packages-up-to grid_map --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
-### Build Examples
+### 2.4 Build Examples
 **⚠️ Warning:**
 
 If build without "-DCMAKE_BUILD_TYPE=RelWithDebInfo", the mpc will have poor performance.
-#### [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
+#### 2.4.1 [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
 
 * build
 ```bash
+cd ../..
 colcon build --packages-up-to ocs2_double_integrator_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
 * run
 ```bash
-cd ~/ocs2_ws
+cd ../..
 source install/setup.bash
 ros2 launch ocs2_double_integrator_ros double_integrator.launch.py
 ```
 
-#### [Cartpole](https://leggedrobotics.github.io/ocs2/robotic_examples.html#cartpole)
+#### 2.4.2 [Cartpole](https://leggedrobotics.github.io/ocs2/robotic_examples.html#cartpole)
 
 * build
 ```bash
+cd ../..
 colcon build --packages-up-to ocs2_cartpole_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
 * run
 ```bash
-cd ~/ocs2_ws
+cd ../..
 source install/setup.bash
 ros2 launch ocs2_cartpole_ros cartpole.launch.py
 ```
 
 
+#### 2.4.3 [Ballbot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#ballbot)
 
-##### [Legged Robot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#legged-robot)
+* build
+```bash
+cd ../..
+colcon build --packages-up-to ocs2_ballbot_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+```
+* run
+```bash
+cd ../..
+source install/setup.bash
+ros2 launch ocs2_ballbot_ros ballbot_ddp.launch.py
+```
+
+
+##### 2.4.6 [Legged Robot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#legged-robot)
 * build
 ```bash
 colcon build --packages-up-to ocs2_legged_robot_ros ocs2_self_collision_visualization --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
