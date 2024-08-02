@@ -1,136 +1,92 @@
-import os
-import sys
-
-import launch
-import launch_ros.actions
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import ThisLaunchFileDir
 from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    rviz_config_file = get_package_share_directory('ocs2_legged_robot_ros') + "/rviz/legged_robot.rviz"
-    ld = launch.LaunchDescription([
-        launch.actions.DeclareLaunchArgument(
+    ld = LaunchDescription([
+        DeclareLaunchArgument(
             name='rviz',
             default_value='true'
         ),
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             name='description_name',
             default_value='legged_robot_description'
         ),
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             name='multiplot',
             default_value='false'
         ),
-        launch.actions.DeclareLaunchArgument(
+
+        DeclareLaunchArgument(
             name='taskFile',
             default_value=get_package_share_directory(
                 'ocs2_legged_robot') + '/config/mpc/task.info'
         ),
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             name='referenceFile',
             default_value=get_package_share_directory(
                 'ocs2_legged_robot') + '/config/command/reference.info'
         ),
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             name='urdfFile',
             default_value=get_package_share_directory(
                 'ocs2_robotic_assets') + '/resources/anymal_c/urdf/anymal.urdf'
         ),
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             name='gaitCommandFile',
             default_value=get_package_share_directory(
                 'ocs2_legged_robot') + '/config/command/gait.info'
         ),
-        launch_ros.actions.Node(
-            package="robot_state_publisher",
-            executable="robot_state_publisher",
-            output="screen",
-            arguments=[launch.substitutions.LaunchConfiguration("urdfFile")],
+        
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [ThisLaunchFileDir(), '/basic.launch.py']),
+            launch_arguments={
+                'rviz': LaunchConfiguration('rviz'),
+                'description_name': LaunchConfiguration('description_name'),
+                'multiplot': LaunchConfiguration('multiplot'),
+            }.items(),
         ),
-        launch_ros.actions.Node(
-            package='rviz2',
-            executable='rviz2',
-            name='rviz2',
-            output='screen',
-            arguments=["-d", rviz_config_file],
-            condition=launch.conditions.IfCondition(
-                launch.substitutions.LaunchConfiguration('rviz'))
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [ThisLaunchFileDir(), '/mpc_ddp.launch.py']),
+            launch_arguments={
+                'referenceFile': LaunchConfiguration('referenceFile'),
+                'taskFile': LaunchConfiguration('taskFile'),
+                'urdfFile': LaunchConfiguration('urdfFile'),
+            }.items(),
         ),
-        launch_ros.actions.Node(
-            package='ocs2_legged_robot_ros',
-            executable='legged_robot_ddp_mpc',
-            name='legged_robot_ddp_mpc',
-            prefix="",
-            output='screen',
-            parameters=[
-                {
-                    'taskFile': launch.substitutions.LaunchConfiguration('taskFile')
-                },
-                {
-                    'referenceFile': launch.substitutions.LaunchConfiguration('referenceFile')
-                },
-                {
-                    'urdfFile': launch.substitutions.LaunchConfiguration('urdfFile')
-                },
-                {
-                    'gaitCommandFile': launch.substitutions.LaunchConfiguration('gaitCommandFile')
-                }
-            ]
-        ),
-        launch_ros.actions.Node(
-            package='ocs2_legged_robot_ros',
-            executable='legged_robot_dummy',
-            name='legged_robot_dummy',
-            output='screen',
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [ThisLaunchFileDir(), '/dummy.launch.py']),
             prefix="gnome-terminal --",
-            parameters=[
-                {
-                    'taskFile': launch.substitutions.LaunchConfiguration('taskFile')
-                },
-                {
-                    'referenceFile': launch.substitutions.LaunchConfiguration('referenceFile')
-                },
-                {
-                    'urdfFile': launch.substitutions.LaunchConfiguration('urdfFile')
-                },
-                {
-                    'gaitCommandFile': launch.substitutions.LaunchConfiguration('gaitCommandFile')
-                }
-            ]
+            launch_arguments={
+                'referenceFile': LaunchConfiguration('referenceFile'),
+                'taskFile': LaunchConfiguration('taskFile'),
+                'urdfFile': LaunchConfiguration('urdfFile'),
+            }.items(),
         ),
-        launch_ros.actions.Node(
-            package='ocs2_legged_robot_ros',
-            executable='legged_robot_target',
-            name='legged_robot_target',
-            output='screen',
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [ThisLaunchFileDir(), '/gait_command.launch.py']),
             prefix="gnome-terminal --",
-            parameters=[
-                {
-                    'referenceFile': launch.substitutions.LaunchConfiguration('referenceFile')
-                }
-            ]
+            launch_arguments={
+                'gaitCommandFile': LaunchConfiguration('gaitCommandFile'),
+            }.items(),
         ),
-        launch_ros.actions.Node(
-            package='ocs2_legged_robot_ros',
-            executable='legged_robot_gait_command',
-            name='legged_robot_gait_command',
-            output='screen',
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [ThisLaunchFileDir(), '/robot_target.launch.py']),
             prefix="gnome-terminal --",
-            parameters=[
-                {
-                    'taskFile': launch.substitutions.LaunchConfiguration('taskFile')
-                },
-                {
-                    'referenceFile': launch.substitutions.LaunchConfiguration('referenceFile')
-                },
-                {
-                    'urdfFile': launch.substitutions.LaunchConfiguration('urdfFile')
-                },
-                {
-                    'gaitCommandFile': launch.substitutions.LaunchConfiguration('gaitCommandFile')
-                }
-            ]
-        )
+            launch_arguments={
+                'referenceFile': LaunchConfiguration('referenceFile'),
+            }.items(),
+        ),
     ])
     return ld
 
