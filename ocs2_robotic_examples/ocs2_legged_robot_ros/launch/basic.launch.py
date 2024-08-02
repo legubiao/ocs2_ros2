@@ -1,12 +1,12 @@
-import launch
 from launch.substitutions import LaunchConfiguration
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import Node
+from launch.conditions import IfCondition
 from ament_index_python.packages import get_package_share_directory
 
-def generate_launch_description():
 
+def generate_launch_description():
     rviz_config_file = get_package_share_directory('ocs2_legged_robot_ros') + "/rviz/legged_robot.rviz"
 
     return LaunchDescription([
@@ -40,10 +40,6 @@ def generate_launch_description():
             name='rviz2',
             output='screen',
             arguments=["-d", rviz_config_file],
-            condition=launch.conditions.IfCondition(
-                LaunchConfiguration('rviz'))
+            condition=IfCondition(LaunchConfiguration('rviz'))
         ),
     ])
-
-if __name__ == '__main__':
-    generate_launch_description()

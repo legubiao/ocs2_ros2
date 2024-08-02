@@ -1,28 +1,30 @@
-# gait_command.launch.py
-import launch
-import launch_ros.actions
+import os
+from launch import LaunchDescription
+from launch_ros.actions import Node
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 
+
 def generate_launch_description():
-    return launch.LaunchDescription([
-        launch.actions.DeclareLaunchArgument(
+    prefix = os.getenv('LAUNCH_PREFIX', '')
+    return LaunchDescription([
+        DeclareLaunchArgument(
             name='gaitCommandFile',
             default_value=get_package_share_directory(
                 'ocs2_legged_robot') + '/config/command/gait.info'
         ),
-        launch_ros.actions.Node(
+
+        Node(
             package='ocs2_legged_robot_ros',
             executable='legged_robot_gait_command',
             name='legged_robot_gait_command',
             output='screen',
+            prefix=prefix,
             parameters=[
                 {
-                    'gaitCommandFile': launch.substitutions.LaunchConfiguration('gaitCommandFile')
+                    'gaitCommandFile': LaunchConfiguration('gaitCommandFile')
                 }
             ],
-            prefix='xterm -e'
         )
     ])
-
-if __name__ == '__main__':
-    generate_launch_description()

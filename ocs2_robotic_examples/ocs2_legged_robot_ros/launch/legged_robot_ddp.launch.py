@@ -1,14 +1,30 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription,  SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
 from ament_index_python.packages import get_package_share_directory
 
+def is_wsl():
+    try:
+        with open('/proc/version', 'r') as f:
+            version_info = f.read().lower()
+            return 'microsoft' in version_info or 'wsl' in version_info
+    except FileNotFoundError:
+        return False
 
 def generate_launch_description():
-    ld = LaunchDescription([
+    
+    prefix = "gnome-terminal --"
+    if is_wsl():
+        prefix = "xterm -e"
+        print("Current system is WSL, use xterm as terminal")
+    else:
+        print("Current system is not WSL, use gnome-terminal as terminal")
+    
+    return LaunchDescription([
+        SetEnvironmentVariable('LAUNCH_PREFIX', prefix),
         DeclareLaunchArgument(
             name='rviz',
             default_value='true'
@@ -42,7 +58,7 @@ def generate_launch_description():
             default_value=get_package_share_directory(
                 'ocs2_legged_robot') + '/config/command/gait.info'
         ),
-        
+
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [ThisLaunchFileDir(), '/basic.launch.py']),
@@ -64,7 +80,6 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [ThisLaunchFileDir(), '/dummy.launch.py']),
-            prefix="gnome-terminal --",
             launch_arguments={
                 'referenceFile': LaunchConfiguration('referenceFile'),
                 'taskFile': LaunchConfiguration('taskFile'),
@@ -74,7 +89,6 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [ThisLaunchFileDir(), '/gait_command.launch.py']),
-            prefix="gnome-terminal --",
             launch_arguments={
                 'gaitCommandFile': LaunchConfiguration('gaitCommandFile'),
             }.items(),
@@ -82,14 +96,8 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [ThisLaunchFileDir(), '/robot_target.launch.py']),
-            prefix="gnome-terminal --",
             launch_arguments={
                 'referenceFile': LaunchConfiguration('referenceFile'),
             }.items(),
         ),
     ])
-    return ld
-
-
-if __name__ == '__main__':
-    generate_launch_description()
