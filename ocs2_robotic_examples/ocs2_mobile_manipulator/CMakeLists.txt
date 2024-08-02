@@ -23,6 +23,8 @@ find_package(ocs2_mpc REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
 find_package(ocs2_self_collision REQUIRED)
+find_package(pinocchio REQUIRED)
+find_package(hpp-fcl REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS
         system
@@ -30,10 +32,6 @@ find_package(Boost REQUIRED COMPONENTS
         log_setup
         log
 )
-
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(pinocchio REQUIRED pinocchio)
-pkg_check_modules(hpp-fcl REQUIRED hpp-fcl)
 
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
@@ -56,13 +54,6 @@ configure_file(
         "${PROJECT_BINARY_DIR}/include/${PROJECT_NAME}/package_path.h" @ONLY
 )
 
-# Add directories for all targets
-include_directories(
-        include
-        ${EIGEN3_INCLUDE_DIRS}
-        ${Boost_INCLUDE_DIRS}
-)
-
 # mobile maniulator interface library
 add_library(${PROJECT_NAME}
         src/FactoryFunctions.cpp
@@ -74,6 +65,13 @@ add_library(${PROJECT_NAME}
         src/dynamics/FloatingArmManipulatorDynamics.cpp
         src/dynamics/FullyActuatedFloatingArmManipulatorDynamics.cpp
         src/MobileManipulatorInterface.cpp
+)
+
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    ${EIGEN3_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
 )
 
 ament_target_dependencies(${PROJECT_NAME}
@@ -109,9 +107,7 @@ install(
         INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
-install(DIRECTORY config
-        DESTINATION share/${PROJECT_NAME}/
-)
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
 
 #############
 ## Testing ##
@@ -120,25 +116,22 @@ find_package(ament_lint_auto REQUIRED)
 ament_lint_auto_find_test_dependencies()
 find_package(ament_cmake_gtest)
 
-# Helper macro for adding target applications
-macro(add_ocs2_test APP_NAME APP_SRC)
-    ament_add_gtest(${APP_NAME}
-            ${APP_SRC}
-    )
-    target_include_directories(${APP_NAME} PRIVATE
-            ${PROJECT_BINARY_DIR}/include
-    )
-    ament_target_dependencies(${APP_NAME}
-            ${dependencies}
-    )
-    target_link_libraries(${APP_NAME}
-            ${PROJECT_NAME}
-    )
-endmacro()
-
-add_ocs2_test(SelfCollisionTest test/testSelfCollision.cpp)
-add_ocs2_test(EndEffectorConstraintTest test/testEndEffectorConstraint.cpp)
-add_ocs2_test(DummyMobileManipulatorTest test/testDummyMobileManipulator.cpp)
+ament_add_gtest(${PROJECT_NAME}_test
+        test/testSelfCollision.cpp
+        test/testEndEffectorConstraint.cpp
+        test/testDummyMobileManipulator.cpp
+)
+target_include_directories(${PROJECT_NAME}_test PRIVATE
+        test/include
+        ${PROJECT_BINARY_DIR}/include
+)
+ament_target_dependencies(${PROJECT_NAME}_test
+        ${dependencies}
+)
+target_link_libraries(${PROJECT_NAME}_test
+        ${PROJECT_NAME}
+)
+target_compile_options(${PROJECT_NAME}_test PRIVATE ${FLAGS})
 
 ament_export_dependencies(${dependencies})
 ament_export_include_directories("include/${PROJECT_NAME}")

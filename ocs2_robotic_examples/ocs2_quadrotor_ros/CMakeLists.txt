@@ -12,9 +12,11 @@ set(dependencies
         ocs2_robotic_assets
         ocs2_quadrotor
         Boost
+        ament_index_cpp
 )
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(ocs2_mpc REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)

@@ -19,9 +19,11 @@ set(dependencies
         ocs2_ballbot
         ocs2_robotic_assets
         Boost
+        ament_index_cpp
 )
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(ocs2_core REQUIRED)
 find_package(ocs2_oc REQUIRED)
 find_package(urdf REQUIRED)

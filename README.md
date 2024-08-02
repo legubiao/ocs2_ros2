@@ -61,7 +61,10 @@ colcon build --packages-up-to grid_map --cmake-args -DCMAKE_EXPORT_COMPILE_COMMA
 ### 2.4 Build Examples
 **⚠️ Warning:**
 
-If build without "-DCMAKE_BUILD_TYPE=RelWithDebInfo", the mpc will have poor performance.
+* **If build without "-DCMAKE_BUILD_TYPE=RelWithDebInfo", the mpc will have poor performance.**
+* **Don't forget to deactivate conda before "colcon build", otherwise gtest would generate some file caused later build all failed and you may need to clean the ros2 workspace to recover.**
+
+
 #### 2.4.1 [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
 
 * build

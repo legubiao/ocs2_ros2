@@ -2,14 +2,21 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_self_collision)
 
-
 set(dependencies
         ocs2_core
         ocs2_robotic_tools
         ocs2_pinocchio_interface
         hpp-fcl
         pinocchio
+        urdfdom
 )
+execute_process(COMMAND pkg-config --modversion urdfdom OUTPUT_VARIABLE URDFDOM_VERSION)
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" URDFDOM_VERSION "${URDFDOM_VERSION}")
+if (URDFDOM_VERSION VERSION_GREATER_EQUAL 4.0.0)
+    add_definitions(-DURDFDOM_VERSION_GT_4)
+    find_package(tinyxml2 REQUIRED)
+    list(APPEND dependencies tinyxml2)
+endif ()
 
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_core REQUIRED)
@@ -42,25 +49,6 @@ set(FLAGS
         -DPINOCCHIO_URDFDOM_USE_STD_SHARED_PTR
 )
 
-include_directories(
-        include
-        ${EIGEN3_INCLUDE_DIRS}
-        ${pinocchio_INCLUDE_DIRS}
-        ${hpp-fcl_INCLUDE_DIRS}
-)
-
-execute_process(
-        COMMAND urdfdom-config --version
-        OUTPUT_VARIABLE URDFDOM_VERSION
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-execute_process(COMMAND pkg-config --modversion urdfdom OUTPUT_VARIABLE URDFDOM_VERSION)
-string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" URDFDOM_VERSION "${URDFDOM_VERSION}")
-if(URDFDOM_VERSION VERSION_GREATER_EQUAL 4.0.0)
-    add_definitions(-DURDFDOM_VERSION_GT_4)
-endif()
-
 # ocs2 pinocchio interface library
 add_library(${PROJECT_NAME}
         src/PinocchioGeometryInterface.cpp
@@ -69,41 +57,39 @@ add_library(${PROJECT_NAME}
         src/SelfCollisionConstraint.cpp
         src/SelfCollisionConstraintCppAd.cpp
 )
+
+target_include_directories(${PROJECT_NAME}
+        PUBLIC
+        ${EIGEN3_INCLUDE_DIRS}
+        ${pinocchio_INCLUDE_DIRS}
+        ${hpp-fcl_INCLUDE_DIRS}
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+
 ament_target_dependencies(${PROJECT_NAME}
+        PUBLIC
         ${dependencies}
 )
+
 target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})
-
-####################
-## Clang tooling ###
-####################
-
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling")
-    add_clang_tooling(
-            TARGETS ${PROJECT_NAME}
-            SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include
-            CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
 
 #############
 ## Install ##
 #############
+install(
+        DIRECTORY include/
+        DESTINATION include/${PROJECT_NAME}
+)
 
 install(
         TARGETS ${PROJECT_NAME}
         EXPORT export_${PROJECT_NAME}
-        ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/${PROJECT_NAME}
 )
-install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(${dependencies})
 ament_export_include_directories("include/${PROJECT_NAME}")
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()

@@ -24,6 +24,8 @@
   <depend>ocs2_centroidal_model</depend>
   <depend>pinocchio</depend>
 
+  <test_depend>ament_cmake_gtest</test_depend>
+
   <export>                               
    <build_type>ament_cmake</build_type>
   </export>
