@@ -2,33 +2,33 @@
 
 <package format="2">
 
-  <name>ocs2_ros_interfaces</name>
-  <version>0.0.0</version>
-  <description>The ocs2 communication interfaces to ROS</description>
+    <name>ocs2_ros_interfaces</name>
+    <version>0.0.0</version>
+    <description>The ocs2 communication interfaces to ROS</description>
 
-  <license>TODO</license>
-  <maintainer email="farbod.farshidian@gmail.com">Farbod Farshidian</maintainer>
-  <maintainer email="jcarius@ethz.ch">Jan Carius</maintainer>
-  <maintainer email="rgrandia@ethz.ch">Ruben Grandia</maintainer>
+    <license>TODO</license>
+    <maintainer email="farbod.farshidian@gmail.com">Farbod Farshidian</maintainer>
+    <maintainer email="jcarius@ethz.ch">Jan Carius</maintainer>
+    <maintainer email="rgrandia@ethz.ch">Ruben Grandia</maintainer>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+    <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>cmake_modules</build_depend>
-  <build_depend>cmake_clang_tools</build_depend>
+    <build_depend>cmake_modules</build_depend>
+    <build_depend>cmake_clang_tools</build_depend>
 
-  <depend>rclcpp</depend>
-  <depend>ocs2_msgs</depend>
-  <depend>ocs2_core</depend>
-  <depend>ocs2_mpc</depend>
-  <depend>std_msgs</depend>
-  <depend>visualization_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>interactive_markers</depend>
-  <exec_depend>rqt_multiplot</exec_depend>
-  <exec_depend>ros2launch</exec_depend>
+    <depend>rclcpp</depend>
+    <depend>ocs2_msgs</depend>
+    <depend>ocs2_core</depend>
+    <depend>ocs2_mpc</depend>
+    <depend>std_msgs</depend>
+    <depend>visualization_msgs</depend>
+    <depend>geometry_msgs</depend>
+    <depend>interactive_markers</depend>
+    <exec_depend>rqt_multiplot</exec_depend>
+    <exec_depend>ros2launch</exec_depend>
 
-  <export>                               
-   <build_type>ament_cmake</build_type>
-  </export> 
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
 
 </package>

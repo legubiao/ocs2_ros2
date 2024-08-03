@@ -47,155 +47,155 @@ using namespace ocs2;
 using namespace legged_robot;
 
 class testEndEffectorLinearConstraint : public ::testing::Test {
- public:
-  testEndEffectorLinearConstraint() {
-    const ModelSettings
-        modelSettings;  // default constructor just to get contactNames3DoF
+public:
+    testEndEffectorLinearConstraint() {
+        const ModelSettings
+                modelSettings; // default constructor just to get contactNames3DoF
 
-    pinocchioMappingPtr.reset(
-        new CentroidalModelPinocchioMapping(centroidalModelInfo));
-    pinocchioMappingAdPtr.reset(new CentroidalModelPinocchioMappingCppAd(
-        centroidalModelInfo.toCppAd()));
+        pinocchioMappingPtr.reset(
+            new CentroidalModelPinocchioMapping(centroidalModelInfo));
+        pinocchioMappingAdPtr.reset(new CentroidalModelPinocchioMappingCppAd(
+            centroidalModelInfo.toCppAd()));
 
-    eeKinematicsPtr.reset(new PinocchioEndEffectorKinematics(
-        *pinocchioInterfacePtr, *pinocchioMappingPtr,
-        {modelSettings.contactNames3DoF[0]}));
+        eeKinematicsPtr.reset(new PinocchioEndEffectorKinematics(
+            *pinocchioInterfacePtr, *pinocchioMappingPtr,
+            {modelSettings.contactNames3DoF[0]}));
 
-    auto velocityUpdateCallback =
-        [&](ad_vector_t state,
-            PinocchioInterfaceTpl<ad_scalar_t>& pinocchioInterfaceAd) {
-          const ad_vector_t& q =
-              state.tail(centroidalModelInfo.generalizedCoordinatesNum);
-          updateCentroidalDynamics(pinocchioInterfaceAd,
-                                   centroidalModelInfo.toCppAd(), q);
+        auto velocityUpdateCallback =
+                [&](ad_vector_t state,
+                    PinocchioInterfaceTpl<ad_scalar_t> &pinocchioInterfaceAd) {
+            const ad_vector_t &q =
+                    state.tail(centroidalModelInfo.generalizedCoordinatesNum);
+            updateCentroidalDynamics(pinocchioInterfaceAd,
+                                     centroidalModelInfo.toCppAd(), q);
         };
-    eeKinematicsAdPtr.reset(new PinocchioEndEffectorKinematicsCppAd(
-        *pinocchioInterfacePtr, *pinocchioMappingAdPtr,
-        {modelSettings.contactNames3DoF[0]}, centroidalModelInfo.stateDim,
-        centroidalModelInfo.inputDim, velocityUpdateCallback, "EEVel",
-        "/tmp/ocs2", true, true));
+        eeKinematicsAdPtr.reset(new PinocchioEndEffectorKinematicsCppAd(
+            *pinocchioInterfacePtr, *pinocchioMappingAdPtr,
+            {modelSettings.contactNames3DoF[0]}, centroidalModelInfo.stateDim,
+            centroidalModelInfo.inputDim, velocityUpdateCallback, "EEVel",
+            "/tmp/ocs2", true, true));
 
-    x.resize(centroidalModelInfo.stateDim);
-    x(0) = 0.0;  // vcom_x
-    x(1) = 0.0;  // vcom_y
-    x(2) = 0.0;  // vcom_z
-    x(3) = 0.0;  // L_x / robotMass
-    x(4) = 0.0;  // L_y / robotMass
-    x(5) = 0.0;  // L_z / robotMass
+        x.resize(centroidalModelInfo.stateDim);
+        x(0) = 0.0; // vcom_x
+        x(1) = 0.0; // vcom_y
+        x(2) = 0.0; // vcom_z
+        x(3) = 0.0; // L_x / robotMass
+        x(4) = 0.0; // L_y / robotMass
+        x(5) = 0.0; // L_z / robotMass
 
-    x(6) = 0.0;   // p_base_x
-    x(7) = 0.0;   // p_base_y
-    x(8) = 0.57;  // p_base_z
-    x(9) = 0.0;   // theta_base_z
-    x(10) = 0.0;  // theta_base_y
-    x(11) = 0.0;  // theta_base_x
+        x(6) = 0.0; // p_base_x
+        x(7) = 0.0; // p_base_y
+        x(8) = 0.57; // p_base_z
+        x(9) = 0.0; // theta_base_z
+        x(10) = 0.0; // theta_base_y
+        x(11) = 0.0; // theta_base_x
 
-    x(12) = -0.25;  // LF_HAA
-    x(13) = 0.6;    // LF_HFE
-    x(14) = -0.85;  // LF_KFE
-    x(15) = -0.25;  // LH_HAA
-    x(16) = -0.6;   // LH_HFE
-    x(17) = 0.85;   // LH_KFE
-    x(18) = 0.25;   // RF_HAA
-    x(19) = 0.6;    // RF_HFE
-    x(20) = -0.85;  // RF_KFE
-    x(21) = 0.25;   // RH_HAA
-    x(22) = -0.6;   // RH_HFE
-    x(23) = 0.85;   // RH_KFE
+        x(12) = -0.25; // LF_HAA
+        x(13) = 0.6; // LF_HFE
+        x(14) = -0.85; // LF_KFE
+        x(15) = -0.25; // LH_HAA
+        x(16) = -0.6; // LH_HFE
+        x(17) = 0.85; // LH_KFE
+        x(18) = 0.25; // RF_HAA
+        x(19) = 0.6; // RF_HFE
+        x(20) = -0.85; // RF_KFE
+        x(21) = 0.25; // RH_HAA
+        x(22) = -0.6; // RH_HFE
+        x(23) = 0.85; // RH_KFE
 
-    u = vector_t::Random(centroidalModelInfo.inputDim);
+        u = vector_t::Random(centroidalModelInfo.inputDim);
 
-    config.b = vector_t::Random(3);
-    config.Ax = matrix_t::Random(3, 3);
-    config.Av = matrix_t::Random(3, 3);
-  }
+        config.b = vector_t::Random(3);
+        config.Ax = matrix_t::Random(3, 3);
+        config.Av = matrix_t::Random(3, 3);
+    }
 
-  const CentroidalModelType centroidalModelType =
-      CentroidalModelType::SingleRigidBodyDynamics;
-  std::unique_ptr<PinocchioInterface> pinocchioInterfacePtr =
-      createAnymalPinocchioInterface();
-  const CentroidalModelInfo centroidalModelInfo =
-      createAnymalCentroidalModelInfo(*pinocchioInterfacePtr,
-                                      centroidalModelType);
-  PreComputation preComputation;
+    const CentroidalModelType centroidalModelType =
+            CentroidalModelType::SingleRigidBodyDynamics;
+    std::unique_ptr<PinocchioInterface> pinocchioInterfacePtr =
+            createAnymalPinocchioInterface();
+    const CentroidalModelInfo centroidalModelInfo =
+            createAnymalCentroidalModelInfo(*pinocchioInterfacePtr,
+                                            centroidalModelType);
+    PreComputation preComputation;
 
-  std::unique_ptr<CentroidalModelPinocchioMapping> pinocchioMappingPtr;
-  std::unique_ptr<CentroidalModelPinocchioMappingCppAd> pinocchioMappingAdPtr;
-  std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematicsPtr;
-  std::unique_ptr<PinocchioEndEffectorKinematicsCppAd> eeKinematicsAdPtr;
-  EndEffectorLinearConstraint::Config config;
-  vector_t x, u;
+    std::unique_ptr<CentroidalModelPinocchioMapping> pinocchioMappingPtr;
+    std::unique_ptr<CentroidalModelPinocchioMappingCppAd> pinocchioMappingAdPtr;
+    std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematicsPtr;
+    std::unique_ptr<PinocchioEndEffectorKinematicsCppAd> eeKinematicsAdPtr;
+    EndEffectorLinearConstraint::Config config;
+    vector_t x, u;
 };
 
 TEST_F(testEndEffectorLinearConstraint, testValue) {
-  auto eeVelConstraintPtr =
-      std::make_unique<EndEffectorLinearConstraint>(*eeKinematicsPtr, 3);
-  eeVelConstraintPtr->configure(config);
-  auto eeVelConstraintAdPtr =
-      std::make_unique<EndEffectorLinearConstraint>(*eeKinematicsAdPtr, 3);
-  eeVelConstraintAdPtr->configure(config);
+    auto eeVelConstraintPtr =
+            std::make_unique<EndEffectorLinearConstraint>(*eeKinematicsPtr, 3);
+    eeVelConstraintPtr->configure(config);
+    auto eeVelConstraintAdPtr =
+            std::make_unique<EndEffectorLinearConstraint>(*eeKinematicsAdPtr, 3);
+    eeVelConstraintAdPtr->configure(config);
 
-  dynamic_cast<PinocchioEndEffectorKinematics&>(
-      eeVelConstraintPtr->getEndEffectorKinematics())
-      .setPinocchioInterface(*pinocchioInterfacePtr);
-  pinocchioMappingPtr->setPinocchioInterface(*pinocchioInterfacePtr);
+    dynamic_cast<PinocchioEndEffectorKinematics &>(
+                eeVelConstraintPtr->getEndEffectorKinematics())
+            .setPinocchioInterface(*pinocchioInterfacePtr);
+    pinocchioMappingPtr->setPinocchioInterface(*pinocchioInterfacePtr);
 
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+    const auto &model = pinocchioInterfacePtr->getModel();
+    auto &data = pinocchioInterfacePtr->getData();
 
-  const auto q = pinocchioMappingPtr->getPinocchioJointPosition(x);
-  updateCentroidalDynamics(*pinocchioInterfacePtr, centroidalModelInfo, q);
-  const auto v = pinocchioMappingPtr->getPinocchioJointVelocity(x, u);
+    const auto q = pinocchioMappingPtr->getPinocchioJointPosition(x);
+    updateCentroidalDynamics(*pinocchioInterfacePtr, centroidalModelInfo, q);
+    const auto v = pinocchioMappingPtr->getPinocchioJointVelocity(x, u);
 
-  // For getPosition() & getVelocity() of PinocchioEndEffectorKinematics
-  pinocchio::forwardKinematics(model, data, q, v);
-  pinocchio::updateFramePlacements(model, data);
+    // For getPosition() & getVelocity() of PinocchioEndEffectorKinematics
+    pinocchio::forwardKinematics(model, data, q, v);
+    pinocchio::updateFramePlacements(model, data);
 
-  const auto value = eeVelConstraintPtr->getValue(0.0, x, u, preComputation);
-  const auto valueAd =
-      eeVelConstraintAdPtr->getValue(0.0, x, u, preComputation);
+    const auto value = eeVelConstraintPtr->getValue(0.0, x, u, preComputation);
+    const auto valueAd =
+            eeVelConstraintAdPtr->getValue(0.0, x, u, preComputation);
 
-  EXPECT_TRUE(value.isApprox(valueAd));
+    EXPECT_TRUE(value.isApprox(valueAd));
 }
 
 TEST_F(testEndEffectorLinearConstraint, testLinearApproximation) {
-  auto eeVelConstraintPtr =
-      std::make_unique<EndEffectorLinearConstraint>(*eeKinematicsPtr, 3);
-  eeVelConstraintPtr->configure(config);
-  auto eeVelConstraintAdPtr =
-      std::make_unique<EndEffectorLinearConstraint>(*eeKinematicsAdPtr, 3);
-  eeVelConstraintAdPtr->configure(config);
+    auto eeVelConstraintPtr =
+            std::make_unique<EndEffectorLinearConstraint>(*eeKinematicsPtr, 3);
+    eeVelConstraintPtr->configure(config);
+    auto eeVelConstraintAdPtr =
+            std::make_unique<EndEffectorLinearConstraint>(*eeKinematicsAdPtr, 3);
+    eeVelConstraintAdPtr->configure(config);
 
-  dynamic_cast<PinocchioEndEffectorKinematics&>(
-      eeVelConstraintPtr->getEndEffectorKinematics())
-      .setPinocchioInterface(*pinocchioInterfacePtr);
-  pinocchioMappingPtr->setPinocchioInterface(*pinocchioInterfacePtr);
+    dynamic_cast<PinocchioEndEffectorKinematics &>(
+                eeVelConstraintPtr->getEndEffectorKinematics())
+            .setPinocchioInterface(*pinocchioInterfacePtr);
+    pinocchioMappingPtr->setPinocchioInterface(*pinocchioInterfacePtr);
 
-  const auto& model = pinocchioInterfacePtr->getModel();
-  auto& data = pinocchioInterfacePtr->getData();
+    const auto &model = pinocchioInterfacePtr->getModel();
+    auto &data = pinocchioInterfacePtr->getData();
 
-  // PinocchioInterface update for the analytical EndEffectorVelocityConstraint
-  const auto q = pinocchioMappingPtr->getPinocchioJointPosition(x);
-  updateCentroidalDynamics(*pinocchioInterfacePtr, centroidalModelInfo, q);
-  const auto v = pinocchioMappingPtr->getPinocchioJointVelocity(x, u);
-  const auto a = vector_t::Zero(q.size());
+    // PinocchioInterface update for the analytical EndEffectorVelocityConstraint
+    const auto q = pinocchioMappingPtr->getPinocchioJointPosition(x);
+    updateCentroidalDynamics(*pinocchioInterfacePtr, centroidalModelInfo, q);
+    const auto v = pinocchioMappingPtr->getPinocchioJointVelocity(x, u);
+    const auto a = vector_t::Zero(q.size());
 
-  // For getPositionLinearApproximation of PinocchioEndEffectorKinematics
-  pinocchio::forwardKinematics(model, data, q);
-  pinocchio::updateFramePlacements(model, data);
-  pinocchio::computeJointJacobians(model, data);
-  // For getVelocityLinearApproximation of PinocchioEndEffectorKinematics
-  pinocchio::computeForwardKinematicsDerivatives(model, data, q, v, a);
-  // For getOcs2Jacobian of CentroidalModelPinocchioMapping
-  updateCentroidalDynamicsDerivatives(*pinocchioInterfacePtr,
-                                      centroidalModelInfo, q, v);
+    // For getPositionLinearApproximation of PinocchioEndEffectorKinematics
+    pinocchio::forwardKinematics(model, data, q);
+    pinocchio::updateFramePlacements(model, data);
+    pinocchio::computeJointJacobians(model, data);
+    // For getVelocityLinearApproximation of PinocchioEndEffectorKinematics
+    pinocchio::computeForwardKinematicsDerivatives(model, data, q, v, a);
+    // For getOcs2Jacobian of CentroidalModelPinocchioMapping
+    updateCentroidalDynamicsDerivatives(*pinocchioInterfacePtr,
+                                        centroidalModelInfo, q, v);
 
-  const auto linApprox =
-      eeVelConstraintPtr->getLinearApproximation(0.0, x, u, preComputation);
-  const auto linApproxAd =
-      eeVelConstraintAdPtr->getLinearApproximation(0.0, x, u, preComputation);
+    const auto linApprox =
+            eeVelConstraintPtr->getLinearApproximation(0.0, x, u, preComputation);
+    const auto linApproxAd =
+            eeVelConstraintAdPtr->getLinearApproximation(0.0, x, u, preComputation);
 
-  EXPECT_TRUE(linApprox.f.isApprox(linApproxAd.f));
-  EXPECT_TRUE(linApprox.dfdx.isApprox(linApproxAd.dfdx, 1e-14));
-  EXPECT_TRUE(linApprox.dfdu.isApprox(linApproxAd.dfdu));
+    EXPECT_TRUE(linApprox.f.isApprox(linApproxAd.f));
+    EXPECT_TRUE(linApprox.dfdx.isApprox(linApproxAd.dfdx, 1e-14));
+    EXPECT_TRUE(linApprox.dfdu.isApprox(linApproxAd.dfdu));
 }

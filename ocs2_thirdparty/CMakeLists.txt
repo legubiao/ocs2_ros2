@@ -8,5 +8,5 @@ install(DIRECTORY include/
         DESTINATION "include/${PROJECT_NAME}/../")
 
 ament_export_include_directories(include)
-ament_export_dependencies()
+
 ament_package()

@@ -35,12 +35,6 @@ include(cmake/pinocchio_config.cmake)
 ## Build ##
 ###########
 
-include_directories(
-        include
-        ${EIGEN3_INCLUDE_DIRS}
-        ${pinocchio_INCLUDE_DIRS}
-)
-
 # ocs2 pinocchio interface library
 add_library(${PROJECT_NAME} SHARED
         src/PinocchioInterface.cpp
@@ -52,6 +46,13 @@ add_library(${PROJECT_NAME} SHARED
 ament_target_dependencies(${PROJECT_NAME}
         ${dependencies}
 )
+target_include_directories(${PROJECT_NAME}
+        PUBLIC
+        ${EIGEN3_INCLUDE_DIRS}
+        ${pinocchio_INCLUDE_DIRS}
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_PINOCCHIO_FLAGS})
 
 ####################
@@ -89,8 +90,8 @@ install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 ############
 find_package(ament_lint_auto REQUIRED)
 ament_lint_auto_find_test_dependencies()
-find_package(ament_cmake_gtest REQUIRED)
 
+find_package(ament_cmake_gtest REQUIRED)
 ament_add_gtest(testPinocchioInterface
         test/testPinocchioInterface.cpp
         test/testPinocchioEndEffectorKinematics.cpp

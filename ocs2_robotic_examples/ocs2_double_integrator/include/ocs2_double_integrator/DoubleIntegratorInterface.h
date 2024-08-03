@@ -44,50 +44,51 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "definitions.h"
 
 namespace ocs2 {
-namespace double_integrator {
+    namespace double_integrator {
+        class DoubleIntegratorInterface final : public RobotInterface {
+        public:
+            /**
+             * Constructor
+             * @param [in] taskFile: The absolute path to the configuration file for the MPC.
+             * @param [in] libraryFolder: The absolute path to the directory to generate CppAD library into.
+             * @param [in] verbose: Load the settings in verbose.
+             */
+            DoubleIntegratorInterface(const std::string &taskFile, const std::string &libraryFolder,
+                                      bool verbose = true);
 
-class DoubleIntegratorInterface final : public RobotInterface {
- public:
-  /**
-   * Constructor
-   * @param [in] taskFile: The absolute path to the configuration file for the MPC.
-   * @param [in] libraryFolder: The absolute path to the directory to generate CppAD library into.
-   * @param [in] verbose: Load the settings in verbose.
-   */
-  DoubleIntegratorInterface(const std::string& taskFile, const std::string& libraryFolder, bool verbose = true);
+            /** Destructor */
+            ~DoubleIntegratorInterface() override = default;
 
-  /** Destructor */
-  ~DoubleIntegratorInterface() override = default;
+            const vector_t &getInitialState() { return initialState_; }
 
-  const vector_t& getInitialState() { return initialState_; }
+            const vector_t &getInitialTarget() { return finalGoal_; }
 
-  const vector_t& getInitialTarget() { return finalGoal_; }
+            ddp::Settings &ddpSettings() { return ddpSettings_; }
 
-  ddp::Settings& ddpSettings() { return ddpSettings_; }
+            mpc::Settings &mpcSettings() { return mpcSettings_; }
 
-  mpc::Settings& mpcSettings() { return mpcSettings_; }
+            const OptimalControlProblem &getOptimalControlProblem() const override { return problem_; }
 
-  const OptimalControlProblem& getOptimalControlProblem() const override { return problem_; }
+            std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const override {
+                return referenceManagerPtr_;
+            }
 
-  std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const override { return referenceManagerPtr_; }
+            const RolloutBase &getRollout() const { return *rolloutPtr_; }
 
-  const RolloutBase& getRollout() const { return *rolloutPtr_; }
+            const Initializer &getInitializer() const override { return *linearSystemInitializerPtr_; }
 
-  const Initializer& getInitializer() const override { return *linearSystemInitializerPtr_; }
+        private:
+            ddp::Settings ddpSettings_;
+            mpc::Settings mpcSettings_;
 
- private:
-  ddp::Settings ddpSettings_;
-  mpc::Settings mpcSettings_;
+            OptimalControlProblem problem_;
+            std::shared_ptr<ReferenceManager> referenceManagerPtr_;
 
-  OptimalControlProblem problem_;
-  std::shared_ptr<ReferenceManager> referenceManagerPtr_;
+            std::unique_ptr<RolloutBase> rolloutPtr_;
+            std::unique_ptr<Initializer> linearSystemInitializerPtr_;
 
-  std::unique_ptr<RolloutBase> rolloutPtr_;
-  std::unique_ptr<Initializer> linearSystemInitializerPtr_;
-
-  vector_t initialState_{STATE_DIM};
-  vector_t finalGoal_{STATE_DIM};
-};
-
-}  // namespace double_integrator
-}  // namespace ocs2
+            vector_t initialState_{STATE_DIM};
+            vector_t finalGoal_{STATE_DIM};
+        };
+    } // namespace double_integrator
+} // namespace ocs2

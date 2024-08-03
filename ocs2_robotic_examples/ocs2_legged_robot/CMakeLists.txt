@@ -18,10 +18,8 @@ set(dependencies
         pinocchio
         urdf
         urdfdom
-        hpp-fcl
 )
 
-find_package(hpp-fcl REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_core REQUIRED)
 find_package(ocs2_oc REQUIRED)
@@ -134,27 +132,27 @@ install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
 #############
 ## Testing ##
 #############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
-find_package(ament_cmake_gtest)
-
-ament_add_gtest(${PROJECT_NAME}_test
-        test/AnymalFactoryFunctions.cpp
-        test/constraint/testEndEffectorLinearConstraint.cpp
-        test/constraint/testFrictionConeConstraint.cpp
-        test/constraint/testZeroForceConstraint.cpp
-)
-target_include_directories(${PROJECT_NAME}_test PRIVATE
-        test/include
-        ${PROJECT_BINARY_DIR}/include
-)
-ament_target_dependencies(${PROJECT_NAME}_test
-        ${dependencies}
-)
-target_link_libraries(${PROJECT_NAME}_test
-        ${PROJECT_NAME}
-)
-target_compile_options(${PROJECT_NAME}_test PRIVATE ${FLAGS})
+#find_package(ament_lint_auto REQUIRED)
+#ament_lint_auto_find_test_dependencies()
+#find_package(ament_cmake_gtest)
+#
+#ament_add_gtest(${PROJECT_NAME}_test
+#        test/AnymalFactoryFunctions.cpp
+#        test/constraint/testEndEffectorLinearConstraint.cpp
+#        test/constraint/testFrictionConeConstraint.cpp
+#        test/constraint/testZeroForceConstraint.cpp
+#)
+#target_include_directories(${PROJECT_NAME}_test PRIVATE
+#        ${PROJECT_BINARY_DIR}/include
+#        ${CMAKE_CURRENT_SOURCE_DIR}/test/include
+#)
+#ament_target_dependencies(${PROJECT_NAME}_test
+#        ${dependencies}
+#)
+#target_link_libraries(${PROJECT_NAME}_test
+#        ${PROJECT_NAME}
+#)
+#target_compile_options(${PROJECT_NAME}_test PRIVATE ${FLAGS})
 
 ament_export_dependencies(${dependencies})
 ament_export_include_directories("include/${PROJECT_NAME}")

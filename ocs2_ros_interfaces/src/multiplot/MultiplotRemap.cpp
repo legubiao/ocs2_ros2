@@ -27,8 +27,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <ocs2_core/Types.h>
-
 #include <ocs2_msgs/msg/mpc_flattened_controller.hpp>
 #include <ocs2_msgs/msg/mpc_performance_indices.hpp>
 #include <string>
@@ -36,51 +34,49 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rclcpp/rclcpp.hpp"
 
 namespace {
+    class MultiplotRemap final : public rclcpp::Node {
+    public:
+        /** Constructor */
+        explicit MultiplotRemap(const std::string &mpcPolicyTopicName)
+            : Node("MultiplotRemap") {
+            mpcPolicySubscriber_ =
+                    this->create_subscription<ocs2_msgs::msg::MpcFlattenedController>(
+                        mpcPolicyTopicName, 1,
+                        std::bind(&MultiplotRemap::mpcPoicyCallback, this,
+                                  std::placeholders::_1));
+            mpcPerformanceIndicesPublisher_ =
+                    this->create_publisher<ocs2_msgs::msg::MpcPerformanceIndices>(
+                        "mpc_performance_indices", 1);
+        }
 
-class MultiplotRemap : public rclcpp::Node {
- public:
-  /** Constructor */
-  explicit MultiplotRemap(const std::string& mpcPolicyTopicName)
-      : Node("MultiplotRemap") {
-    mpcPolicySubscriber_ =
-        this->create_subscription<ocs2_msgs::msg::MpcFlattenedController>(
-            mpcPolicyTopicName, 1,
-            std::bind(&MultiplotRemap::mpcPoicyCallback, this,
-                      std::placeholders::_1));
-    mpcPerformanceIndicesPublisher_ =
-        this->create_publisher<ocs2_msgs::msg::MpcPerformanceIndices>(
-            "mpc_performance_indices", 1);
-  }
+        /** Default deconstructor */
+        ~MultiplotRemap() override = default;
 
-  /** Default deconstructor */
-  ~MultiplotRemap() = default;
+    private:
+        void mpcPoicyCallback(
+            const ocs2_msgs::msg::MpcFlattenedController::ConstSharedPtr &policyMsg) {
+            mpcPerformanceIndicesPublisher_->publish(policyMsg->performance_indices);
+        }
 
- private:
-  void mpcPoicyCallback(
-      const ocs2_msgs::msg::MpcFlattenedController::ConstSharedPtr& policyMsg) {
-    mpcPerformanceIndicesPublisher_->publish(policyMsg->performance_indices);
-  }
+        // publishers and subscribers
+        rclcpp::Subscription<ocs2_msgs::msg::MpcFlattenedController>::SharedPtr
+        mpcPolicySubscriber_;
+        rclcpp::Publisher<ocs2_msgs::msg::MpcPerformanceIndices>::SharedPtr
+        mpcPerformanceIndicesPublisher_;
+    };
+} // unnamed namespace
 
-  // publishers and subscribers
-  rclcpp::Subscription<ocs2_msgs::msg::MpcFlattenedController>::SharedPtr
-      mpcPolicySubscriber_;
-  rclcpp::Publisher<ocs2_msgs::msg::MpcPerformanceIndices>::SharedPtr
-      mpcPerformanceIndicesPublisher_;
-};
+int main(int argc, char **argv) {
+    // mpc policy topic name
+    std::vector<std::string> programArgs =
+            rclcpp::remove_ros_arguments(argc, argv);
+    if (programArgs.size() <= 1) {
+        throw std::runtime_error("MPC policy topic name is not specified!");
+    }
+    const auto mpcPolicyTopicName = std::string(programArgs[1]);
 
-}  // unnamed namespace
+    rclcpp::init(argc, argv);
+    spin(std::make_shared<MultiplotRemap>(mpcPolicyTopicName));
 
-int main(int argc, char** argv) {
-  // mpc policy topic name
-  std::vector<std::string> programArgs =
-      rclcpp::remove_ros_arguments(argc, argv);
-  if (programArgs.size() <= 1) {
-    throw std::runtime_error("MPC policy topic name is not specified!");
-  }
-  const std::string mpcPolicyTopicName = std::string(programArgs[1]);
-
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<MultiplotRemap>(mpcPolicyTopicName));
-
-  return 0;
+    return 0;
 }

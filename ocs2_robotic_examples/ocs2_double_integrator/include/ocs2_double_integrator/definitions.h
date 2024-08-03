@@ -32,10 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstddef>
 
 namespace ocs2 {
-namespace double_integrator {
-
-static constexpr size_t STATE_DIM = 2;
-static constexpr size_t INPUT_DIM = 1;
-
-}  // namespace double_integrator
-}  // namespace ocs2
+    namespace double_integrator {
+        static constexpr size_t STATE_DIM = 2;
+        static constexpr size_t INPUT_DIM = 1;
+    } // namespace double_integrator
+} // namespace ocs2

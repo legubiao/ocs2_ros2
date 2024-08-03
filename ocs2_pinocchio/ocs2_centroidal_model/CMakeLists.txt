@@ -44,12 +44,6 @@ set(FLAGS
         -DPINOCCHIO_URDFDOM_USE_STD_SHARED_PTR
 )
 
-include_directories(
-        include
-        ${pinocchio_INCLUDE_DIRS}
-        ${EIGEN3_INCLUDE_DIRS}
-)
-
 add_library(${PROJECT_NAME}
         src/PinocchioCentroidalDynamics.cpp
         src/PinocchioCentroidalDynamicsAD.cpp
@@ -59,6 +53,14 @@ add_library(${PROJECT_NAME}
         src/FactoryFunctions.cpp
         src/ModelHelperFunctions.cpp
 )
+
+target_include_directories(${PROJECT_NAME}
+        PUBLIC
+        ${pinocchio_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIRS}
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+
 ament_target_dependencies(${PROJECT_NAME}
         ${dependencies}
 )

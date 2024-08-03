@@ -38,57 +38,55 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_legged_robot/package_path.h"
 
 namespace {
-const std::string URDF_FILE =
-    ocs2::robotic_assets::getPath() + "/resources/anymal_c/urdf/anymal.urdf";
-const std::string TASK_FILE =
-    ocs2::legged_robot::getPath() + "/config/mpc/" + "task.info";
-const std::string REFERENCE_FILE =
-    ocs2::legged_robot::getPath() + "/config/command/" + "reference.info";
-}  // unnamed namespace
+    const std::string URDF_FILE =
+            ocs2::robotic_assets::getPath() + "/resources/anymal_c/urdf/anymal.urdf";
+    const std::string TASK_FILE =
+            ocs2::legged_robot::getPath() + "/config/mpc/" + "task.info";
+    const std::string REFERENCE_FILE =
+            ocs2::legged_robot::getPath() + "/config/command/" + "reference.info";
+} // unnamed namespace
 
 namespace ocs2::legged_robot {
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    std::unique_ptr<PinocchioInterface> createAnymalPinocchioInterface() {
+        return std::make_unique<PinocchioInterface>(
+            centroidal_model::createPinocchioInterface(URDF_FILE));
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::unique_ptr<PinocchioInterface> createAnymalPinocchioInterface() {
-  return std::make_unique<PinocchioInterface>(
-      centroidal_model::createPinocchioInterface(URDF_FILE));
-}
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    CentroidalModelInfo createAnymalCentroidalModelInfo(
+        const PinocchioInterface &pinocchioInterface,
+        CentroidalModelType centroidalType) {
+        const ModelSettings
+                modelSettings; // default constructor just to get contactNames3DoF
+        return centroidal_model::createCentroidalModelInfo(
+            pinocchioInterface, centroidalType,
+            centroidal_model::loadDefaultJointState(12, REFERENCE_FILE),
+            modelSettings.contactNames3DoF, modelSettings.contactNames6DoF);
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-CentroidalModelInfo createAnymalCentroidalModelInfo(
-    const PinocchioInterface& pinocchioInterface,
-    CentroidalModelType centroidalType) {
-  const ModelSettings
-      modelSettings;  // default constructor just to get contactNames3DoF
-  return centroidal_model::createCentroidalModelInfo(
-      pinocchioInterface, centroidalType,
-      centroidal_model::loadDefaultJointState(12, REFERENCE_FILE),
-      modelSettings.contactNames3DoF, modelSettings.contactNames6DoF);
-}
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    std::shared_ptr<SwitchedModelReferenceManager> createReferenceManager(
+        size_t numFeet) {
+        const auto initModeSchedule =
+                loadModeSchedule(REFERENCE_FILE, "initialModeSchedule", false);
+        const auto defaultModeSequenceTemplate = loadModeSequenceTemplate(
+            REFERENCE_FILE, "defaultModeSequenceTemplate", false);
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::shared_ptr<SwitchedModelReferenceManager> createReferenceManager(
-    size_t numFeet) {
-  const auto initModeSchedule =
-      loadModeSchedule(REFERENCE_FILE, "initialModeSchedule", false);
-  const auto defaultModeSequenceTemplate = loadModeSequenceTemplate(
-      REFERENCE_FILE, "defaultModeSequenceTemplate", false);
-
-  const ModelSettings modelSettings;
-  auto gaitSchedule = std::make_shared<GaitSchedule>(
-      initModeSchedule, defaultModeSequenceTemplate,
-      modelSettings.phaseTransitionStanceTime);
-  auto swingTrajectoryPlanner = std::make_unique<SwingTrajectoryPlanner>(
-      loadSwingTrajectorySettings(TASK_FILE, "swing_trajectory_config", false),
-      numFeet);
-  return std::make_shared<SwitchedModelReferenceManager>(
-      std::move(gaitSchedule), std::move(swingTrajectoryPlanner));
-}
-
-}  // namespace ocs2::legged_robot
+        const ModelSettings modelSettings;
+        auto gaitSchedule = std::make_shared<GaitSchedule>(
+            initModeSchedule, defaultModeSequenceTemplate,
+            modelSettings.phaseTransitionStanceTime);
+        auto swingTrajectoryPlanner = std::make_unique<SwingTrajectoryPlanner>(
+            loadSwingTrajectorySettings(TASK_FILE, "swing_trajectory_config", false),
+            numFeet);
+        return std::make_shared<SwitchedModelReferenceManager>(
+            std::move(gaitSchedule), std::move(swingTrajectoryPlanner));
+    }
+} // namespace ocs2::legged_robot

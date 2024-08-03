@@ -33,26 +33,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_oc/oc_data/LoopshapingPrimalSolution.h>
 
 namespace ocs2 {
-
-LoopshapingDummyObserver::LoopshapingDummyObserver(
-    std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr,
-    std::vector<std::shared_ptr<DummyObserver>> observersPtrArray)
-    : loopshapingDefinitionPtr_(std::move(loopshapingDefinitionPtr)),
-      observersPtrArray_(std::move(observersPtrArray)) {}
-
-void LoopshapingDummyObserver::update(const SystemObservation& observation,
-                                      const PrimalSolution& primalSolution,
-                                      const CommandData& command) {
-  if (!observersPtrArray_.empty()) {
-    const auto systemObservation =
-        loopshapingToSystemObservation(observation, *loopshapingDefinitionPtr_);
-    const auto systemPrimalSolution = loopshapingToSystemPrimalSolution(
-        primalSolution, *loopshapingDefinitionPtr_);
-
-    for (auto& observer : observersPtrArray_) {
-      observer->update(systemObservation, systemPrimalSolution, command);
+    LoopshapingDummyObserver::LoopshapingDummyObserver(
+        std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr,
+        std::vector<std::shared_ptr<DummyObserver> > observersPtrArray)
+        : loopshapingDefinitionPtr_(std::move(loopshapingDefinitionPtr)),
+          observersPtrArray_(std::move(observersPtrArray)) {
     }
-  }
-}
 
-}  // namespace ocs2
+    void LoopshapingDummyObserver::update(const SystemObservation &observation,
+                                          const PrimalSolution &primalSolution,
+                                          const CommandData &command) {
+        if (!observersPtrArray_.empty()) {
+            const auto systemObservation =
+                    loopshapingToSystemObservation(observation, *loopshapingDefinitionPtr_);
+            const auto systemPrimalSolution = loopshapingToSystemPrimalSolution(
+                primalSolution, *loopshapingDefinitionPtr_);
+
+            for (auto &observer: observersPtrArray_) {
+                observer->update(systemObservation, systemPrimalSolution, command);
+            }
+        }
+    }
+} // namespace ocs2

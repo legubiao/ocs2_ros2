@@ -1,92 +1,82 @@
-import os
-import sys
-
-import launch
-import launch_ros.actions
-
+from launch import LaunchDescription
 from launch.substitutions import LaunchConfiguration
-from ament_index_python.packages import get_package_share_directory
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import ThisLaunchFileDir
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
+from launch.conditions import IfCondition, UnlessCondition
+
+
+def is_wsl():
+    try:
+        with open('/proc/version', 'r') as f:
+            version_info = f.read().lower()
+            return 'microsoft' in version_info or 'wsl' in version_info
+    except FileNotFoundError:
+        return False
 
 
 def generate_launch_description():
-    rviz_arg = launch.actions.DeclareLaunchArgument(
-        name='rviz',
-        default_value='true'
-    )
-    task_name_arg = launch.actions.DeclareLaunchArgument(
-        name='task_name',
-        default_value='mpc'
-    )
-    debug_arg = launch.actions.DeclareLaunchArgument(
-        name='debug',
-        default_value='false'
-    )
+    prefix = "gnome-terminal --"
+    if is_wsl():
+        prefix = "xterm -e"
+        print("Current system is WSL, use xterm as terminal")
+    else:
+        print("Current system is not WSL, use gnome-terminal as terminal")
 
-    ld = launch.LaunchDescription([
-        rviz_arg,
-        task_name_arg,
-        debug_arg
-    ])
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            name='rviz',
+            default_value='true'
+        ),
+        DeclareLaunchArgument(
+            name='task_name',
+            default_value='mpc'
+        ),
+        DeclareLaunchArgument(
+            name='debug',
+            default_value='false'
+        ),
 
-    # TODO rviz_condition=launch.conditions.IfCondition(LaunchConfiguration("rviz"))
-    ld.add_action(
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory(
-                    'ocs2_double_integrator_ros'), 'launch/visualize.launch.py')
-            ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                [ThisLaunchFileDir(), '/visualize.launch.py']),
             launch_arguments={
                 'use_joint_state_publisher': 'false'
             }.items()
-        )
-    )
-
-    ld.add_action(
-        launch_ros.actions.Node(
+        ),
+        Node(
             package='ocs2_double_integrator_ros',
             executable='double_integrator_mpc',
             name='double_integrator_mpc',
             arguments=[LaunchConfiguration('task_name')],
-            prefix= "gnome-terminal -- gdb --args",
-            condition=launch.conditions.IfCondition(LaunchConfiguration("debug")),
+            prefix=prefix,
+            condition=IfCondition(LaunchConfiguration("debug")),
             output='screen'
-        )
-    )
-
-    ld.add_action(
-        launch_ros.actions.Node(
+        ),
+        Node(
             package='ocs2_double_integrator_ros',
             executable='double_integrator_mpc',
             name='double_integrator_mpc',
             arguments=[LaunchConfiguration('task_name')],
-            prefix= "",
-            condition=launch.conditions.UnlessCondition(LaunchConfiguration("debug")),
+            condition=UnlessCondition(LaunchConfiguration("debug")),
             output='screen'
-        )
-    )
-
-    ld.add_action(
-        launch_ros.actions.Node(
+        ),
+        Node(
             package='ocs2_double_integrator_ros',
             executable='double_integrator_dummy_test',
             name='double_integrator_dummy_test',
             arguments=[LaunchConfiguration('task_name')],
-            prefix="gnome-terminal --",
+            prefix=prefix,
             output='screen'
-        )
-    )
-
-    ld.add_action(
-        launch_ros.actions.Node(
+        ),
+        Node(
             package='ocs2_double_integrator_ros',
             executable='double_integrator_target',
             name='double_integrator_target',
             arguments=[LaunchConfiguration('task_name')],
-            prefix="gnome-terminal --",
+            prefix=prefix,
             output='screen'
         )
-    )
-    return ld
-
-if __name__ == '__main__':
-    generate_launch_description()
+    ])

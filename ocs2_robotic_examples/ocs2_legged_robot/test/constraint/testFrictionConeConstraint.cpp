@@ -38,209 +38,211 @@ using namespace ocs2;
 using namespace legged_robot;
 
 class TestFrictionConeConstraint : public testing::Test {
- public:
-  using Matrix6x = Eigen::Matrix<scalar_t, 6, Eigen::Dynamic>;
-  TestFrictionConeConstraint() {}
+public:
+    using Matrix6x = Eigen::Matrix<scalar_t, 6, Eigen::Dynamic>;
 
-  const CentroidalModelType centroidalModelType =
-      CentroidalModelType::SingleRigidBodyDynamics;
-  std::unique_ptr<PinocchioInterface> pinocchioInterfacePtr =
-      createAnymalPinocchioInterface();
-  const CentroidalModelInfo centroidalModelInfo =
-      createAnymalCentroidalModelInfo(*pinocchioInterfacePtr,
-                                      centroidalModelType);
-  const std::shared_ptr<SwitchedModelReferenceManager> referenceManagerPtr =
-      createReferenceManager(centroidalModelInfo.numThreeDofContacts);
-  PreComputation preComputation;
+    TestFrictionConeConstraint() {
+    }
+
+    const CentroidalModelType centroidalModelType =
+            CentroidalModelType::SingleRigidBodyDynamics;
+    std::unique_ptr<PinocchioInterface> pinocchioInterfacePtr =
+            createAnymalPinocchioInterface();
+    const CentroidalModelInfo centroidalModelInfo =
+            createAnymalCentroidalModelInfo(*pinocchioInterfacePtr,
+                                            centroidalModelType);
+    const std::shared_ptr<SwitchedModelReferenceManager> referenceManagerPtr =
+            createReferenceManager(centroidalModelInfo.numThreeDofContacts);
+    PreComputation preComputation;
 };
 
 TEST_F(TestFrictionConeConstraint, finiteDifference) {
-  for (size_t legNumber = 0;
-       legNumber < centroidalModelInfo.numThreeDofContacts; ++legNumber) {
-    scalar_t eps = 1e-4;
-    scalar_t tol = 1e-2;
-    size_t N = 10000;
-    scalar_t t = 0.0;
-    const FrictionConeConstraint::Config config;
-    FrictionConeConstraint frictionConeConstraint(
-        *referenceManagerPtr, config, legNumber, centroidalModelInfo);
+    for (size_t legNumber = 0;
+         legNumber < centroidalModelInfo.numThreeDofContacts; ++legNumber) {
+        scalar_t eps = 1e-4;
+        scalar_t tol = 1e-2;
+        size_t N = 10000;
+        scalar_t t = 0.0;
+        const FrictionConeConstraint::Config config;
+        FrictionConeConstraint frictionConeConstraint(
+            *referenceManagerPtr, config, legNumber, centroidalModelInfo);
 
-    vector_t u0 = 10.0 * vector_t::Random(centroidalModelInfo.inputDim);
-    u0(2) = 100.0;
-    u0(5) = 100.0;
-    u0(8) = 100.0;
-    u0(11) = 100.0;
-    vector_t x0 = 0.1 * vector_t::Random(centroidalModelInfo.stateDim);
-    const auto y0 =
-        frictionConeConstraint.getValue(t, x0, u0, preComputation)(0);
-    auto quadraticApproximation =
-        frictionConeConstraint.getQuadraticApproximation(t, x0, u0,
-                                                         preComputation);
+        vector_t u0 = 10.0 * vector_t::Random(centroidalModelInfo.inputDim);
+        u0(2) = 100.0;
+        u0(5) = 100.0;
+        u0(8) = 100.0;
+        u0(11) = 100.0;
+        vector_t x0 = 0.1 * vector_t::Random(centroidalModelInfo.stateDim);
+        const auto y0 =
+                frictionConeConstraint.getValue(t, x0, u0, preComputation)(0);
+        auto quadraticApproximation =
+                frictionConeConstraint.getQuadraticApproximation(t, x0, u0,
+                                                                 preComputation);
 
-    vector_t data(N);
-    matrix_t regressor(N, 6 + 6 + 6 + 9);
-    vector_t dx = vector_t::Zero(centroidalModelInfo.stateDim);
-    vector_t du = vector_t::Zero(centroidalModelInfo.inputDim);
-    for (size_t i = 0; i < N; i++) {
-      // evaluation point
-      vector_t dEuler = eps * vector_t::Random(3);
-      vector_t dF = eps * vector_t::Random(3);
-      dx.segment<3>(0) = dEuler;
-      du.segment<3>(3 * legNumber) = dF;
-      vector_t dz(6);
-      dz << dEuler, dF;
-      const matrix_t quadTerms = dz * dz.transpose();
-      vector_t quadTermsVector(6 + 6 + 9);
-      size_t count = 0;
-      for (size_t p = 0; p < 6; ++p) {
-        for (size_t q = p; q < 6; ++q) {
-          quadTermsVector(count) = quadTerms(p, q);
-          if (q == p) {
-            quadTermsVector(count) *= 0.5;
-          }
-          count++;
+        vector_t data(N);
+        matrix_t regressor(N, 6 + 6 + 6 + 9);
+        vector_t dx = vector_t::Zero(centroidalModelInfo.stateDim);
+        vector_t du = vector_t::Zero(centroidalModelInfo.inputDim);
+        for (size_t i = 0; i < N; i++) {
+            // evaluation point
+            vector_t dEuler = eps * vector_t::Random(3);
+            vector_t dF = eps * vector_t::Random(3);
+            dx.segment<3>(0) = dEuler;
+            du.segment<3>(3 * legNumber) = dF;
+            vector_t dz(6);
+            dz << dEuler, dF;
+            const matrix_t quadTerms = dz * dz.transpose();
+            vector_t quadTermsVector(6 + 6 + 9);
+            size_t count = 0;
+            for (size_t p = 0; p < 6; ++p) {
+                for (size_t q = p; q < 6; ++q) {
+                    quadTermsVector(count) = quadTerms(p, q);
+                    if (q == p) {
+                        quadTermsVector(count) *= 0.5;
+                    }
+                    count++;
+                }
+            }
+
+            // Scale to condition the regressor
+            regressor.row(i) << dEuler.transpose() / eps, dF.transpose() / eps,
+                    quadTermsVector.transpose() / (eps * eps);
+            data(i) = (frictionConeConstraint.getValue(t, x0 + dx, u0 + du,
+                                                       preComputation)(0) -
+                       y0);
         }
-      }
 
-      // Scale to condition the regressor
-      regressor.row(i) << dEuler.transpose() / eps, dF.transpose() / eps,
-          quadTermsVector.transpose() / (eps * eps);
-      data(i) = (frictionConeConstraint.getValue(t, x0 + dx, u0 + du,
-                                                 preComputation)(0) -
-                 y0);
-    }
+        vector_t dh_emperical = regressor.colPivHouseholderQr().solve(data);
+        dh_emperical /= eps;
+        dh_emperical.tail<6 + 6 + 9>() /= eps;
 
-    vector_t dh_emperical = regressor.colPivHouseholderQr().solve(data);
-    dh_emperical /= eps;
-    dh_emperical.tail<6 + 6 + 9>() /= eps;
+        matrix_t quadTerms(6, 6);
+        size_t count = 0;
+        for (size_t p = 0; p < 6; ++p) {
+            for (size_t q = p; q < 6; ++q) {
+                quadTerms(p, q) = dh_emperical(6 + count);
+                quadTerms(q, p) = quadTerms(p, q);
+                count++;
+            }
+        }
 
-    matrix_t quadTerms(6, 6);
-    size_t count = 0;
-    for (size_t p = 0; p < 6; ++p) {
-      for (size_t q = p; q < 6; ++q) {
-        quadTerms(p, q) = dh_emperical(6 + count);
-        quadTerms(q, p) = quadTerms(p, q);
-        count++;
-      }
-    }
+        vector_t dhdx_emperical = dh_emperical.head<3>();
+        vector_t dhdu_emperical = dh_emperical.segment<3>(3);
+        matrix_t ddhdxdx_emperical = quadTerms.block<3, 3>(0, 0);
+        matrix_t ddhdudx_emperical = quadTerms.block<3, 3>(3, 0);
+        matrix_t ddhdudu_emperical = quadTerms.block<3, 3>(3, 3);
 
-    vector_t dhdx_emperical = dh_emperical.head<3>();
-    vector_t dhdu_emperical = dh_emperical.segment<3>(3);
-    matrix_t ddhdxdx_emperical = quadTerms.block<3, 3>(0, 0);
-    matrix_t ddhdudx_emperical = quadTerms.block<3, 3>(3, 0);
-    matrix_t ddhdudu_emperical = quadTerms.block<3, 3>(3, 3);
-
-    matrix_t ddhdudu = quadraticApproximation.dfduu.front().block<3, 3>(
-        3 * legNumber, 3 * legNumber);
-    matrix_t ddhdxdx = quadraticApproximation.dfdxx.front().block<3, 3>(0, 0);
-    ASSERT_LT((dhdx_emperical -
-               quadraticApproximation.dfdx.block<1, 3>(0, 0).transpose())
+        matrix_t ddhdudu = quadraticApproximation.dfduu.front().block<3, 3>(
+            3 * legNumber, 3 * legNumber);
+        matrix_t ddhdxdx = quadraticApproximation.dfdxx.front().block<3, 3>(0, 0);
+        ASSERT_LT((dhdx_emperical -
+                      quadraticApproximation.dfdx.block<1, 3>(0, 0).transpose())
                   .array()
                   .abs()
                   .maxCoeff(),
-              tol);
-    ASSERT_LT(
-        (dhdu_emperical -
-         quadraticApproximation.dfdu.block<1, 3>(0, 3 * legNumber).transpose())
+                  tol);
+        ASSERT_LT(
+            (dhdu_emperical -
+                quadraticApproximation.dfdu.block<1, 3>(0, 3 * legNumber).transpose())
             .array()
             .abs()
             .maxCoeff(),
-        tol);
-    ASSERT_LT((ddhdudu_emperical - ddhdudu).array().abs().maxCoeff(), tol);
-    // ddhdxdx and ddhdudx are off because of the negative definite hessian
-    // approximation
-  }
+            tol);
+        ASSERT_LT((ddhdudu_emperical - ddhdudu).array().abs().maxCoeff(), tol);
+        // ddhdxdx and ddhdudx are off because of the negative definite hessian
+        // approximation
+    }
 }
 
 TEST_F(TestFrictionConeConstraint, gravityAligned_flatTerrain) {
-  // Check friction cone for the case where the body is aligned with the terrain
-  const FrictionConeConstraint::Config config(0.7, 25.0, 0.0, 0.0);
-  const auto mu = config.frictionCoefficient;
-  const auto regularization = config.regularization;
+    // Check friction cone for the case where the body is aligned with the terrain
+    const FrictionConeConstraint::Config config(0.7, 25.0, 0.0, 0.0);
+    const auto mu = config.frictionCoefficient;
+    const auto regularization = config.regularization;
 
-  // evaluation point
-  scalar_t t = 0.0;
-  vector_t x = vector_t::Random(centroidalModelInfo.stateDim);
-  vector_t u = vector_t::Random(centroidalModelInfo.inputDim);
+    // evaluation point
+    scalar_t t = 0.0;
+    vector_t x = vector_t::Random(centroidalModelInfo.stateDim);
+    vector_t u = vector_t::Random(centroidalModelInfo.inputDim);
 
-  for (size_t legNumber = 0;
-       legNumber < centroidalModelInfo.numThreeDofContacts; ++legNumber) {
-    FrictionConeConstraint frictionConeConstraint(
-        *referenceManagerPtr, config, legNumber, centroidalModelInfo);
+    for (size_t legNumber = 0;
+         legNumber < centroidalModelInfo.numThreeDofContacts; ++legNumber) {
+        FrictionConeConstraint frictionConeConstraint(
+            *referenceManagerPtr, config, legNumber, centroidalModelInfo);
 
-    // Local forces are equal to the body forces.
-    const vector_t F =
-        centroidal_model::getContactForces(u, legNumber, centroidalModelInfo);
-    const auto Fx = F(0);
-    const auto Fy = F(1);
-    const auto Fz = F(2);
+        // Local forces are equal to the body forces.
+        const vector_t F =
+                centroidal_model::getContactForces(u, legNumber, centroidalModelInfo);
+        const auto Fx = F(0);
+        const auto Fy = F(1);
+        const auto Fz = F(2);
 
-    auto quadraticApproximation =
-        frictionConeConstraint.getQuadraticApproximation(t, x, u,
-                                                         preComputation);
+        auto quadraticApproximation =
+                frictionConeConstraint.getQuadraticApproximation(t, x, u,
+                                                                 preComputation);
 
-    ASSERT_DOUBLE_EQ(
-        quadraticApproximation.f(0),
-        Fz * sqrt(mu * mu) - sqrt(Fx * Fx + Fy * Fy + regularization));
+        ASSERT_DOUBLE_EQ(
+            quadraticApproximation.f(0),
+            Fz * sqrt(mu * mu) - sqrt(Fx * Fx + Fy * Fy + regularization));
 
-    // First derivative inputs
-    vector_t dhdu = vector_t::Zero(centroidalModelInfo.inputDim);
-    const auto F_norm = sqrt(Fx * Fx + Fy * Fy + regularization);
-    dhdu(3 * legNumber + 0) = -Fx / F_norm;
-    dhdu(3 * legNumber + 1) = -Fy / F_norm;
-    dhdu(3 * legNumber + 2) = sqrt(mu * mu);
+        // First derivative inputs
+        vector_t dhdu = vector_t::Zero(centroidalModelInfo.inputDim);
+        const auto F_norm = sqrt(Fx * Fx + Fy * Fy + regularization);
+        dhdu(3 * legNumber + 0) = -Fx / F_norm;
+        dhdu(3 * legNumber + 1) = -Fy / F_norm;
+        dhdu(3 * legNumber + 2) = sqrt(mu * mu);
 
-    ASSERT_LT((quadraticApproximation.dfdu.row(0).transpose() - dhdu).norm(),
-              1e-12);
+        ASSERT_LT((quadraticApproximation.dfdu.row(0).transpose() - dhdu).norm(),
+                  1e-12);
 
-    // Second derivative inputs
-    matrix_t ddhdudu = matrix_t::Zero(centroidalModelInfo.inputDim,
-                                      centroidalModelInfo.inputDim);
-    const auto F_norm2 = Fx * Fx + Fy * Fy + regularization;
-    const auto F_norm32 = pow(F_norm2, 1.5);
-    ddhdudu(3 * legNumber + 0, 3 * legNumber + 0) =
-        -(Fy * Fy + regularization) / F_norm32;
-    ddhdudu(3 * legNumber + 0, 3 * legNumber + 1) = Fx * Fy / F_norm32;
-    ddhdudu(3 * legNumber + 0, 3 * legNumber + 2) = 0.0;
-    ddhdudu(3 * legNumber + 1, 3 * legNumber + 0) = Fx * Fy / F_norm32;
-    ddhdudu(3 * legNumber + 1, 3 * legNumber + 1) =
-        -(Fx * Fx + regularization) / F_norm32;
-    ddhdudu(3 * legNumber + 1, 3 * legNumber + 2) = 0.0;
-    ddhdudu(3 * legNumber + 2, 3 * legNumber + 0) = 0.0;
-    ddhdudu(3 * legNumber + 2, 3 * legNumber + 1) = 0.0;
-    ddhdudu(3 * legNumber + 2, 3 * legNumber + 2) = 0.0;
+        // Second derivative inputs
+        matrix_t ddhdudu = matrix_t::Zero(centroidalModelInfo.inputDim,
+                                          centroidalModelInfo.inputDim);
+        const auto F_norm2 = Fx * Fx + Fy * Fy + regularization;
+        const auto F_norm32 = pow(F_norm2, 1.5);
+        ddhdudu(3 * legNumber + 0, 3 * legNumber + 0) =
+                -(Fy * Fy + regularization) / F_norm32;
+        ddhdudu(3 * legNumber + 0, 3 * legNumber + 1) = Fx * Fy / F_norm32;
+        ddhdudu(3 * legNumber + 0, 3 * legNumber + 2) = 0.0;
+        ddhdudu(3 * legNumber + 1, 3 * legNumber + 0) = Fx * Fy / F_norm32;
+        ddhdudu(3 * legNumber + 1, 3 * legNumber + 1) =
+                -(Fx * Fx + regularization) / F_norm32;
+        ddhdudu(3 * legNumber + 1, 3 * legNumber + 2) = 0.0;
+        ddhdudu(3 * legNumber + 2, 3 * legNumber + 0) = 0.0;
+        ddhdudu(3 * legNumber + 2, 3 * legNumber + 1) = 0.0;
+        ddhdudu(3 * legNumber + 2, 3 * legNumber + 2) = 0.0;
 
-    ASSERT_LT((quadraticApproximation.dfduu.front() - ddhdudu).norm(), 1e-12);
-  }
+        ASSERT_LT((quadraticApproximation.dfduu.front() - ddhdudu).norm(), 1e-12);
+    }
 }
 
 TEST_F(TestFrictionConeConstraint, negativeDefinite) {
-  const FrictionConeConstraint::Config config;
+    const FrictionConeConstraint::Config config;
 
-  // evaluation point
-  scalar_t t = 0.0;
-  vector_t x = vector_t::Random(centroidalModelInfo.stateDim);
-  vector_t u = vector_t::Random(centroidalModelInfo.inputDim);
-  u(2) = 100.0;
-  u(5) = 100.0;
-  u(8) = 100.0;
-  u(11) = 100.0;
+    // evaluation point
+    scalar_t t = 0.0;
+    vector_t x = vector_t::Random(centroidalModelInfo.stateDim);
+    vector_t u = vector_t::Random(centroidalModelInfo.inputDim);
+    u(2) = 100.0;
+    u(5) = 100.0;
+    u(8) = 100.0;
+    u(11) = 100.0;
 
-  for (size_t legNumber = 0;
-       legNumber < centroidalModelInfo.numThreeDofContacts; ++legNumber) {
-    FrictionConeConstraint frictionConeConstraint(
-        *referenceManagerPtr, config, legNumber, centroidalModelInfo);
+    for (size_t legNumber = 0;
+         legNumber < centroidalModelInfo.numThreeDofContacts; ++legNumber) {
+        FrictionConeConstraint frictionConeConstraint(
+            *referenceManagerPtr, config, legNumber, centroidalModelInfo);
 
-    const auto quadraticApproximation =
-        frictionConeConstraint.getQuadraticApproximation(t, x, u,
-                                                         preComputation);
-    ASSERT_LT(LinearAlgebra::symmetricEigenvalues(
-                  quadraticApproximation.dfdxx.front())
+        const auto quadraticApproximation =
+                frictionConeConstraint.getQuadraticApproximation(t, x, u,
+                                                                 preComputation);
+        ASSERT_LT(LinearAlgebra::symmetricEigenvalues(
+                      quadraticApproximation.dfdxx.front())
                   .maxCoeff(),
-              0.0);
-    ASSERT_LT(LinearAlgebra::symmetricEigenvalues(
-                  quadraticApproximation.dfduu.front())
+                  0.0);
+        ASSERT_LT(LinearAlgebra::symmetricEigenvalues(
+                      quadraticApproximation.dfduu.front())
                   .maxCoeff(),
-              0.0);
-  }
+                  0.0);
+    }
 }
