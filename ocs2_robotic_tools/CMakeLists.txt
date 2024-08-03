@@ -13,7 +13,6 @@ find_package(Boost REQUIRED COMPONENTS
 )
 
 set(dependencies
-        ocs2_core
         ocs2_oc
 )
 

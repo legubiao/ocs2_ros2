@@ -32,11 +32,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/Types.h>
 #include <ocs2_core/automatic_differentiation/Types.h>
 
-#include <Eigen/Dense>
 #include <cppad/cg.hpp>
 #include <iosfwd>
 #include <memory>
-#include <string>
 #include <type_traits>
 
 /* Forward declaration of main pinocchio types */

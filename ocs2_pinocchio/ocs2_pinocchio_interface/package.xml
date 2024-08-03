@@ -16,7 +16,6 @@
   <depend>ocs2_robotic_tools</depend>
   <depend>pinocchio</depend>
   <depend>urdf</depend>
-  <depend>urdfdom_headers</depend>
   <depend>urdfdom</depend>
 
   <export>                               

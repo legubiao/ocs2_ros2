@@ -26,11 +26,12 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
-
-#include <string>
+#pragma once
 
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <urdf_model/model.h>
+
+#include <string>
 
 namespace ocs2 {
 

@@ -19,8 +19,6 @@ find_package(Boost REQUIRED COMPONENTS
 ###################################
 
 set(dependencies
-        ocs2_core
-        ocs2_oc
         ocs2_mpc
         ocs2_qp_solver
         Boost

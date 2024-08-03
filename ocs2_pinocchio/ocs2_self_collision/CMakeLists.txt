@@ -3,12 +3,7 @@ set(CMAKE_CXX_STANDARD 17)
 project(ocs2_self_collision)
 
 set(dependencies
-        ocs2_core
-        ocs2_robotic_tools
         ocs2_pinocchio_interface
-        hpp-fcl
-        pinocchio
-        urdfdom
 )
 execute_process(COMMAND pkg-config --modversion urdfdom OUTPUT_VARIABLE URDFDOM_VERSION)
 string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" URDFDOM_VERSION "${URDFDOM_VERSION}")
@@ -19,21 +14,13 @@ if (URDFDOM_VERSION VERSION_GREATER_EQUAL 4.0.0)
 endif ()
 
 find_package(ament_cmake REQUIRED)
-find_package(ocs2_core REQUIRED)
-find_package(ocs2_robotic_tools REQUIRED)
 find_package(ocs2_pinocchio_interface REQUIRED)
-find_package(urdfdom REQUIRED)
-
-find_package(PkgConfig REQUIRED)
-find_package(pinocchio REQUIRED)
-find_package(hpp-fcl REQUIRED)
 find_package(Boost REQUIRED COMPONENTS
         system
         filesystem
         log_setup
         log
 )
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 ###########
 ## Build ##
@@ -60,17 +47,10 @@ add_library(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC
-        ${EIGEN3_INCLUDE_DIRS}
-        ${pinocchio_INCLUDE_DIRS}
-        ${hpp-fcl_INCLUDE_DIRS}
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
-ament_target_dependencies(${PROJECT_NAME}
-        PUBLIC
-        ${dependencies}
-)
-
+ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})
 
 #############

@@ -4,36 +4,21 @@ project(ocs2_mobile_manipulator)
 
 
 set(dependencies
-        ocs2_core
         ocs2_ddp
-        ocs2_mpc
-        ocs2_robotic_tools
         ocs2_robotic_assets
-        ocs2_pinocchio_interface
         ocs2_self_collision
-        Boost
-        pinocchio
-        hpp-fcl
 )
 
 find_package(ament_cmake REQUIRED)
-find_package(ocs2_core REQUIRED)
 find_package(ocs2_ddp REQUIRED)
-find_package(ocs2_mpc REQUIRED)
-find_package(ocs2_robotic_tools REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
 find_package(ocs2_self_collision REQUIRED)
-find_package(pinocchio REQUIRED)
-find_package(hpp-fcl REQUIRED)
-
 find_package(Boost REQUIRED COMPONENTS
         system
         filesystem
         log_setup
         log
 )
-
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 ###########
 ## Build ##
@@ -68,15 +53,11 @@ add_library(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME}
-    PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    ${EIGEN3_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIRS}
-)
+        PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
-ament_target_dependencies(${PROJECT_NAME}
-        ${dependencies}
-)
+ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})
 
 ####################
@@ -109,31 +90,31 @@ install(
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
 
+ament_export_dependencies(${dependencies})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
 #############
 ## Testing ##
 #############
 find_package(ament_lint_auto REQUIRED)
 ament_lint_auto_find_test_dependencies()
-find_package(ament_cmake_gtest)
 
-ament_add_gtest(${PROJECT_NAME}_test
-        test/testSelfCollision.cpp
-        test/testEndEffectorConstraint.cpp
-        test/testDummyMobileManipulator.cpp
-)
-target_include_directories(${PROJECT_NAME}_test PRIVATE
-        test/include
-        ${PROJECT_BINARY_DIR}/include
-)
-ament_target_dependencies(${PROJECT_NAME}_test
-        ${dependencies}
-)
-target_link_libraries(${PROJECT_NAME}_test
-        ${PROJECT_NAME}
-)
-target_compile_options(${PROJECT_NAME}_test PRIVATE ${FLAGS})
+if (BUILD_TESTING)
+    find_package(ament_cmake_gtest)
 
-ament_export_dependencies(${dependencies})
-ament_export_include_directories("include/${PROJECT_NAME}")
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+    ament_add_gtest(${PROJECT_NAME}_test
+            test/testSelfCollision.cpp
+            test/testEndEffectorConstraint.cpp
+            test/testDummyMobileManipulator.cpp
+    )
+    target_include_directories(${PROJECT_NAME}_test PRIVATE
+            test/include
+            ${PROJECT_BINARY_DIR}/include
+    )
+    ament_target_dependencies(${PROJECT_NAME}_test ${dependencies})
+    target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
+    target_compile_options(${PROJECT_NAME}_test PRIVATE ${FLAGS})
+
+endif ()
+
 ament_package()

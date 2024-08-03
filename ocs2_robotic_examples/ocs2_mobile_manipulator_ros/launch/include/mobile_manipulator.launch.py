@@ -1,31 +1,47 @@
 import os
 from launch.substitutions import LaunchConfiguration
-
-import launch
-import launch_ros.actions
+from launch import LaunchDescription
+from launch_ros.actions import Node
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.conditions import IfCondition, UnlessCondition
 from ament_index_python.packages import get_package_share_directory
 
+def is_wsl():
+    try:
+        with open('/proc/version', 'r') as f:
+            version_info = f.read().lower()
+            return 'microsoft' in version_info or 'wsl' in version_info
+    except FileNotFoundError:
+        return False
 
 def generate_launch_description():
-    ld = launch.LaunchDescription([
-        launch.actions.DeclareLaunchArgument(
+    prefix = "gnome-terminal --"
+    if is_wsl():
+        prefix = "xterm -e"
+        print("Current system is WSL, use xterm as terminal")
+    else:
+        print("Current system is not WSL, use gnome-terminal as terminal")
+        
+    return LaunchDescription([
+        DeclareLaunchArgument(
             name='rviz',
             default_value='true'
         ),
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             name='urdfFile',
             default_value=''
         ),
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             name='urdfFile',
             default_value=''
         ),
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             name='libFolder',
             default_value=''
         ),
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
                     'ocs2_mobile_manipulator_ros'), 'launch/include/visualize.launch.py')
             ),
@@ -34,84 +50,77 @@ def generate_launch_description():
                 'rviz': LaunchConfiguration('rviz')
             }.items()
         ),
-        launch_ros.actions.Node(
+        Node(
             package='ocs2_mobile_manipulator_ros',
             executable='mobile_manipulator_mpc',
             name='mobile_manipulator_mpc',
-            prefix= "gnome-terminal -- gdb -ex run --args",
-            condition=launch.conditions.IfCondition(LaunchConfiguration("debug")),
+            prefix= prefix,
+            condition=IfCondition(LaunchConfiguration("debug")),
             output='screen',
             parameters=[
                 {
-                    'taskFile': launch.substitutions.LaunchConfiguration('taskFile')
+                    'taskFile': LaunchConfiguration('taskFile')
                 },
                 {
-                    'urdfFile': launch.substitutions.LaunchConfiguration('urdfFile')
+                    'urdfFile': LaunchConfiguration('urdfFile')
                 },
                 {
-                    'libFolder': launch.substitutions.LaunchConfiguration('libFolder')
+                    'libFolder': LaunchConfiguration('libFolder')
                 }
             ]
         ),
-        launch_ros.actions.Node(
+        Node(
             package='ocs2_mobile_manipulator_ros',
             executable='mobile_manipulator_mpc_node',
             name='mobile_manipulator_mpc',
-            prefix="",
-            condition=launch.conditions.UnlessCondition(LaunchConfiguration("debug")),
+            condition=UnlessCondition(LaunchConfiguration("debug")),
             output='screen',
             parameters=[
                 {
-                    'taskFile': launch.substitutions.LaunchConfiguration('taskFile')
+                    'taskFile': LaunchConfiguration('taskFile')
                 },
                 {
-                    'urdfFile': launch.substitutions.LaunchConfiguration('urdfFile')
+                    'urdfFile': LaunchConfiguration('urdfFile')
                 },
                 {
-                    'libFolder': launch.substitutions.LaunchConfiguration('libFolder')
+                    'libFolder': LaunchConfiguration('libFolder')
                 }
             ]
         ),
-        launch_ros.actions.Node(
+        Node(
             package='ocs2_mobile_manipulator_ros',
             executable='mobile_manipulator_dummy_mrt_node',
             name='mobile_manipulator_dummy_mrt_node',
-            prefix= "gnome-terminal --",
+            prefix= prefix,
             output='screen',
             parameters=[
                 {
-                    'taskFile': launch.substitutions.LaunchConfiguration('taskFile')
+                    'taskFile': LaunchConfiguration('taskFile')
                 },
                 {
-                    'urdfFile': launch.substitutions.LaunchConfiguration('urdfFile')
+                    'urdfFile': LaunchConfiguration('urdfFile')
                 },
                 {
-                    'libFolder': launch.substitutions.LaunchConfiguration('libFolder')
+                    'libFolder': LaunchConfiguration('libFolder')
                 }
             ]
         ),
-        launch_ros.actions.Node(
+        Node(
             package='ocs2_mobile_manipulator_ros',
             executable='mobile_manipulator_target',
             name='mobile_manipulator_target',
-            prefix="",
-            condition=launch.conditions.UnlessCondition(LaunchConfiguration("rviz")),
+            condition=UnlessCondition(LaunchConfiguration("rviz")),
             output='screen',
             parameters=[
                 {
-                    'taskFile': launch.substitutions.LaunchConfiguration('taskFile')
+                    'taskFile': LaunchConfiguration('taskFile')
                 },
                 {
-                    'urdfFile': launch.substitutions.LaunchConfiguration('urdfFile')
+                    'urdfFile': LaunchConfiguration('urdfFile')
                 },
                 {
-                    'libFolder': launch.substitutions.LaunchConfiguration('libFolder')
+                    'libFolder': LaunchConfiguration('libFolder')
                 }
             ]
         )
     ])
-    return ld
-
-
-if __name__ == '__main__':
-    generate_launch_description()
