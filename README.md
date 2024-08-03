@@ -6,13 +6,12 @@ OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), 
 * ocs2_mpcnet
 * ocs2_doc
 
-robotic example test todolist:
-- [x] Double Integrator
-- [x] Cartpole
-- [x] Ballbot
-- [x] Quadrotor
-- [x] Mobile Manipulator
-- [x] Legged Robot (can run but have problem in visualization)
+Todo List:
+- [x] modern cmake
+- [x] basic 6 examples in official documents
+- [x] WSL2 support
+- [ ] perceptive locomotion demo
+- [ ] tinyxml2 problem in Ubuntu 24.04 ROS2 Jazzy
 
 The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up the IDE.
 
