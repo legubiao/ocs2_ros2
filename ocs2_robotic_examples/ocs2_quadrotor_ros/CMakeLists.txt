@@ -7,6 +7,7 @@ set(dependencies
         rclcpp
         tf2_ros
         ocs2_mpc
+        ocs2_ddp
         ocs2_ros_interfaces
         ocs2_robotic_tools
         ocs2_robotic_assets
@@ -17,13 +18,10 @@ set(dependencies
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+
 find_package(tf2_ros REQUIRED)
-find_package(ocs2_mpc REQUIRED)
-find_package(ocs2_robotic_tools REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
 find_package(ocs2_quadrotor REQUIRED)
-find_package(ocs2_robotic_assets REQUIRED)
-find_package(rclcpp REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS
         system
@@ -32,44 +30,38 @@ find_package(Boost REQUIRED COMPONENTS
         log
 )
 
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-
 ###########
 ## Build ##
 ###########
-
-include_directories(
-        include
-        ${EIGEN3_INCLUDE_DIRS}
-        ${Boost_INCLUDE_DIRS}
-        dependencies
+add_library(${PROJECT_NAME}
+        src/QuadrotorDummyVisualization.cpp
 )
+
+target_include_directories(${PROJECT_NAME}
+        PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+
+ament_target_dependencies(${PROJECT_NAME} ${dependencies})
+target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 # MPC node
-add_executable(quadrotor_mpc
-        src/QuadrotorMpcNode.cpp
-)
-ament_target_dependencies(quadrotor_mpc
-        ${dependencies}
-)
+add_executable(quadrotor_mpc src/QuadrotorMpcNode.cpp)
+target_link_libraries(quadrotor_mpc ${PROJECT_NAME})
+ament_target_dependencies(quadrotor_mpc ${dependencies})
 
 # Dummy node
 add_executable(quadrotor_dummy_test
         src/DummyQuadrotorNode.cpp
         src/QuadrotorDummyVisualization.cpp
 )
-ament_target_dependencies(quadrotor_dummy_test
-        ${dependencies}
-)
+target_link_libraries(quadrotor_dummy_test ${PROJECT_NAME})
+ament_target_dependencies(quadrotor_dummy_test ${dependencies})
 
 # Target node
-add_executable(quadrotor_target
-        src/QuadrotorTargetPoseCommand.cpp
-)
-ament_target_dependencies(quadrotor_target
-        ${dependencies}
-)
-target_compile_options(quadrotor_target PRIVATE ${OCS2_CXX_FLAGS})
+add_executable(quadrotor_target src/QuadrotorTargetPoseCommand.cpp)
+target_link_libraries(quadrotor_target ${PROJECT_NAME})
+ament_target_dependencies(quadrotor_target ${dependencies})
 
 #########################
 ###   CLANG TOOLING   ###
@@ -92,7 +84,10 @@ endif (cmake_clang_tools_FOUND)
 ## Install ##
 #############
 
-install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
+install(
+        DIRECTORY include/
+        DESTINATION include/${PROJECT_NAME}
+)
 install(
         TARGETS
         quadrotor_mpc
@@ -100,11 +95,13 @@ install(
         quadrotor_target
         DESTINATION lib/${PROJECT_NAME}
 )
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
-install(DIRECTORY launch rviz
+install(
+        DIRECTORY launch
+        DESTINATION share/${PROJECT_NAME}
+)
+install(
+        DIRECTORY launch rviz
         DESTINATION share/${PROJECT_NAME}/
 )
 
-ament_export_dependencies(${dependencies})
-ament_export_include_directories("include/${PROJECT_NAME}")
 ament_package()
