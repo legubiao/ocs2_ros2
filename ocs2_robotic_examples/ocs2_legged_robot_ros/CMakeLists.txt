@@ -1,48 +1,22 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_legged_robot_ros)
 
 
 set(dependencies
-        rclcpp
         tf2_ros
-        urdf
         kdl_parser
         robot_state_publisher
-        ocs2_core
-        ocs2_oc
-        ocs2_ddp
-        ocs2_mpc
-        ocs2_sqp
-        ocs2_ipm
-        ocs2_robotic_tools
-        ocs2_pinocchio_interface
-        ocs2_centroidal_model
-        ocs2_robotic_assets
-        ocs2_msgs
-        ocs2_ros_interfaces
         ocs2_legged_robot
-        Boost
+        ocs2_ros_interfaces
 )
 
 find_package(ament_cmake REQUIRED)
-find_package(ocs2_core REQUIRED)
 find_package(tf2_ros REQUIRED)
-find_package(ocs2_oc REQUIRED)
-find_package(urdf REQUIRED)
-find_package(ocs2_ddp REQUIRED)
-find_package(ocs2_mpc REQUIRED)
-find_package(ocs2_sqp REQUIRED)
-find_package(ocs2_ipm REQUIRED)
-find_package(ocs2_ros_interfaces REQUIRED)
-find_package(ocs2_robotic_tools REQUIRED)
-find_package(ocs2_robotic_assets REQUIRED)
-find_package(ocs2_msgs REQUIRED)
 find_package(ocs2_legged_robot REQUIRED)
-find_package(rclcpp REQUIRED)
-
 find_package(kdl_parser REQUIRED)
 find_package(robot_state_publisher REQUIRED)
+find_package(ocs2_ros_interfaces REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS
         system
@@ -50,10 +24,6 @@ find_package(Boost REQUIRED COMPONENTS
         log_setup
         log
 )
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(pinocchio REQUIRED pinocchio)
-
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 ###########
 ## Build ##
@@ -71,10 +41,7 @@ target_include_directories(${PROJECT_NAME}
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
-ament_target_dependencies(${PROJECT_NAME}
-        ${dependencies}
-)
-
+ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 # DDP-MPC node for legged robot
@@ -165,13 +132,8 @@ install(
         DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY
-        launch
-        rviz
-        DESTINATION share/${PROJECT_NAME})
-
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(${dependencies})
-ament_export_include_directories("include/${PROJECT_NAME}")
+install(DIRECTORY launch rviz
+        DESTINATION share/${PROJECT_NAME}/
+)
 
 ament_package()

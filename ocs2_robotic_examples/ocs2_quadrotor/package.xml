@@ -16,9 +16,7 @@
   <depend>pybind11_vendor</depend>
   <exec_depend>ament_index_python</exec_depend>
 
-  <depend>ocs2_mpc</depend>
   <depend>ocs2_ddp</depend>
-  <depend>ocs2_robotic_tools</depend>
   <depend>ocs2_robotic_assets</depend>
   <depend>ocs2_python_interface</depend>
 

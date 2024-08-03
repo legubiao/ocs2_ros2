@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_anymal_mpc)
 

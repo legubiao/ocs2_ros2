@@ -4,9 +4,7 @@ project(ocs2_quadrotor)
 
 
 set(dependencies
-        ocs2_mpc
         ocs2_ddp
-        ocs2_robotic_tools
         ocs2_robotic_assets
         ocs2_python_interface
         Boost

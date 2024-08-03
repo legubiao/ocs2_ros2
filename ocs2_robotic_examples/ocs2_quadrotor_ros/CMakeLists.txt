@@ -6,13 +6,8 @@ project(ocs2_quadrotor_ros)
 set(dependencies
         rclcpp
         tf2_ros
-        ocs2_mpc
-        ocs2_ddp
         ocs2_ros_interfaces
-        ocs2_robotic_tools
-        ocs2_robotic_assets
         ocs2_quadrotor
-        Boost
         ament_index_cpp
 )
 

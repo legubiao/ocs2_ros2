@@ -4,35 +4,19 @@ project(ocs2_legged_robot)
 
 
 set(dependencies
-        ocs2_core
-        ocs2_oc
         ocs2_ddp
         ocs2_mpc
         ocs2_sqp
         ocs2_ipm
-        ocs2_robotic_tools
-        ocs2_pinocchio_interface
         ocs2_centroidal_model
-        ocs2_robotic_assets
-        Boost
-        pinocchio
-        urdf
-        urdfdom
 )
 
 find_package(ament_cmake REQUIRED)
-find_package(ocs2_core REQUIRED)
-find_package(ocs2_oc REQUIRED)
 find_package(ocs2_ddp REQUIRED)
 find_package(ocs2_mpc REQUIRED)
 find_package(ocs2_sqp REQUIRED)
 find_package(ocs2_ipm REQUIRED)
-find_package(ocs2_robotic_tools REQUIRED)
-find_package(ocs2_pinocchio_interface REQUIRED)
 find_package(ocs2_centroidal_model REQUIRED)
-find_package(ocs2_robotic_assets REQUIRED)
-find_package(urdf REQUIRED)
-find_package(urdfdom REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS
         system
@@ -40,11 +24,6 @@ find_package(Boost REQUIRED COMPONENTS
         log_setup
         log
 )
-
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(pinocchio REQUIRED pinocchio)
 
 ###########
 ## Build ##
@@ -63,13 +42,6 @@ set(FLAGS
         -Wno-invalid-partial-specialization   # to silence warning with unsupported Eigen Tensor
         -DPINOCCHIO_URDFDOM_TYPEDEF_SHARED_PTR
         -DPINOCCHIO_URDFDOM_USE_STD_SHARED_PTR
-)
-
-include_directories(
-        include
-        ${pinocchio_INCLUDE_DIRS}
-        ${EIGEN3_INCLUDE_DIRS}
-        ${Boost_INCLUDE_DIRS}
 )
 
 # Legged robot interface library
@@ -94,9 +66,12 @@ add_library(${PROJECT_NAME}
         src/LeggedRobotPreComputation.cpp
 )
 
-ament_target_dependencies(${PROJECT_NAME}
-        ${dependencies}
-)
+target_include_directories(${PROJECT_NAME}
+        PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+
+ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})
 
 #########################
@@ -129,32 +104,31 @@ install(
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
 
+ament_export_dependencies(${dependencies})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
 #############
 ## Testing ##
 #############
-#find_package(ament_lint_auto REQUIRED)
-#ament_lint_auto_find_test_dependencies()
-#find_package(ament_cmake_gtest)
-#
-#ament_add_gtest(${PROJECT_NAME}_test
-#        test/AnymalFactoryFunctions.cpp
-#        test/constraint/testEndEffectorLinearConstraint.cpp
-#        test/constraint/testFrictionConeConstraint.cpp
-#        test/constraint/testZeroForceConstraint.cpp
-#)
-#target_include_directories(${PROJECT_NAME}_test PRIVATE
-#        ${PROJECT_BINARY_DIR}/include
-#        ${CMAKE_CURRENT_SOURCE_DIR}/test/include
-#)
-#ament_target_dependencies(${PROJECT_NAME}_test
-#        ${dependencies}
-#)
-#target_link_libraries(${PROJECT_NAME}_test
-#        ${PROJECT_NAME}
-#)
-#target_compile_options(${PROJECT_NAME}_test PRIVATE ${FLAGS})
+find_package(ament_lint_auto REQUIRED)
+ament_lint_auto_find_test_dependencies()
 
-ament_export_dependencies(${dependencies})
-ament_export_include_directories("include/${PROJECT_NAME}")
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+if (BUILD_TESTING)
+    find_package(ament_cmake_gtest)
+
+    ament_add_gtest(${PROJECT_NAME}_test
+            test/AnymalFactoryFunctions.cpp
+            test/constraint/testEndEffectorLinearConstraint.cpp
+            test/constraint/testFrictionConeConstraint.cpp
+            test/constraint/testZeroForceConstraint.cpp
+    )
+    target_include_directories(${PROJECT_NAME}_test PRIVATE
+            test/include
+            ${PROJECT_BINARY_DIR}/include
+    )
+    ament_target_dependencies(${PROJECT_NAME}_test ${dependencies})
+    target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
+    target_compile_options(${PROJECT_NAME}_test PRIVATE ${FLAGS})
+endif ()
+
 ament_package()

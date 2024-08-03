@@ -1,34 +1,29 @@
 <?xml version="1.0"?>
 <package>
-  <name>ocs2_robotic_examples</name>
-  <version>0.0.0</version>
-  <description>The ocs2_robotic_examples metapackage</description>
+    <name>ocs2_robotic_examples</name>
+    <version>0.0.0</version>
+    <description>The ocs2_robotic_examples metapackage</description>
 
-  <maintainer email="farbod.farshidian@gmail.com">Farbod Farshidian</maintainer>
-  <maintainer email="jcarius@ethz.ch">Jan Carius</maintainer>
-  <maintainer email="rgrandia@ethz.ch">Ruben Grandia</maintainer>
+    <maintainer email="farbod.farshidian@gmail.com">Farbod Farshidian</maintainer>
+    <maintainer email="jcarius@ethz.ch">Jan Carius</maintainer>
+    <maintainer email="rgrandia@ethz.ch">Ruben Grandia</maintainer>
 
-  <license>TODO</license>
+    <license>TODO</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+    <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <run_depend>ocs2_ballbot</run_depend>
-  <run_depend>ocs2_ballbot_ros</run_depend>
-  <run_depend>ocs2_cartpole</run_depend>
-  <run_depend>ocs2_cartpole_ros</run_depend>
-  <run_depend>ocs2_double_integrator</run_depend>
-  <run_depend>ocs2_double_integrator_ros</run_depend>
-  <run_depend>ocs2_quadrotor</run_depend>
-  <run_depend>ocs2_quadrotor_ros</run_depend>
-  <run_depend>ocs2_mobile_manipulator</run_depend>
-  <run_depend>ocs2_mobile_manipulator_ros</run_depend>
-  <run_depend>ocs2_anymal</run_depend>
-  <run_depend>ocs2_legged_robot</run_depend>
-  <run_depend>ocs2_legged_robot_ros</run_depend>
-  <run_depend>xacro</run_depend>
 
-  <export>                               
-   <build_type>ament_cmake</build_type>
-  </export>
+    <run_depend>ocs2_ballbot_ros</run_depend>
+    <run_depend>ocs2_cartpole_ros</run_depend>
+    <run_depend>ocs2_double_integrator_ros</run_depend>
+    <run_depend>ocs2_quadrotor_ros</run_depend>
+    <run_depend>ocs2_mobile_manipulator_ros</run_depend>
+    <run_depend>ocs2_anymal</run_depend>
+    <run_depend>ocs2_legged_robot_ros</run_depend>
+    <run_depend>xacro</run_depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
 
 </package>
