@@ -114,6 +114,8 @@ install(
         ballbot_dummy_test
         ballbot_target
         ballbot_sqp
+        ballbot_slp
+        ballbot_mpc_mrt
         DESTINATION lib/${PROJECT_NAME}
 )
 install(DIRECTORY launch rviz
@@ -133,6 +135,8 @@ if (cmake_clang_tools_FOUND)
             ballbot_sqp
             ballbot_dummy_test
             ballbot_target
+            ballbot_slp
+            ballbot_mpc_mrt
             SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include
             CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
             CF_WERROR

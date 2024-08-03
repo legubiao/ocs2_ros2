@@ -32,11 +32,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_robotic_tools/common/RotationTransforms.h>
 #include <urdf/model.h>
 
-#include <kdl_parser/kdl_parser.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
 namespace ocs2::ballbot {
-
 BallbotDummyVisualization::BallbotDummyVisualization(
     const rclcpp::Node::SharedPtr& node)
     : node_(node),
@@ -108,5 +106,4 @@ void BallbotDummyVisualization::update(const SystemObservation& observation,
   joint_state.position[4] = observation.state(4);
   jointPublisher_->publish(joint_state);
 }
-
 }  // namespace ocs2::ballbot

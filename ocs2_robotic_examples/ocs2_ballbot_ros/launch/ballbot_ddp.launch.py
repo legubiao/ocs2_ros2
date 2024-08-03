@@ -1,13 +1,10 @@
-import os
-from launch.substitutions import LaunchConfiguration
-
-import launch
-import launch_ros.actions
 from launch import LaunchDescription
+from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from ament_index_python.packages import get_package_share_directory
+from launch.substitutions import ThisLaunchFileDir
+from launch_ros.actions import Node
 
 
 def is_wsl():
@@ -38,21 +35,19 @@ def generate_launch_description():
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory(
-                    'ocs2_ballbot_ros'), 'launch/visualize.launch.py')
-            ),
+                [ThisLaunchFileDir(), '/visualize.launch.py']),
             launch_arguments={
                 'use_joint_state_publisher': 'false'
             }.items()
         ),
-        launch_ros.actions.Node(
+        Node(
             package='ocs2_ballbot_ros',
             executable='ballbot_ddp',
             name='ballbot_ddp',
             arguments=[LaunchConfiguration('task_name')],
             output='screen'
         ),
-        launch_ros.actions.Node(
+        Node(
             package='ocs2_ballbot_ros',
             executable='ballbot_dummy_test',
             name='ballbot_dummy_test',
@@ -60,7 +55,7 @@ def generate_launch_description():
             arguments=[LaunchConfiguration('task_name')],
             output='screen'
         ),
-        launch_ros.actions.Node(
+        Node(
             package='ocs2_ballbot_ros',
             executable='ballbot_target',
             name='ballbot_target',

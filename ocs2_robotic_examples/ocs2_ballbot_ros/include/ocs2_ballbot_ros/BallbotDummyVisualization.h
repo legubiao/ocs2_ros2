@@ -29,7 +29,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_ballbot/definitions.h>
 #include <ocs2_ros_interfaces/mrt/DummyObserver.h>
 #include <tf2_ros/transform_broadcaster.h>
 
@@ -38,7 +37,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 namespace ballbot {
-
 class BallbotDummyVisualization final : public DummyObserver {
  public:
   explicit BallbotDummyVisualization(const rclcpp::Node::SharedPtr& node);
@@ -54,6 +52,5 @@ class BallbotDummyVisualization final : public DummyObserver {
   tf2_ros::TransformBroadcaster tfBroadcaster_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointPublisher_;
 };
-
 }  // namespace ballbot
 }  // namespace ocs2
