@@ -60,13 +60,13 @@ class TargetTrajectoriesInteractiveMarker final {
    * commanded pose to TargetTrajectories.
    */
   TargetTrajectoriesInteractiveMarker(
-      const rclcpp::Node::SharedPtr& node, const std::string& topicPrefix,
+      rclcpp::Node::SharedPtr  node, const std::string& topicPrefix,
       GaolPoseToTargetTrajectories gaolPoseToTargetTrajectories);
 
   /**
    * Spins ROS to update the interactive markers.
    */
-  void publishInteractiveMarker() { rclcpp::spin(node_); }
+  void publishInteractiveMarker() const { spin(node_); }
 
  private:
   visualization_msgs::msg::InteractiveMarker createInteractiveMarker() const;
@@ -75,8 +75,8 @@ class TargetTrajectoriesInteractiveMarker final {
           feedback);
 
   rclcpp::Node::SharedPtr node_;
-  interactive_markers::MenuHandler menuHandler_;
-  interactive_markers::InteractiveMarkerServer server_;
+  std::shared_ptr<interactive_markers::MenuHandler> menuHandler_;
+  std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
 
   GaolPoseToTargetTrajectories gaolPoseToTargetTrajectories_;
 

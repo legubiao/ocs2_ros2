@@ -31,23 +31,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_ros_interfaces/common/RosMsgConversions.h>
 
+#include <memory>
 #include <ocs2_msgs/msg/mpc_observation.hpp>
+#include <utility>
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 TargetTrajectoriesInteractiveMarker::TargetTrajectoriesInteractiveMarker(
-    const rclcpp::Node::SharedPtr& node, const std::string& topicPrefix,
+  rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
     GaolPoseToTargetTrajectories gaolPoseToTargetTrajectories)
     : node_(node),
-      server_("simple_marker", node_),
       gaolPoseToTargetTrajectories_(std::move(gaolPoseToTargetTrajectories)) {
+  server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
+      "simple_marker", node_);
   // observation subscriber
   auto observationCallback =
       [this](const ocs2_msgs::msg::MpcObservation::ConstSharedPtr& msg) {
-        std::lock_guard<std::mutex> lock(latestObservationMutex_);
+        std::lock_guard lock(latestObservationMutex_);
         latestObservation_ = ros_msg_conversions::readObservationMsg(*msg);
       };
   observationSubscriber_ =
@@ -55,28 +56,22 @@ TargetTrajectoriesInteractiveMarker::TargetTrajectoriesInteractiveMarker(
           topicPrefix + "_mpc_observation", 1, observationCallback);
 
   // Trajectories publisher
-  targetTrajectoriesPublisherPtr_.reset(
-      new TargetTrajectoriesRosPublisher(node_, topicPrefix));
+  targetTrajectoriesPublisherPtr_ =
+      std::make_unique<TargetTrajectoriesRosPublisher>(node_, topicPrefix);
 
+  menuHandler_ = std::make_unique<interactive_markers::MenuHandler>();
   // create an interactive marker for our server
   auto feedback_cb =
       [&](const visualization_msgs::msg::InteractiveMarkerFeedback::
               ConstSharedPtr& feedback) { processFeedback(feedback); };
-  menuHandler_.insert("Send target pose", feedback_cb);
+  menuHandler_->insert("Send target pose", feedback_cb);
 
   // create an interactive marker for our server
-  auto interactiveMarker = createInteractiveMarker();
-
-  // add the interactive marker to our collection &
-  // tell the server to call processFeedback() when feedback arrives for it
-  server_.insert(
-      interactiveMarker);  //,
-                           // boost::bind(&TargetTrajectoriesInteractiveMarker::processFeedback,
-                           // this, _1));
-  menuHandler_.apply(server_, interactiveMarker.name);
-
-  // 'commit' changes and send to all clients
-  server_.applyChanges();
+  auto const interactiveMarker = createInteractiveMarker();
+  server_->insert(interactiveMarker);
+  menuHandler_->apply(*server_, interactiveMarker.name);
+  server_->applyChanges();
+  RCLCPP_INFO(node_->get_logger(), "Interactive marker is ready.");
 }
 
 /******************************************************************************************************/
@@ -108,7 +103,7 @@ TargetTrajectoriesInteractiveMarker::createInteractiveMarker() const {
 
   // create a non-interactive control which contains the box
   visualization_msgs::msg::InteractiveMarkerControl boxControl;
-  boxControl.always_visible = 1;
+  boxControl.always_visible = true;
   boxControl.markers.push_back(boxMarker);
   boxControl.interaction_mode =
       visualization_msgs::msg::InteractiveMarkerControl::MOVE_ROTATE_3D;

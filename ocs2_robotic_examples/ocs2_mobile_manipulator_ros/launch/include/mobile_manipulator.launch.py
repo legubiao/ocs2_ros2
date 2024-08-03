@@ -109,18 +109,7 @@ def generate_launch_description():
             package='ocs2_mobile_manipulator_ros',
             executable='mobile_manipulator_target',
             name='mobile_manipulator_target',
-            condition=UnlessCondition(LaunchConfiguration("rviz")),
+            condition=IfCondition(LaunchConfiguration("rviz")),
             output='screen',
-            parameters=[
-                {
-                    'taskFile': LaunchConfiguration('taskFile')
-                },
-                {
-                    'urdfFile': LaunchConfiguration('urdfFile')
-                },
-                {
-                    'libFolder': LaunchConfiguration('libFolder')
-                }
-            ]
         )
     ])

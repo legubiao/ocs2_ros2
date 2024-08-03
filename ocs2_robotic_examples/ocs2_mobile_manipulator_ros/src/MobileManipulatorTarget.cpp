@@ -60,10 +60,7 @@ int main(int argc, char* argv[]) {
           .allow_undeclared_parameters(true)
           .automatically_declare_parameters_from_overrides(true));
 
-  TargetTrajectoriesInteractiveMarker targetPoseCommand(
-      node, robotName, &goalPoseToTargetTrajectories);
-  targetPoseCommand.publishInteractiveMarker();
-
-  // Successful exit
+  TargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &goalPoseToTargetTrajectories);
+  spin(node);
   return 0;
 }
