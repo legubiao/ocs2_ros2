@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>blasfeo_colcon</name>
-  <version>0.0.0</version>
-  <description>ament_cmake wrapper for Blasfeo.</description>
-  <maintainer email="rgrandia@ethz.ch">Ruben Grandia</maintainer>
+    <name>blasfeo_colcon</name>
+    <version>0.0.0</version>
+    <description>ament_cmake wrapper for Blasfeo.</description>
+    <maintainer email="rgrandia@ethz.ch">Ruben Grandia</maintainer>
 
-  <license>See package</license>
+    <license>See package</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <build_depend>cmake_modules</build_depend>
-  <build_depend>cmake_clang_tools</build_depend>
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <build_depend>cmake_modules</build_depend>
+    <build_depend>cmake_clang_tools</build_depend>
 
-  <export>                               
-   <build_type>ament_cmake</build_type>
-  </export> 
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
 </package>

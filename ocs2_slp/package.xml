@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ocs2_slp</name>
-  <version>0.0.0</version>
-  <description>A numerical implementation of a first order primal-dual MPC basee on PIPG.</description>
+    <name>ocs2_slp</name>
+    <version>0.0.0</version>
+    <description>A numerical implementation of a first order primal-dual MPC basee on PIPG.</description>
 
-  <maintainer email="farbod.farshidian@gmail.com">Farbod Farshidian</maintainer>
-  <maintainer email="zhengfuaj@gmail.com">Zhengyu Fu</maintainer>
+    <maintainer email="farbod.farshidian@gmail.com">Farbod Farshidian</maintainer>
+    <maintainer email="zhengfuaj@gmail.com">Zhengyu Fu</maintainer>
 
-  <license>BSD3</license>
+    <license>BSD3</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>ocs2_core</depend>
-  <depend>ocs2_mpc</depend>
-  <depend>ocs2_oc</depend>
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <depend>ocs2_core</depend>
+    <depend>ocs2_mpc</depend>
+    <depend>ocs2_oc</depend>
 
-  <!-- Test dependancy -->
-  <depend>ocs2_qp_solver</depend>
+    <!-- Test dependancy -->
+    <depend>ocs2_qp_solver</depend>
 
-  <export>
-    <build_type>ament_cmake</build_type>
-  </export>
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
 </package>

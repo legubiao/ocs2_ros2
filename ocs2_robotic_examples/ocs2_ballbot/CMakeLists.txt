@@ -14,15 +14,12 @@ set(dependencies
         Boost
 )
 
-find_package(pybind11 REQUIRED)
 find_package(ament_cmake REQUIRED)
-find_package(pybind11_vendor REQUIRED)
-find_package(ocs2_core REQUIRED)
-find_package(ocs2_mpc REQUIRED)
+find_package(pybind11 REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(ocs2_ddp REQUIRED)
 find_package(ocs2_slp REQUIRED)
 find_package(ocs2_sqp REQUIRED)
-find_package(ocs2_robotic_tools REQUIRED)
 find_package(ocs2_python_interface REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS
@@ -31,13 +28,6 @@ find_package(Boost REQUIRED COMPONENTS
         log_setup
         log
 )
-
-# find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-find_package(ament_cmake_auto REQUIRED)
-find_package(Python COMPONENTS Interpreter Development)
-find_package(pybind11 CONFIG)
-ament_auto_find_build_dependencies()
-
 
 ###########
 ## Build ##
@@ -49,31 +39,23 @@ configure_file(
         "${PROJECT_BINARY_DIR}/include/${PROJECT_NAME}/package_path.h" @ONLY
 )
 
-# Add directories for all targets
-include_directories(
-        include
-        ${EIGEN3_INCLUDE_DIRS}
-        ${Boost_INCLUDE_DIRS}
-)
-
 # Ballbot interface library
 add_library(${PROJECT_NAME}
         src/BallbotInterface.cpp
         src/dynamics/BallbotSystemDynamics.cpp
 )
-ament_target_dependencies(${PROJECT_NAME}
-        ${dependencies}
-)
+target_include_directories(${PROJECT_NAME}
+        PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+
+ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 
 # python bindings
-pybind11_add_module(BallbotPyBindings SHARED
-        src/pyBindModule.cpp
-)
-target_link_libraries(BallbotPyBindings PUBLIC
-        ${PROJECT_NAME}
-)
+pybind11_add_module(BallbotPyBindings SHARED src/pyBindModule.cpp)
+target_link_libraries(BallbotPyBindings PUBLIC ${PROJECT_NAME})
 
 #########################
 ###   CLANG TOOLING   ###
@@ -115,26 +97,23 @@ install(TARGETS BallbotPyBindings
         RUNTIME DESTINATION bin
 )
 
+ament_export_dependencies(${dependencies})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
 #############
 ## Testing ##
 #############
 find_package(ament_lint_auto REQUIRED)
 ament_lint_auto_find_test_dependencies()
-find_package(ament_cmake_gtest)
 
-ament_add_gtest(test_BallbotPyBindings
-        test/testBallbotPyBindings.cpp)
-target_include_directories(test_BallbotPyBindings PRIVATE
-        ${PROJECT_BINARY_DIR}/include
-)
-ament_target_dependencies(test_BallbotPyBindings
-        ${dependencies}
-)
-target_link_libraries(test_BallbotPyBindings
-        ${PROJECT_NAME}
-)
+if (BUILD_TESTING)
+    find_package(ament_cmake_gtest)
 
-ament_export_dependencies(${dependencies})
-ament_export_include_directories("include/${PROJECT_NAME}")
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+    ament_add_gtest(test_BallbotPyBindings test/testBallbotPyBindings.cpp)
+    target_include_directories(test_BallbotPyBindings PRIVATE ${PROJECT_BINARY_DIR}/include)
+    ament_target_dependencies(test_BallbotPyBindings ${dependencies})
+    target_link_libraries(test_BallbotPyBindings ${PROJECT_NAME})
+
+endif ()
+
 ament_package()

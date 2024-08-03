@@ -3,21 +3,41 @@ from launch.substitutions import LaunchConfiguration
 
 import launch
 import launch_ros.actions
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 
 
+def is_wsl():
+    try:
+        with open('/proc/version', 'r') as f:
+            version_info = f.read().lower()
+            return 'microsoft' in version_info or 'wsl' in version_info
+    except FileNotFoundError:
+        return False
+
+
 def generate_launch_description():
-    ld = launch.LaunchDescription([
-        launch.actions.DeclareLaunchArgument(
+    prefix = "gnome-terminal --"
+    if is_wsl():
+        prefix = "xterm -e"
+        print("Current system is WSL, use xterm as terminal")
+    else:
+        print("Current system is not WSL, use gnome-terminal as terminal")
+
+    return LaunchDescription([
+        DeclareLaunchArgument(
             name='rviz',
             default_value='true'
         ),
-        launch.actions.DeclareLaunchArgument(
+        DeclareLaunchArgument(
             name='task_name',
             default_value='mpc'
         ),
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
                     'ocs2_ballbot_ros'), 'launch/visualize.launch.py')
             ),
@@ -29,7 +49,6 @@ def generate_launch_description():
             package='ocs2_ballbot_ros',
             executable='ballbot_ddp',
             name='ballbot_ddp',
-            prefix= "",
             arguments=[LaunchConfiguration('task_name')],
             output='screen'
         ),
@@ -37,7 +56,7 @@ def generate_launch_description():
             package='ocs2_ballbot_ros',
             executable='ballbot_dummy_test',
             name='ballbot_dummy_test',
-            prefix="gnome-terminal --",
+            prefix=prefix,
             arguments=[LaunchConfiguration('task_name')],
             output='screen'
         ),
@@ -45,13 +64,8 @@ def generate_launch_description():
             package='ocs2_ballbot_ros',
             executable='ballbot_target',
             name='ballbot_target',
-            prefix="gnome-terminal --",
+            prefix=prefix,
             arguments=[LaunchConfiguration('task_name')],
             output='screen'
         )
     ])
-    return ld
-
-
-if __name__ == '__main__':
-    generate_launch_description()
