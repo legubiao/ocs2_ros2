@@ -40,17 +40,11 @@ using namespace quadrotor;
  */
 TargetTrajectories commandLineToTargetTrajectories(
     const vector_t& commadLineTarget, const SystemObservation& observation) {
-  const vector_t targetState = [&]() {
-    vector_t targetState = vector_t::Zero(STATE_DIM);
-    targetState(0) = observation.state(0) + commadLineTarget(0);
-    targetState(1) = observation.state(1) + commadLineTarget(1);
-    targetState(2) = observation.state(2) + commadLineTarget(2);
-    targetState(3) = observation.state(3);
-    targetState(4) = observation.state(4);
-    targetState(5) =
-        observation.state(5) + commadLineTarget(3) * M_PI / 180.0;  //  deg2rad
-    return targetState;
-  }();
+  vector_t targetState = observation.state;
+  targetState(0) += commadLineTarget(0);
+  targetState(1) += commadLineTarget(1);
+  targetState(2) += commadLineTarget(2);
+  targetState(5) += commadLineTarget(3) * M_PI / 180.0;  // deg2rad
 
   // target reaching duration
   constexpr scalar_t averageSpeed = 2.0;
@@ -73,7 +67,7 @@ TargetTrajectories commandLineToTargetTrajectories(
 int main(int argc, char* argv[]) {
   const std::string robotName = "quadrotor";
   rclcpp::init(argc, argv);
-  rclcpp::Node::SharedPtr node =
+  const rclcpp::Node::SharedPtr node =
       rclcpp::Node::make_shared(robotName + "_target");
 
   // goalPose: [deltaX, deltaY, deltaZ, deltaYaw]

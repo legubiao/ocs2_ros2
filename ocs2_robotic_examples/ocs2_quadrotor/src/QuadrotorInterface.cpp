@@ -27,39 +27,44 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <iostream>
-#include <string>
-
 #include "ocs2_quadrotor/QuadrotorInterface.h"
-#include "ocs2_quadrotor/dynamics/QuadrotorSystemDynamics.h"
 
 #include <ocs2_core/cost/QuadraticStateCost.h>
 #include <ocs2_core/cost/QuadraticStateInputCost.h>
 #include <ocs2_core/initialization/OperatingPoints.h>
 #include <ocs2_core/misc/LoadData.h>
 
+#include <iostream>
+#include <memory>
+#include <string>
+
+#include "ocs2_quadrotor/dynamics/QuadrotorSystemDynamics.h"
+
 // Boost
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
-namespace ocs2 {
-namespace quadrotor {
+namespace ocs2::quadrotor {
 
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
-QuadrotorInterface::QuadrotorInterface(const std::string& taskFile, const std::string& libraryFolder) {
+QuadrotorInterface::QuadrotorInterface(const std::string& taskFile,
+                                       const std::string& libraryFolder) {
   // check that task file exists
-  boost::filesystem::path taskFilePath(taskFile);
-  if (boost::filesystem::exists(taskFilePath)) {
-    std::cerr << "[QuadrotorInterface] Loading task file: " << taskFilePath << std::endl;
+  if (const boost::filesystem::path taskFilePath(taskFile);
+      exists(taskFilePath)) {
+    std::cerr << "[QuadrotorInterface] Loading task file: " << taskFilePath
+              << std::endl;
   } else {
-    throw std::invalid_argument("[QuadrotorInterface] Task file not found: " + taskFilePath.string());
+    throw std::invalid_argument("[QuadrotorInterface] Task file not found: " +
+                                taskFilePath.string());
   }
   // create library folder if it does not exist
-  boost::filesystem::path libraryFolderPath(libraryFolder);
-  boost::filesystem::create_directories(libraryFolderPath);
-  std::cerr << "[QuadrotorInterface] Generated library path: " << libraryFolderPath << std::endl;
+  const boost::filesystem::path libraryFolderPath(libraryFolder);
+  create_directories(libraryFolderPath);
+  std::cerr << "[QuadrotorInterface] Generated library path: "
+            << libraryFolderPath << std::endl;
 
   // Default initial condition
   loadData::loadEigenMatrix(taskFile, "initialState", initialState_);
@@ -72,7 +77,7 @@ QuadrotorInterface::QuadrotorInterface(const std::string& taskFile, const std::s
   /*
    * ReferenceManager & SolverSynchronizedModule
    */
-  referenceManagerPtr_.reset(new ReferenceManager);
+  referenceManagerPtr_ = std::make_shared<ReferenceManager>();
 
   /*
    * Optimal control problem
@@ -88,22 +93,28 @@ QuadrotorInterface::QuadrotorInterface(const std::string& taskFile, const std::s
   std::cerr << "R:  \n" << R << "\n";
   std::cerr << "Q_final:\n" << Qf << "\n";
 
-  problem_.costPtr->add("cost", std::make_unique<QuadraticStateInputCost>(Q, R));
-  problem_.finalCostPtr->add("finalCost", std::make_unique<QuadraticStateCost>(Qf));
+  problem_.costPtr->add("cost",
+                        std::make_unique<QuadraticStateInputCost>(Q, R));
+  problem_.finalCostPtr->add("finalCost",
+                             std::make_unique<QuadraticStateCost>(Qf));
 
   // Dynamics
-  auto quadrotorParameters = quadrotor::loadSettings(taskFile, "QuadrotorParameters", true);
-  problem_.dynamicsPtr.reset(new QuadrotorSystemDynamics(quadrotorParameters));
+  auto quadrotorParameters =
+      loadSettings(taskFile, "QuadrotorParameters", true);
+  problem_.dynamicsPtr =
+      std::make_unique<QuadrotorSystemDynamics>(quadrotorParameters);
 
   // Rollout
-  auto rolloutSettings = rollout::loadSettings(taskFile, "rollout");
-  rolloutPtr_.reset(new TimeTriggeredRollout(*problem_.dynamicsPtr, rolloutSettings));
+  const auto rolloutSettings = rollout::loadSettings(taskFile, "rollout");
+  rolloutPtr_ = std::make_unique<TimeTriggeredRollout>(*problem_.dynamicsPtr,
+                                                       rolloutSettings);
 
   // Initialization
   vector_t initialInput = vector_t::Zero(INPUT_DIM);
-  initialInput(0) = quadrotorParameters.quadrotorMass_ * quadrotorParameters.gravity_;
-  operatingPointPtr_.reset(new OperatingPoints(initialState_, initialInput));
+  initialInput(0) =
+      quadrotorParameters.quadrotorMass_ * quadrotorParameters.gravity_;
+  operatingPointPtr_ =
+      std::make_unique<OperatingPoints>(initialState_, initialInput);
 }
 
-}  // namespace quadrotor
-}  // namespace ocs2
+}  // namespace ocs2::quadrotor

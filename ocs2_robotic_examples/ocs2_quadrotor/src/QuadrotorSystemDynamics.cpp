@@ -27,18 +27,24 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <cmath>
-
-#include <ocs2_robotic_tools/common/AngularVelocityMapping.h>
 #include "ocs2_quadrotor/dynamics/QuadrotorSystemDynamics.h"
 
-namespace ocs2 {
-namespace quadrotor {
+#include <ocs2_robotic_tools/common/AngularVelocityMapping.h>
 
-vector_t QuadrotorSystemDynamics::computeFlowMap(scalar_t time, const vector_t& state, const vector_t& input, const PreComputation&) {
+#include <cmath>
+
+
+namespace ocs2::quadrotor {
+
+vector_t QuadrotorSystemDynamics::computeFlowMap(scalar_t time,
+                                                 const vector_t& state,
+                                                 const vector_t& input,
+                                                 const PreComputation&) {
   // angular velocities to Euler angle Derivatives transformation
   Eigen::Matrix<scalar_t, 3, 1> eulerAngle = state.segment<3>(3);
-  Eigen::Matrix<scalar_t, 3, 3> T = getMappingFromLocalAngularVelocityToEulerAnglesXyzDerivative<scalar_t>(eulerAngle);
+  Eigen::Matrix<scalar_t, 3, 3> T =
+      getMappingFromLocalAngularVelocityToEulerAnglesXyzDerivative<scalar_t>(
+          eulerAngle);
 
   // positions
   scalar_t qxQ = state(0);  // x
@@ -93,29 +99,39 @@ vector_t QuadrotorSystemDynamics::computeFlowMap(scalar_t time, const vector_t& 
   stateDerivative(6) = Fz * t2 * t4;
   stateDerivative(7) = -Fz * t2 * t3 * sin(qph);
 
-  stateDerivative(8) = t2 * (param_.quadrotorMass_ * param_.gravity_ - Fz * t3 * cos(qph)) * (-1.0);
-  stateDerivative(9) =
-      -t5 * t11 *
-      (-Mx * t6 + My * t7 + param_.Thzz_ * dqps * dqth - param_.Thxxyy_ * dqph * dqth * t4 * (2.0) + param_.Thzz_ * dqph * dqth * t4);
-  stateDerivative(10) = t5 * (Mx * t7 + My * t6 - param_.Thxxyy_ * t8 * t10 * (1.0 / 2.0) + param_.Thzz_ * t8 * t10 * (1.0 / 2.0) +
-                              param_.Thzz_ * dqph * dqps * t3);
-  stateDerivative(11) = (t5 * t11 *
-                         (Mz * param_.Thxxyy_ * t3 + dqph * dqth * t12 - dqph * dqth * t12 * t13 + dqps * dqth * t4 * t12 -
-                          param_.Thxxyy_ * param_.Thzz_ * dqph * dqth * (2.0) - Mx * param_.Thzz_ * t4 * t6 + My * param_.Thzz_ * t4 * t7 +
-                          param_.Thxxyy_ * param_.Thzz_ * dqph * dqth * t13)) /
-                        param_.Thzz_;
+  stateDerivative(8) =
+      t2 * (param_.quadrotorMass_ * param_.gravity_ - Fz * t3 * cos(qph)) *
+      (-1.0);
+  stateDerivative(9) = -t5 * t11 *
+                       (-Mx * t6 + My * t7 + param_.Thzz_ * dqps * dqth -
+                        param_.Thxxyy_ * dqph * dqth * t4 * (2.0) +
+                        param_.Thzz_ * dqph * dqth * t4);
+  stateDerivative(10) =
+      t5 *
+      (Mx * t7 + My * t6 - param_.Thxxyy_ * t8 * t10 * (1.0 / 2.0) +
+       param_.Thzz_ * t8 * t10 * (1.0 / 2.0) + param_.Thzz_ * dqph * dqps * t3);
+  stateDerivative(11) =
+      (t5 * t11 *
+       (Mz * param_.Thxxyy_ * t3 + dqph * dqth * t12 - dqph * dqth * t12 * t13 +
+        dqps * dqth * t4 * t12 -
+        param_.Thxxyy_ * param_.Thzz_ * dqph * dqth * (2.0) -
+        Mx * param_.Thzz_ * t4 * t6 + My * param_.Thzz_ * t4 * t7 +
+        param_.Thxxyy_ * param_.Thzz_ * dqph * dqth * t13)) /
+      param_.Thzz_;
   return stateDerivative;
 }
 
-VectorFunctionLinearApproximation QuadrotorSystemDynamics::linearApproximation(scalar_t t, const vector_t& x, const vector_t& u,
-                                                                               const PreComputation& preComp) {
+VectorFunctionLinearApproximation QuadrotorSystemDynamics::linearApproximation(
+    scalar_t t, const vector_t& x, const vector_t& u,
+    const PreComputation& preComp) {
   VectorFunctionLinearApproximation dynamics;
   dynamics.f = computeFlowMap(t, x, u, preComp);
 
   // Jacobian of angular velocity mapping
   Eigen::Matrix<scalar_t, 3, 1> eulerAngle = x.segment<3>(3);
   Eigen::Matrix<scalar_t, 3, 1> angularVelocity = x.segment<3>(9);
-  jacobianOfAngularVelocityMapping_ = JacobianOfAngularVelocityMapping(eulerAngle, angularVelocity).transpose();
+  jacobianOfAngularVelocityMapping_ =
+      JacobianOfAngularVelocityMapping(eulerAngle, angularVelocity).transpose();
 
   // positions
   scalar_t qxQ = x(0);  // x
@@ -144,7 +160,8 @@ VectorFunctionLinearApproximation QuadrotorSystemDynamics::linearApproximation(s
   scalar_t Mz = u(3);
 
   {  // derivative state
-    scalar_t t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t26, t21, t22, t27, t23, t24, t25;
+    scalar_t t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16,
+        t17, t18, t19, t20, t26, t21, t22, t27, t23, t24, t25;
 
     t2 = 1.0 / param_.quadrotorMass_;
     t3 = cos(qth);
@@ -183,23 +200,36 @@ VectorFunctionLinearApproximation QuadrotorSystemDynamics::linearApproximation(s
     A(8, 3) = -Fz * t2 * t3 * t4;
     A(8, 4) = -Fz * t2 * t5 * t6;
     A(9, 4) = -t6 * t7 * t17 *
-                  (t15 - Mx * t8 + param_.Thzz_ * dqps * dqth - param_.Thxxyy_ * dqph * dqth * t6 * 2.0 + param_.Thzz_ * dqph * dqth * t6) -
+                  (t15 - Mx * t8 + param_.Thzz_ * dqps * dqth -
+                   param_.Thxxyy_ * dqph * dqth * t6 * 2.0 +
+                   param_.Thzz_ * dqph * dqth * t6) -
               dqph * dqth * t7 * t12;
     A(9, 5) = -t7 * t10 * t22;
     A(9, 9) = -dqth * t6 * t7 * t10 * t12;
-    A(9, 10) = -t7 * t10 * (param_.Thzz_ * dqps - param_.Thxxyy_ * dqph * t6 * 2.0 + param_.Thzz_ * dqph * t6);
+    A(9, 10) = -t7 * t10 *
+               (param_.Thzz_ * dqps - param_.Thxxyy_ * dqph * t6 * 2.0 +
+                param_.Thzz_ * dqph * t6);
     A(9, 11) = -param_.Thzz_ * dqth * t7 * t10;
-    A(10, 4) = -dqph * t7 * (t25 + param_.Thxxyy_ * dqph * t14 - param_.Thzz_ * dqph * t14);
+    A(10, 4) = -dqph * t7 *
+               (t25 + param_.Thxxyy_ * dqph * t14 - param_.Thzz_ * dqph * t14);
     A(10, 5) = -t7 * (t15 - Mx * t8);
-    A(10, 9) = t7 * (-param_.Thxxyy_ * dqph * t16 + param_.Thzz_ * dqps * t3 + param_.Thzz_ * dqph * t16);
+    A(10, 9) = t7 * (-param_.Thxxyy_ * dqph * t16 + param_.Thzz_ * dqps * t3 +
+                     param_.Thzz_ * dqph * t16);
     A(10, 11) = param_.Thzz_ * dqph * t3 * t7;
-    A(11, 4) = t7 * t17 *
-               (Mx * t8 * -4.0 + My * t9 * 4.0 + param_.Thzz_ * dqps * dqth * 4.0 - param_.Thxxyy_ * dqph * dqth * t6 * 9.0 -
-                param_.Thxxyy_ * dqph * dqth * t19 + param_.Thzz_ * dqph * dqth * t6 * 5.0 + param_.Thzz_ * dqph * dqth * t19) *
-               (1.0 / 4.0);
+    A(11, 4) =
+        t7 * t17 *
+        (Mx * t8 * -4.0 + My * t9 * 4.0 + param_.Thzz_ * dqps * dqth * 4.0 -
+         param_.Thxxyy_ * dqph * dqth * t6 * 9.0 -
+         param_.Thxxyy_ * dqph * dqth * t19 +
+         param_.Thzz_ * dqph * dqth * t6 * 5.0 +
+         param_.Thzz_ * dqph * dqth * t19) *
+        (1.0 / 4.0);
     A(11, 5) = t6 * t7 * t10 * t22;
-    A(11, 9) = dqth * t7 * t10 * (param_.Thzz_ - t11 + param_.Thxxyy_ * t23 - param_.Thzz_ * t23);
-    A(11, 10) = t7 * t10 * (t25 - param_.Thxxyy_ * dqph - param_.Thxxyy_ * dqph * t24 + param_.Thzz_ * dqph * t24);
+    A(11, 9) = dqth * t7 * t10 *
+               (param_.Thzz_ - t11 + param_.Thxxyy_ * t23 - param_.Thzz_ * t23);
+    A(11, 10) = t7 * t10 *
+                (t25 - param_.Thxxyy_ * dqph - param_.Thxxyy_ * dqph * t24 +
+                 param_.Thzz_ * dqph * t24);
     A(11, 11) = param_.Thzz_ * dqth * t6 * t7 * t10;
   }
 
@@ -230,5 +260,5 @@ VectorFunctionLinearApproximation QuadrotorSystemDynamics::linearApproximation(s
   return dynamics;
 }
 
-}  // namespace quadrotor
-}  // namespace ocs2
+} // namespace ocs2::quadrotor
+

@@ -10,6 +10,8 @@ Todo List:
 - [x] modern cmake
 - [x] basic 6 examples in official documents
 - [x] WSL2 support
+- [x] Fix Quadrotor example's unexpected behavior
+- [x] Fix Mobile Manipolator's interactive marker
 - [ ] perceptive locomotion demo
 - [ ] tinyxml2 problem in Ubuntu 24.04 ROS2 Jazzy
 

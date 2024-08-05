@@ -40,17 +40,17 @@ int main(int argc, char** argv) {
   const std::string robotName = "quadrotor";
 
   // task file
-  std::vector<std::string> programArgs =
+  const std::vector<std::string> programArgs =
       rclcpp::remove_ros_arguments(argc, argv);
 
   if (programArgs.size() <= 1) {
     throw std::runtime_error("No task file specified. Aborting.");
   }
-  std::string taskFileFolderName(programArgs[1]);
+  const std::string& taskFileFolderName(programArgs[1]);
 
   // Initialize ros node
   rclcpp::init(argc, argv);
-  rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(robotName + "_mpc");
+  const rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(robotName + "_mpc");
 
   // Robot interface
   const std::string taskFile =
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
   ocs2::quadrotor::QuadrotorInterface quadrotorInterface(taskFile, libFolder);
 
   // ROS ReferenceManager
-  auto rosReferenceManagerPtr = std::make_shared<ocs2::RosReferenceManager>(
+  const auto rosReferenceManagerPtr = std::make_shared<ocs2::RosReferenceManager>(
       robotName, quadrotorInterface.getReferenceManagerPtr());
   rosReferenceManagerPtr->subscribe(node);
 

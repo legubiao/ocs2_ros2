@@ -34,8 +34,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <rclcpp/rclcpp.hpp>
 
-#include "ocs2_quadrotor/definitions.h"
-
 namespace ocs2 {
 namespace quadrotor {
 
