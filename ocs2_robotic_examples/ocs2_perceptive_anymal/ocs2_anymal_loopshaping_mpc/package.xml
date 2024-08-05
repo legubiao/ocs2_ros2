@@ -9,7 +9,6 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>rclcpp</depend>
   <depend>ocs2_anymal_mpc</depend>
   <depend>ocs2_quadruped_loopshaping_interface</depend>
 

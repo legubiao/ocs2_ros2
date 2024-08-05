@@ -16,7 +16,7 @@
 
     <depend>ocs2_quadruped_interface</depend>
 
-    <export>                               
-      <build_type>ament_cmake</build_type>
+    <export>
+        <build_type>ament_cmake</build_type>
     </export>
 </package>

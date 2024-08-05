@@ -9,11 +9,11 @@ find_package(rosidl_default_generators REQUIRED)
 
 # Declare the message files to be built
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/Gait.msg"
-  "msg/GaitSequence.msg"
-  "msg/ScheduledGaitSequence.msg"
-  "srv/TrajectoryRequest.srv"
-  DEPENDENCIES std_msgs ocs2_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
+        "msg/Gait.msg"
+        "msg/GaitSequence.msg"
+        "msg/ScheduledGaitSequence.msg"
+        "srv/TrajectoryRequest.srv"
+        DEPENDENCIES std_msgs ocs2_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
 )
 
 ament_package()

@@ -1,24 +1,25 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ocs2_anymal_mpc</name>
-  <version>0.0.0</version>
-  <description>The ocs2_anymal_mpc package</description>
+    <name>ocs2_anymal_mpc</name>
+    <version>0.0.0</version>
+    <description>The ocs2_anymal_mpc package</description>
 
-  <maintainer email="farbod@todo.todo">farbod</maintainer>
+    <maintainer email="farbod@todo.todo">farbod</maintainer>
 
-  <license>TODO</license>
+    <license>TODO</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+    <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>rclcpp</depend>
-  <depend>ocs2_anymal_models</depend>
-  <depend>ocs2_quadruped_interface</depend>
+    <depend>grid_map_sdf</depend>
+    <depend>ocs2_anymal_models</depend>
+    <depend>ocs2_quadruped_interface</depend>
 
-  <exec_depend>ocs2_anymal_commands</exec_depend>
-  <test_depend>ament_cmake_gtest</test_depend>
-  <test_depend>ament_cmake_pytest</test_depend>
+    <exec_depend>ocs2_anymal_commands</exec_depend>
 
-  <export>                               
-   <build_type>ament_cmake</build_type>
-  </export>
+    <test_depend>ament_cmake_gtest</test_depend>
+    <test_depend>ament_cmake_pytest</test_depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
 </package>

@@ -5,15 +5,19 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Terrain1/FilteredMap1
+        - /Desired Trajectory1
+        - /Desired Trajectory1/Base Position Trajectory1/Status1
+        - /Desired Trajectory1/Base Position Trajectory1/Topic1
+        - /Desired Trajectory1/Feet Pose Trajectories1/LF1
+        - /Optimized Trajectory1
+        - /Optimized Trajectory1/Feet Pose Trajectories1/LF1
       Splitter Ratio: 0.5038759708404541
-    Tree Height: 727
+    Tree Height: 625
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
     Expanded:
       - /2D Pose Estimate1
-      - /2D Nav Goal1
       - /Publish Point1
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
@@ -30,10 +34,6 @@ Panels:
     Name: Time
     SyncMode: 0
     SyncSource: ""
-Preferences:
-  PromptSaveOnExit: true
-Toolbars:
-  toolButtonStyle: 2
 Visualization Manager:
   Class: ""
   Displays:
@@ -58,6 +58,14 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz_default_plugins/RobotModel
       Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description
       Enabled: true
       Links:
         All Links Enabled: true
@@ -267,10 +275,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        body_top:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         bottom_shell:
           Alpha: 1
           Show Axes: false
@@ -285,12 +289,36 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        depth_camera_front_color_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        depth_camera_front_color_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        depth_camera_front_depth_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         depth_camera_left_camera:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
         depth_camera_left_camera_parent:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        depth_camera_left_color_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        depth_camera_left_color_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        depth_camera_left_depth_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -303,12 +331,36 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        depth_camera_rear_color_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        depth_camera_rear_color_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        depth_camera_rear_depth_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         depth_camera_right_camera:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
         depth_camera_right_camera_parent:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        depth_camera_right_color_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        depth_camera_right_color_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        depth_camera_right_depth_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -322,11 +374,6 @@ Visualization Manager:
           Show Trail: false
           Value: true
         face_rear:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        front_handle:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -345,17 +392,13 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        interface_hatch:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
           Value: true
         lidar:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        perception_head_cage:
+        lidar_cage:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -388,8 +431,10 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
       Name: "ANYmal "
-      Robot Description: /ocs2_anymal_description
       TF Prefix: ""
       Update Interval: 0
       Value: true
@@ -398,27 +443,40 @@ Visualization Manager:
       Displays:
         - Class: rviz_default_plugins/Marker
           Enabled: true
-          Marker Topic: /ocs2_anymal/desiredBaseTrajectory
           Name: Base Position Trajectory
           Namespaces:
             "": true
-          Queue Size: 1
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /ocs2_anymal/desiredBaseTrajectory
           Value: true
         - Class: rviz_default_plugins/MarkerArray
           Enabled: false
-          Marker Topic: /ocs2_anymal/desiredVelTrajectory
           Name: Base Velocity Trajectory
           Namespaces:
             {}
-          Queue Size: 100
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: visualization_marker_array
           Value: false
         - Class: rviz_default_plugins/MarkerArray
           Enabled: false
-          Marker Topic: /ocs2_anymal/desiredAngVelTrajectory
           Name: Base Angular Velocity Trajectory
           Namespaces:
             {}
-          Queue Size: 100
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: visualization_marker_array
           Value: false
         - Alpha: 1
           Arrow Length: 0.30000001192092896
@@ -430,46 +488,70 @@ Visualization Manager:
           Head Length: 0.07000000029802322
           Head Radius: 0.029999999329447746
           Name: CoM Pose Trajectory
-          Queue Size: 10
           Shaft Length: 0.23000000417232513
           Shaft Radius: 0.009999999776482582
           Shape: Axes
-          Topic: ocs2_anymal/desiredPoseTrajectory
-          Unreliable: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: ocs2_anymal/desiredPoseTrajectory
           Value: true
         - Class: rviz_common/Group
           Displays:
             - Class: rviz_default_plugins/Marker
               Enabled: true
-              Marker Topic: /ocs2_anymal/desiredFeetTrajectory/LF
               Name: LF
               Namespaces:
                 {}
-              Queue Size: 1
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: ""
               Value: true
             - Class: rviz_default_plugins/Marker
               Enabled: true
-              Marker Topic: /ocs2_anymal/desiredFeetTrajectory/RF
               Name: RF
               Namespaces:
                 {}
-              Queue Size: 1
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: ""
               Value: true
             - Class: rviz_default_plugins/Marker
               Enabled: true
-              Marker Topic: /ocs2_anymal/desiredFeetTrajectory/LH
               Name: LH
               Namespaces:
                 {}
-              Queue Size: 1
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: ""
               Value: true
             - Class: rviz_default_plugins/Marker
               Enabled: true
-              Marker Topic: /ocs2_anymal/desiredFeetTrajectory/RH
               Name: RH
               Namespaces:
                 {}
-              Queue Size: 1
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: ""
               Value: true
           Enabled: false
           Name: Feet Position Trajectories
@@ -477,35 +559,51 @@ Visualization Manager:
           Displays:
             - Class: rviz_default_plugins/MarkerArray
               Enabled: false
-              Marker Topic: /ocs2_anymal/desiredFeetVelTrajectory/LF
               Name: LF
               Namespaces:
                 {}
-              Queue Size: 100
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: visualization_marker_array
               Value: false
             - Class: rviz_default_plugins/MarkerArray
               Enabled: false
-              Marker Topic: /ocs2_anymal/desiredFeetVelTrajectory/RF
               Name: RF
               Namespaces:
                 {}
-              Queue Size: 100
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: visualization_marker_array
               Value: false
             - Class: rviz_default_plugins/MarkerArray
               Enabled: false
-              Marker Topic: /ocs2_anymal/desiredFeetVelTrajectory/LH
               Name: LH
               Namespaces:
                 {}
-              Queue Size: 100
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: visualization_marker_array
               Value: false
             - Class: rviz_default_plugins/MarkerArray
               Enabled: false
-              Marker Topic: /ocs2_anymal/desiredFeetVelTrajectory/RH
               Name: RH
               Namespaces:
                 {}
-              Queue Size: 100
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: visualization_marker_array
               Value: false
           Enabled: false
           Name: Feet Velocity Trajectories
@@ -521,12 +619,16 @@ Visualization Manager:
               Head Length: 0.07000000029802322
               Head Radius: 0.029999999329447746
               Name: LF
-              Queue Size: 10
               Shaft Length: 0.23000000417232513
               Shaft Radius: 0.009999999776482582
               Shape: Axes
-              Topic: /ocs2_anymal/desiredFeetPoseTrajectory/LF
-              Unreliable: false
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /ocs2_anymal/desiredFeetPoseTrajectory/LF
               Value: true
             - Alpha: 1
               Arrow Length: 0.30000001192092896
@@ -538,12 +640,16 @@ Visualization Manager:
               Head Length: 0.07000000029802322
               Head Radius: 0.029999999329447746
               Name: LH
-              Queue Size: 10
               Shaft Length: 0.23000000417232513
               Shaft Radius: 0.009999999776482582
               Shape: Axes
-              Topic: /ocs2_anymal/desiredFeetPoseTrajectory/LH
-              Unreliable: false
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /ocs2_anymal/desiredFeetPoseTrajectory/LH
               Value: true
             - Alpha: 1
               Arrow Length: 0.30000001192092896
@@ -555,12 +661,16 @@ Visualization Manager:
               Head Length: 0.07000000029802322
               Head Radius: 0.029999999329447746
               Name: RF
-              Queue Size: 10
               Shaft Length: 0.23000000417232513
               Shaft Radius: 0.009999999776482582
               Shape: Axes
-              Topic: /ocs2_anymal/desiredFeetPoseTrajectory/RF
-              Unreliable: false
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /ocs2_anymal/desiredFeetPoseTrajectory/RF
               Value: true
             - Alpha: 1
               Arrow Length: 0.30000001192092896
@@ -572,12 +682,16 @@ Visualization Manager:
               Head Length: 0.07000000029802322
               Head Radius: 0.029999999329447746
               Name: RH
-              Queue Size: 10
               Shaft Length: 0.23000000417232513
               Shaft Radius: 0.009999999776482582
               Shape: Axes
-              Topic: /ocs2_anymal/desiredFeetPoseTrajectory/RH
-              Unreliable: false
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /ocs2_anymal/desiredFeetPoseTrajectory/RH
               Value: true
           Enabled: true
           Name: Feet Pose Trajectories
@@ -595,22 +709,28 @@ Visualization Manager:
           Head Length: 0.07000000029802322
           Head Radius: 0.029999999329447746
           Name: CoM Pose Trajectory
-          Queue Size: 10
           Shaft Length: 0.23000000417232513
           Shaft Radius: 0.009999999776482582
           Shape: Axes
-          Topic: ocs2_anymal/optimizedPoseTrajectory
-          Unreliable: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: ocs2_anymal/optimizedPoseTrajectory
           Value: false
         - Class: rviz_default_plugins/MarkerArray
           Enabled: true
-          Marker Topic: /ocs2_anymal/optimizedStateTrajectory
           Name: State Trajectory
           Namespaces:
-            Base Trajectory: true
-            EE Trajectories: true
-            Future footholds: true
-          Queue Size: 1
+            {}
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: visualization_marker_array
           Value: true
         - Class: rviz_common/Group
           Displays:
@@ -624,12 +744,16 @@ Visualization Manager:
               Head Length: 0.07000000029802322
               Head Radius: 0.029999999329447746
               Name: LF
-              Queue Size: 10
               Shaft Length: 0.23000000417232513
               Shaft Radius: 0.009999999776482582
               Shape: Axes
-              Topic: /ocs2_anymal/optimizedFeetPoseTrajectory/LF
-              Unreliable: false
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /ocs2_anymal/optimizedFeetPoseTrajectory/LF
               Value: true
             - Alpha: 1
               Arrow Length: 0.30000001192092896
@@ -641,12 +765,16 @@ Visualization Manager:
               Head Length: 0.07000000029802322
               Head Radius: 0.029999999329447746
               Name: LH
-              Queue Size: 10
               Shaft Length: 0.23000000417232513
               Shaft Radius: 0.009999999776482582
               Shape: Axes
-              Topic: /ocs2_anymal/optimizedFeetPoseTrajectory/LH
-              Unreliable: false
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /ocs2_anymal/optimizedFeetPoseTrajectory/LH
               Value: true
             - Alpha: 1
               Arrow Length: 0.30000001192092896
@@ -658,12 +786,16 @@ Visualization Manager:
               Head Length: 0.07000000029802322
               Head Radius: 0.029999999329447746
               Name: RF
-              Queue Size: 10
               Shaft Length: 0.23000000417232513
               Shaft Radius: 0.009999999776482582
               Shape: Axes
-              Topic: /ocs2_anymal/optimizedFeetPoseTrajectory/RF
-              Unreliable: false
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /ocs2_anymal/optimizedFeetPoseTrajectory/RF
               Value: true
             - Alpha: 1
               Arrow Length: 0.30000001192092896
@@ -675,14 +807,18 @@ Visualization Manager:
               Head Length: 0.07000000029802322
               Head Radius: 0.029999999329447746
               Name: RH
-              Queue Size: 10
               Shaft Length: 0.23000000417232513
               Shaft Radius: 0.009999999776482582
               Shape: Axes
-              Topic: /ocs2_anymal/optimizedFeetPoseTrajectory/RH
-              Unreliable: false
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                Filter size: 10
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /ocs2_anymal/optimizedFeetPoseTrajectory/RH
               Value: true
-          Enabled: false
+          Enabled: true
           Name: Feet Pose Trajectories
       Enabled: true
       Name: Optimized Trajectory
@@ -698,23 +834,28 @@ Visualization Manager:
           Head Length: 0.07000000029802322
           Head Radius: 0.029999999329447746
           Name: CoM Pose
-          Queue Size: 10
           Shaft Length: 0.23000000417232513
           Shaft Radius: 0.009999999776482582
           Shape: Axes
-          Topic: ocs2_anymal/currentPose
-          Unreliable: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: ocs2_anymal/currentPose
           Value: true
         - Class: rviz_default_plugins/MarkerArray
           Enabled: true
-          Marker Topic: /ocs2_anymal/currentState
           Name: State
           Namespaces:
-            Center of Pressure: true
-            EE Forces: true
-            EE Positions: true
-            Support Polygon: true
-          Queue Size: 1
+            {}
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: visualization_marker_array
           Value: true
         - Alpha: 1
           Arrow Length: 0.30000001192092896
@@ -726,28 +867,41 @@ Visualization Manager:
           Head Length: 0.07000000029802322
           Head Radius: 0.029999999329447746
           Name: Feet Poses
-          Queue Size: 10
           Shaft Length: 0.23000000417232513
           Shaft Radius: 0.009999999776482582
           Shape: Axes
-          Topic: /ocs2_anymal/currentFeetPoses
-          Unreliable: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /ocs2_anymal/currentFeetPoses
           Value: false
         - Class: rviz_default_plugins/Marker
           Enabled: false
-          Marker Topic: /ocs2_anymal/localTerrain
           Name: LocalTerrain
           Namespaces:
             {}
-          Queue Size: 100
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: ""
           Value: false
         - Class: rviz_default_plugins/MarkerArray
           Enabled: false
-          Marker Topic: /ocs2_anymal/currentCollisionSpheres
           Name: Collisions
           Namespaces:
             {}
-          Queue Size: 100
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: visualization_marker_array
           Value: false
       Enabled: true
       Name: Current
@@ -768,16 +922,22 @@ Visualization Manager:
           Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
+          Max Intensity: 4096
           Min Color: 0; 0; 0
+          Min Intensity: 0
           Name: Signed distance
           Position Transformer: XYZ
-          Queue Size: 10
           Selectable: true
           Size (Pixels): 3
           Size (m): 0.03999999910593033
           Style: Flat Squares
-          Topic: /signed_distance_field
-          Unreliable: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /signed_distance_field
           Use Fixed Frame: true
           Use rainbow: true
           Value: false
@@ -787,31 +947,37 @@ Visualization Manager:
           Color: 200; 200; 200
           Color Layer: plane_classification
           Color Transformer: ""
-          ColorMap: default
-          Enabled: true
-          Grid Cell Decimation: 1
-          Grid Line Thickness: 0.10000000149011612
+          Enabled: false
           Height Layer: elevation_before_postprocess
           Height Transformer: GridMapLayer
           History Length: 1
-          Invert ColorMap: false
+          Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 10
           Min Color: 0; 0; 0
           Min Intensity: 0
           Name: FilteredMap
           Show Grid Lines: true
-          Topic: /filtered_map
-          Unreliable: false
-          Use ColorMap: false
-          Value: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /filtered_map
+          Use Rainbow: true
+          Value: false
         - Class: rviz_default_plugins/MarkerArray
           Enabled: true
-          Marker Topic: /boundaries
           Name: Boundaries
           Namespaces:
-            "": true
-          Queue Size: 100
+            {}
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: visualization_marker_array
           Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
@@ -819,30 +985,31 @@ Visualization Manager:
           Color: 200; 200; 200
           Color Layer: elevation
           Color Transformer: GridMapLayer
-          ColorMap: default
-          Enabled: false
-          Grid Cell Decimation: 1
-          Grid Line Thickness: 0.10000000149011612
+          Enabled: true
           Height Layer: elevation
           Height Transformer: GridMapLayer
           History Length: 1
-          Invert ColorMap: false
+          Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 10
           Min Color: 0; 0; 0
           Min Intensity: 0
           Name: ElevationMap
           Show Grid Lines: true
-          Topic: /elevation_map
-          Unreliable: false
-          Use ColorMap: true
-          Value: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /elevation_map
+          Use Rainbow: true
+          Value: true
       Enabled: true
       Name: Terrain
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
-    Default Light: true
     Fixed Frame: world
     Frame Rate: 30
   Name: root
@@ -853,39 +1020,58 @@ Visualization Manager:
     - Class: rviz_default_plugins/Select
     - Class: rviz_default_plugins/FocusCamera
     - Class: rviz_default_plugins/Measure
+      Line color: 128; 128; 0
     - Class: rviz_default_plugins/SetInitialPose
-      Theta std deviation: 0.2617993950843811
-      Topic: /initialpose
-      X std deviation: 0.5
-      Y std deviation: 0.5
+      Covariance x: 0.25
+      Covariance y: 0.25
+      Covariance yaw: 0.06853891909122467
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /initialpose
     - Class: rviz_default_plugins/SetGoal
-      Topic: /move_base_simple/goal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /move_base_simple/goal
     - Class: rviz_default_plugins/PublishPoint
       Single click: true
-      Topic: /clicked_point
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /clicked_point
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
   Value: true
   Views:
     Current:
-      Class: rviz_default_plugins/ThirdPersonFollower
-      Distance: 5.270549297332764
+      Class: rviz_default_plugins/Orbit
+      Distance: 6.0170464515686035
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Field of View: 0.7853981852531433
       Focal Point:
-        X: 3.331205368041992
-        Y: 1.1847355365753174
-        Z: 0
+        X: 1.5332175493240356
+        Y: -1.0903650522232056
+        Z: 0.20651379227638245
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.044797856360673904
+      Pitch: 0.17479796707630157
       Target Frame: <Fixed Frame>
-      Yaw: 1.556549310684204
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 1.5465494394302368
     Saved:
       - Angle: 3.140000104904175
         Class: rviz_default_plugins/TopDownOrtho
@@ -899,6 +1085,7 @@ Visualization Manager:
         Near Clip Distance: 0.009999999776482582
         Scale: 582.8400268554688
         Target Frame: <Fixed Frame>
+        Value: TopDownOrtho (rviz_default_plugins)
         X: 0.16045600175857544
         Y: 0.09311659634113312
       - Angle: 6.260000228881836
@@ -913,6 +1100,7 @@ Visualization Manager:
         Near Clip Distance: 0.009999999776482582
         Scale: 266.7760009765625
         Target Frame: <Fixed Frame>
+        Value: TopDownOrtho (rviz_default_plugins)
         X: 2.279409885406494
         Y: -0.7245129942893982
       - Class: rviz_default_plugins/Orbit
@@ -922,7 +1110,6 @@ Visualization Manager:
           Stereo Focal Distance: 1
           Swap Stereo Eyes: false
           Value: false
-        Field of View: 0.7853981852531433
         Focal Point:
           X: 4.226150035858154
           Y: -1.1256200075149536
@@ -934,6 +1121,7 @@ Visualization Manager:
         Near Clip Distance: 0.009999999776482582
         Pitch: 0.434798002243042
         Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
         Yaw: 5.150000095367432
       - Class: rviz_default_plugins/Orbit
         Distance: 1.7256799936294556
@@ -942,7 +1130,6 @@ Visualization Manager:
           Stereo Focal Distance: 1
           Swap Stereo Eyes: false
           Value: false
-        Field of View: 0.7853981852531433
         Focal Point:
           X: 0.09568200260400772
           Y: -0.16040100157260895
@@ -954,14 +1141,35 @@ Visualization Manager:
         Near Clip Distance: 0.009999999776482582
         Pitch: 0.3497979938983917
         Target Frame: base_link
+        Value: Orbit (rviz_default_plugins)
         Yaw: 5.114999771118164
+      - Class: rviz_default_plugins/Orbit
+        Distance: 7.769946575164795
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 1.5332175493240356
+          Y: -1.0903650522232056
+          Z: 0.20651379227638245
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.3747978210449219
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 1.6015493869781494
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1016
+  Height: 914
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001640000039efc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000039e000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000012f00000432fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000004300000432000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000003bf0000003efc0100000002fb0000000800540069006d00650000000000000003bf000004f300fffffffb0000000800540069006d00650100000000000004500000000000000000000005ce0000039e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000016400000338fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000338000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000012f00000338fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d00000338000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000003bf0000003efc0100000002fb0000000800540069006d00650000000000000003bf000002fb00fffffffb0000000800540069006d00650100000000000004500000000000000000000004690000033800000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -970,6 +1178,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1848
-  X: 2632
-  Y: 27
+  Width: 1491
+  X: 256
+  Y: 62

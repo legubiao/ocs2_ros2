@@ -17,7 +17,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://anymal_c/urdf/base/base_3_1_1_mesh.dae" scale="1.0 1.0     1.0"/>
+        <mesh filename="package://ocs2_robotic_assets/resources/anymal_c/meshes/base.dae" scale="1.0 1.0     1.0"/>
       </geometry>
     </visual>
     <collision>

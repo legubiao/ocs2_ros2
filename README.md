@@ -164,3 +164,24 @@ colcon build --packages-up-to ocs2_legged_robot_ros ocs2_self_collision_visualiz
 source ../../install/setup.bash
 ros2 launch ocs2_legged_robot_ros legged_robot_ddp.launch.py
 ```
+
+## 3. Advanced Examples
+
+### 3.1 Perceptive Locomotion
+
+Before tried this example, you need to clone the [Plane Segmentation ROS2](https://github.com/legubiao/plane_segmentation_ros2) into your workspace src folder, and use rosdep to initialize the dependencies.
+```bash
+git clone https://github.com/legubiao/plane_segmentation_ros2
+```
+
+#### 3.1.1 OCS2 Anymal Models 
+* build
+```bash
+cd ../..
+colcon build --packages-up-to ocs2_anymal_models --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+```
+* run
+```bash
+source ../../install/setup.bash
+ros2 launch ocs2_anymal_models visualize.launch.py
+```

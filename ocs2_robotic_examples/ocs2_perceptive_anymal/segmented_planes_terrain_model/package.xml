@@ -9,19 +9,11 @@
     <license>TODO</license>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
-    <depend>convex_plane_decomposition</depend>
-    <depend>convex_plane_decomposition_msgs</depend>
     <depend>convex_plane_decomposition_ros</depend>
-    <depend>grid_map_filters_rsl</depend>
-    <depend>grid_map_ros</depend>
-    <depend>grid_map_sdf</depend>
-    <depend>ocs2_ros_interfaces</depend>
     <depend>ocs2_switched_model_interface</depend>
-    <depend>rclcpp</depend>
-    <depend>sensor_msgs</depend>
-    <depend>visualization_msgs</depend>
+    <depend>grid_map_sdf</depend>
 
-    <export>                               
-      <build_type>ament_cmake</build_type>
+    <export>
+        <build_type>ament_cmake</build_type>
     </export>
 </package>
