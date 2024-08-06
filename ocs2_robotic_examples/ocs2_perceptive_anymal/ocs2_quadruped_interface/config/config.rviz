@@ -4,11 +4,19 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Grid1
         - /Grid1/Offset1
-        - /Desired Trajectory1/Feet Position Trajectories1
+        - /Desired Trajectory1
+        - /Desired Trajectory1/Base Position Trajectory1
+        - /Desired Trajectory1/Base Position Trajectory1/Status1
+        - /Desired Trajectory1/Base Position Trajectory1/Topic1
+        - /Desired Trajectory1/Base Velocity Trajectory1
+        - /Desired Trajectory1/Base Angular Velocity Trajectory1
         - /Optimized Trajectory1/Feet Pose Trajectories1
+        - /Current1
+        - /Current1/Collisions1/Topic1
       Splitter Ratio: 0.472075879573822
-    Tree Height: 727
+    Tree Height: 733
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -441,39 +449,39 @@ Visualization Manager:
           Enabled: true
           Name: Base Position Trajectory
           Namespaces:
-            {}
+            "": true
           Topic:
             Depth: 5
             Durability Policy: Volatile
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: ""
+            Value: /ocs2_anymal/desiredBaseTrajectory
           Value: true
         - Class: rviz_default_plugins/MarkerArray
-          Enabled: false
+          Enabled: true
           Name: Base Velocity Trajectory
           Namespaces:
-            {}
+            "": true
           Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: visualization_marker_array
-          Value: false
+            Value: /ocs2_anymal/desiredVelTrajectory
+          Value: true
         - Class: rviz_default_plugins/MarkerArray
-          Enabled: false
+          Enabled: true
           Name: Base Angular Velocity Trajectory
           Namespaces:
-            {}
+            "": true
           Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: visualization_marker_array
-          Value: false
+            Value: /ocs2_anymal/desiredAngVelTrajectory
+          Value: true
         - Alpha: 1
           Arrow Length: 0.30000001192092896
           Axes Length: 0.05000000074505806
@@ -753,13 +761,15 @@ Visualization Manager:
           Enabled: true
           Name: State Trajectory
           Namespaces:
-            {}
+            Base Trajectory: true
+            EE Trajectories: true
+            Future footholds: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: visualization_marker_array
+            Value: /ocs2_anymal/optimizedStateTrajectory
           Value: true
         - Class: rviz_common/Group
           Displays:
@@ -878,13 +888,16 @@ Visualization Manager:
           Enabled: true
           Name: State
           Namespaces:
-            {}
+            Center of Pressure: true
+            EE Forces: true
+            EE Positions: true
+            Support Polygon: true
           Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: visualization_marker_array
+            Value: /ocs2_anymal/currentState
           Value: true
         - Alpha: 1
           Arrow Length: 0.30000001192092896
@@ -892,7 +905,7 @@ Visualization Manager:
           Axes Radius: 0.009999999776482582
           Class: rviz_default_plugins/PoseArray
           Color: 255; 25; 0
-          Enabled: false
+          Enabled: true
           Head Length: 0.07000000029802322
           Head Radius: 0.029999999329447746
           Name: Feet Poses
@@ -906,32 +919,32 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /ocs2_anymal/currentFeetPoses
-          Value: false
+          Value: true
         - Class: rviz_default_plugins/Marker
-          Enabled: false
+          Enabled: true
           Name: LocalTerrain
           Namespaces:
-            {}
+            "": true
           Topic:
             Depth: 5
             Durability Policy: Volatile
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: ""
-          Value: false
+            Value: /ocs2_anymal/localTerrain
+          Value: true
         - Class: rviz_default_plugins/MarkerArray
-          Enabled: false
+          Enabled: true
           Name: Collisions
           Namespaces:
-            {}
+            "": true
           Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: visualization_marker_array
-          Value: false
+            Value: /ocs2_anymal/currentCollisionSpheres
+          Value: true
       Enabled: true
       Name: Current
     - Class: rviz_common/Group
@@ -1044,7 +1057,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/ThirdPersonFollower
-      Distance: 4.253783702850342
+      Distance: 5.454583644866943
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1059,10 +1072,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.25520315766334534
+      Pitch: 0.26020318269729614
       Target Frame: <Fixed Frame>
       Value: ThirdPersonFollower (rviz_default_plugins)
-      Yaw: 1.1679106950759888
+      Yaw: 3.1129114627838135
     Saved:
       - Angle: 3.140000104904175
         Class: rviz_default_plugins/TopDownOrtho
@@ -1140,7 +1153,7 @@ Window Geometry:
   Height: 1016
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001bd0000039efc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000039e000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000012f00000432fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000004300000432000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000003bf0000003efc0100000002fb0000000800540069006d00650000000000000003bf000002fb00fffffffb0000000800540069006d00650100000000000004500000000000000000000005770000039e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000169000003a2fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b000003a2000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000012f00000432fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000004300000432000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000003bf0000003efc0100000002fb0000000800540069006d00650000000000000003bf0000025300fffffffb0000000800540069006d0065010000000000000450000000000000000000000420000003a200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -1149,6 +1162,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1850
-  X: 70
-  Y: 27
+  Width: 1423
+  X: 909
+  Y: 166

@@ -14,7 +14,7 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(
                 [ThisLaunchFileDir(), '/mpc.launch.py']),
             launch_arguments={
-                'robot_name': 'camel',
+                'robot_name': 'anymal_c',
                 'config_name': 'c_series',
                 'description_name': description_name,
                 'target_command': target_command

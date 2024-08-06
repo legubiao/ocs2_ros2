@@ -7,7 +7,23 @@ from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 from launch.substitutions import LaunchConfiguration
 
+def is_wsl():
+    try:
+        with open('/proc/version', 'r') as f:
+            version_info = f.read().lower()
+            return 'microsoft' in version_info or 'wsl' in version_info
+    except FileNotFoundError:
+        return False
+
 def generate_launch_description():
+    
+    prefix = "gnome-terminal --"
+    if is_wsl():
+        prefix = "xterm -e"
+        print("Current system is WSL, use xterm as terminal")
+    else:
+        print("Current system is not WSL, use gnome-terminal as terminal")
+        
     return LaunchDescription([
         DeclareLaunchArgument(
             name='robot_name'
@@ -49,7 +65,6 @@ def generate_launch_description():
             package='ocs2_anymal_mpc',
             executable='ocs2_anymal_mpc_mpc_node',
             name='ocs2_anymal_mpc_mpc_node',
-            prefix="",
             arguments=[LaunchConfiguration('description_name'), LaunchConfiguration('config_name')],
             output='screen'
         ),
@@ -57,7 +72,7 @@ def generate_launch_description():
             package='ocs2_anymal_mpc',
             executable='ocs2_anymal_mpc_dummy_mrt_node',
             name='ocs2_anymal_mpc_dummy_mrt_node',
-            prefix="gnome-terminal --",
+            prefix=prefix,
             arguments=[LaunchConfiguration('description_name'), LaunchConfiguration('config_name')],
             output='screen'
         ),
@@ -65,14 +80,14 @@ def generate_launch_description():
             package='ocs2_anymal_commands',
             executable='gait_command_node',
             name='gait_command_node',
-            prefix="gnome-terminal --",
+            prefix=prefix,
             output='screen'
         ),
         Node(
             package='ocs2_anymal_commands',
             executable='target_command_node',
             name='target_command_node',
-            prefix="gnome-terminal --",
+            prefix=prefix,
             arguments=[LaunchConfiguration('target_command')],
             output='screen'
         ),
@@ -80,7 +95,7 @@ def generate_launch_description():
             package='ocs2_anymal_commands',
             executable='motion_command_node',
             name='motion_command_node',
-            prefix="gnome-terminal --",
+            prefix=prefix,
             arguments=['dummy'],
             output='screen'
         ),
