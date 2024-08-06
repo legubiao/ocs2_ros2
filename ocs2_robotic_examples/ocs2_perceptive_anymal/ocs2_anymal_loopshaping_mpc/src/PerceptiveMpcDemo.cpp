@@ -3,6 +3,7 @@
 //
 
 #include <grid_map_ros/GridMapRosConverter.hpp>
+#include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -33,13 +34,11 @@ using namespace switched_model;
 int main(int argc, char* argv[]) {
   const std::string path(__FILE__);
   const std::string ocs2_anymal =
-      path.substr(0, path.find_last_of("/")) + "/../../";
+      path.substr(0, path.find_last_of('/')) + "/../../";
   const std::string taskFolder =
       ocs2_anymal + "ocs2_anymal_loopshaping_mpc/config/";
   const std::string terrainFolder =
       ocs2_anymal + "ocs2_anymal_loopshaping_mpc/data/";
-
-  const bool use_ros = false;
 
   std::string urdfString = getUrdfString(anymal::AnymalModel::Camel);
   const std::string robotName = "anymal";
@@ -48,9 +47,10 @@ int main(int argc, char* argv[]) {
   rclcpp::Node::SharedPtr node =
       rclcpp::Node::make_shared(robotName + "anymal_perceptive_mpc_demo");
   node->declare_parameter("ocs2_anymal_description", "anymal");
-  const std::string urdfPath =
-      node->get_parameter("ocs2_anymal_description").as_string();
-  if (urdfPath != "anymal") urdfString = anymal::getUrdfString(urdfPath);
+  if (const std::string urdfPath =
+          node->get_parameter("ocs2_anymal_description").as_string();
+      urdfPath != "anymal")
+    urdfString = anymal::getUrdfString(urdfPath);
   node->declare_parameter("config_name", "c_series");
   const std::string configName = node->get_parameter("config_name").as_string();
 
@@ -81,23 +81,24 @@ int main(int argc, char* argv[]) {
 
   auto anymalInterface = anymal::getAnymalLoopshapingInterface(
       urdfString, taskFolder + configName);
-  const ocs2::vector_t initSystemState =
-      anymalInterface->getInitialState().head(switched_model::STATE_DIM);
+  const vector_t initSystemState =
+      anymalInterface->getInitialState().head(STATE_DIM);
 
   // ====== Scenario settings ========
   node->declare_parameter("forward_velocity", 0.5);
-  ocs2::scalar_t forwardVelocity =
+  scalar_t forwardVelocity =
       node->get_parameter("forward_velocity").as_double();
-  ocs2::scalar_t gaitDuration{0.8};
-  ocs2::scalar_t forwardDistance{3.0};
+  scalar_t gaitDuration{0.8};
+  node->declare_parameter("forward_distance", 3.0);
+  scalar_t forwardDistance =
+      node->get_parameter("forward_distance").as_double();
 
-  ocs2::scalar_t initTime = 0.0;
-  ocs2::scalar_t stanceTime = 1.0;
+  scalar_t initTime = 0.0;
+  scalar_t stanceTime = 1.0;
   int numGaitCycles =
       std::ceil((forwardDistance / forwardVelocity) / gaitDuration);
-  ocs2::scalar_t walkTime = numGaitCycles * gaitDuration;
-  ocs2::scalar_t finalTime = walkTime + 2 * stanceTime;
-  ocs2::scalar_t f_mpc = 100;  // hz
+  scalar_t walkTime = numGaitCycles * gaitDuration;
+  scalar_t finalTime = walkTime + 2 * stanceTime;
 
   // Load a map
   const std::string elevationLayer{"elevation"};
@@ -112,17 +113,15 @@ int main(int argc, char* argv[]) {
   gridMap.get(elevationLayer).array() -=
       gridMap.atPosition(elevationLayer, {0., 0.});
 
-  // Gait
-  using MN = switched_model::ModeNumber;
-  switched_model::Gait stance;
+  Gait stance;
   stance.duration = stanceTime;
   stance.eventPhases = {};
-  stance.modeSequence = {MN::STANCE};
+  stance.modeSequence = {STANCE};
 
-  switched_model::Gait gait;
+  Gait gait;
   gait.duration = gaitDuration;
   gait.eventPhases = {0.5};
-  gait.modeSequence = {MN::LF_RH, MN::RF_LH};
+  gait.modeSequence = {LF_RH, RF_LH};
 
   GaitSchedule::GaitSequence gaitSequence{stance};
   for (int i = 0; i < numGaitCycles; ++i) {
@@ -135,10 +134,10 @@ int main(int argc, char* argv[]) {
   bool adaptReferenceToTerrain =
       node->get_parameter("adaptReferenceToTerrain").as_bool();
 
-  const double dtRef = 0.1;
-  const BaseReferenceHorizon commandHorizon{dtRef,
-                                            size_t(walkTime / dtRef) + 1};
-  BaseReferenceCommand command;
+  constexpr double dtRef = 0.1;
+  const BaseReferenceHorizon commandHorizon{
+      dtRef, static_cast<size_t>(walkTime / dtRef) + 1};
+  BaseReferenceCommand command{};
   command.baseHeight = getPositionInOrigin(getBasePose(initSystemState)).z();
   command.yawRate = 0.0;
   command.headingVelocity = forwardVelocity;
@@ -149,11 +148,11 @@ int main(int argc, char* argv[]) {
       planeDecompositionPipeline(perceptionConfig);
   planeDecompositionPipeline.update(grid_map::GridMap(gridMap), elevationLayer);
   auto& planarTerrain = planeDecompositionPipeline.getPlanarTerrain();
-  auto terrainModel = std::unique_ptr<SegmentedPlanesTerrainModel>(
-      new SegmentedPlanesTerrainModel(planarTerrain));
+  auto terrainModel =
+      std::make_unique<SegmentedPlanesTerrainModel>(planarTerrain);
 
   // Read min-max from elevation map
-  const float heightMargin =
+  constexpr float heightMargin =
       0.5;  // Create SDF till this amount above and below the map.
   const auto& elevationData = gridMap.get(elevationLayer);
   const float minValue = elevationData.minCoeffOfFinites() - heightMargin;
@@ -189,8 +188,8 @@ int main(int argc, char* argv[]) {
   targetTrajectories.timeTrajectory.push_back(stanceTime);
   targetTrajectories.stateTrajectory.push_back(initSystemState);
   targetTrajectories.stateTrajectory.push_back(initSystemState);
-  targetTrajectories.inputTrajectory.push_back(vector_t::Zero(INPUT_DIM));
-  targetTrajectories.inputTrajectory.push_back(vector_t::Zero(INPUT_DIM));
+  targetTrajectories.inputTrajectory.emplace_back(vector_t::Zero(INPUT_DIM));
+  targetTrajectories.inputTrajectory.emplace_back(vector_t::Zero(INPUT_DIM));
   for (int k = 0; k < terrainAdaptedBaseReference.time.size(); ++k) {
     targetTrajectories.timeTrajectory.push_back(
         terrainAdaptedBaseReference.time[k]);
@@ -198,14 +197,14 @@ int main(int argc, char* argv[]) {
     const auto R_WtoB =
         rotationMatrixOriginToBase(terrainAdaptedBaseReference.eulerXyz[k]);
 
-    Eigen::VectorXd costReference(switched_model::STATE_DIM);
+    Eigen::VectorXd costReference(STATE_DIM);
     costReference << terrainAdaptedBaseReference.eulerXyz[k],
         terrainAdaptedBaseReference.positionInWorld[k],
         R_WtoB * terrainAdaptedBaseReference.angularVelocityInWorld[k],
         R_WtoB * terrainAdaptedBaseReference.linearVelocityInWorld[k],
         getJointPositions(initSystemState);
     targetTrajectories.stateTrajectory.push_back(std::move(costReference));
-    targetTrajectories.inputTrajectory.push_back(vector_t::Zero(INPUT_DIM));
+    targetTrajectories.inputTrajectory.emplace_back(vector_t::Zero(INPUT_DIM));
   }
   targetTrajectories.timeTrajectory.push_back(stanceTime + walkTime);
   targetTrajectories.timeTrajectory.push_back(finalTime);
@@ -213,8 +212,8 @@ int main(int argc, char* argv[]) {
       targetTrajectories.stateTrajectory.back());
   targetTrajectories.stateTrajectory.push_back(
       targetTrajectories.stateTrajectory.back());
-  targetTrajectories.inputTrajectory.push_back(vector_t::Zero(INPUT_DIM));
-  targetTrajectories.inputTrajectory.push_back(vector_t::Zero(INPUT_DIM));
+  targetTrajectories.inputTrajectory.emplace_back(vector_t::Zero(INPUT_DIM));
+  targetTrajectories.inputTrajectory.emplace_back(vector_t::Zero(INPUT_DIM));
 
   // ====== Set the scenario to the correct interfaces ========
   auto referenceManager = anymalInterface->getQuadrupedInterface()
@@ -238,13 +237,13 @@ int main(int argc, char* argv[]) {
   const auto sqpSettings = ocs2::sqp::loadSettings(taskFolder + configName +
                                                    "/multiple_shooting.info");
   switch (anymalInterface->modelSettings().algorithm_) {
-    case switched_model::Algorithm::DDP: {
+    case Algorithm::DDP: {
       const auto ddpSettings =
           ocs2::ddp::loadSettings(taskFolder + configName + "/task.info");
       mpcPtr = getDdpMpc(*anymalInterface, mpcSettings, ddpSettings);
       break;
     }
-    case switched_model::Algorithm::SQP: {
+    case Algorithm::SQP: {
       mpcPtr = getSqpMpc(*anymalInterface, mpcSettings, sqpSettings);
       break;
     }
@@ -272,6 +271,7 @@ int main(int argc, char* argv[]) {
   while (observation.time < finalTime) {
     std::cout << "t: " << observation.time << "\n";
     try {
+      scalar_t f_mpc = 100;
       // run MPC at current observation
       mpcInterface.setCurrentObservation(observation);
       mpcInterface.advanceMpc();
@@ -280,7 +280,7 @@ int main(int argc, char* argv[]) {
       performances.push_back(mpcInterface.getPerformanceIndices());
 
       // Evaluate the optimized solution - change to optimal controller
-      ocs2::vector_t tmp;
+      vector_t tmp;
       mpcInterface.evaluatePolicy(observation.time, observation.state, tmp,
                                   observation.input, observation.mode);
       observation.input = ocs2::LinearInterpolation::interpolate(
@@ -322,7 +322,7 @@ int main(int argc, char* argv[]) {
       break;
     }
   }
-  const auto closedLoopSystemSolution = ocs2::loopshapingToSystemPrimalSolution(
+  const auto closedLoopSystemSolution = loopshapingToSystemPrimalSolution(
       closedLoopSolution, *anymalInterface->getLoopshapingDefinition());
 
   // ====== Print result ==========
@@ -430,22 +430,27 @@ int main(int argc, char* argv[]) {
     }
 
     // Visualize the individual execution
-    double speed = 1.0;
     for (size_t k = 0; k < closedLoopSystemSolution.timeTrajectory_.size() - 1;
          k++) {
+      double speed = 1.0;
       double frameDuration =
           speed * (closedLoopSystemSolution.timeTrajectory_[k + 1] -
                    closedLoopSystemSolution.timeTrajectory_[k]);
-      double publishDuration = ocs2::timedExecutionInSeconds([&]() {
-        ocs2::SystemObservation observation;
-        observation.time = closedLoopSystemSolution.timeTrajectory_[k];
-        observation.state = closedLoopSystemSolution.stateTrajectory_[k];
-        observation.input = closedLoopSystemSolution.inputTrajectory_[k];
-        observation.mode =
-            closedLoopSystemSolution.modeSchedule_.modeAtTime(observation.time);
-        visualizer.publishObservation(node->get_clock()->now(), observation);
-      });
-      if (frameDuration > publishDuration) {
+      if (double publishDuration = ocs2::timedExecutionInSeconds([&]() {
+            ocs2::SystemObservation system_observation;
+            system_observation.time =
+                closedLoopSystemSolution.timeTrajectory_[k];
+            system_observation.state =
+                closedLoopSystemSolution.stateTrajectory_[k];
+            system_observation.input =
+                closedLoopSystemSolution.inputTrajectory_[k];
+            system_observation.mode =
+                closedLoopSystemSolution.modeSchedule_.modeAtTime(
+                    system_observation.time);
+            visualizer.publishObservation(node->get_clock()->now(),
+                                          system_observation);
+          });
+          frameDuration > publishDuration) {
         const rclcpp::Duration duration =
             rclcpp::Duration::from_seconds(frameDuration - publishDuration);
         rclcpp::sleep_for((std::chrono::nanoseconds(duration.nanoseconds())));

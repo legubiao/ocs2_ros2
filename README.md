@@ -59,7 +59,7 @@ git checkout jazzy
 cd ../..
 colcon build --packages-up-to grid_map --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
-### 2.4 Build Examples
+### 2.4 Build Basic Robotic Examples
 **⚠️ Warning:**
 
 * **If build without "-DCMAKE_BUILD_TYPE=RelWithDebInfo", the mpc will have poor performance.**
