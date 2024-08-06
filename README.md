@@ -12,7 +12,7 @@ Todo List:
 - [x] WSL2 support
 - [x] Fix Quadrotor example's unexpected behavior
 - [x] Fix Mobile Manipolator's interactive marker
-- [ ] perceptive locomotion demo
+- [x] perceptive locomotion demo
 - [ ] tinyxml2 problem in Ubuntu 24.04 ROS2 Jazzy
 
 The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up the IDE.
@@ -173,15 +173,7 @@ Before tried this example, you need to clone the [Plane Segmentation ROS2](https
 ```bash
 git clone https://github.com/legubiao/plane_segmentation_ros2
 ```
-
-#### 3.1.1 OCS2 Anymal Models 
-* build
-```bash
-cd ../..
-colcon build --packages-up-to ocs2_anymal_models --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-```
-* run
-```bash
-source ../../install/setup.bash
-ros2 launch ocs2_anymal_models visualize.launch.py
-```
+For detailed instructions, please refer to the following link:
+* [OCS2_Anymal_Models](ocs2_robotic_examples/ocs2_perceptive_anymal/ocs2_anymal_models/)
+* [OCS2_Anymal_MPC](ocs2_robotic_examples/ocs2_perceptive_anymal/ocs2_anymal_mpc/)
+* [OCS2_Anymal_Loopshaping_MPC](ocs2_robotic_examples/ocs2_perceptive_anymal/ocs2_anymal_loopshaping_mpc/)
