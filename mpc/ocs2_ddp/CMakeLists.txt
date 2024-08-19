@@ -60,8 +60,8 @@ if (cmake_clang_tools_FOUND)
     message(STATUS "Run clang tooling for target " ${PROJECT_NAME}_lintTarget)
     add_clang_tooling(
             TARGETS ${PROJECT_NAME}_lintTarget ${PROJECT_NAME}
-            SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/test
-            CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
+            SOURCE_DIRS src include test
+            CT_HEADER_DIRS include
             CF_WERROR
     )
 endif (cmake_clang_tools_FOUND)
@@ -70,11 +70,11 @@ endif (cmake_clang_tools_FOUND)
 ## Install ##
 #############
 install(
-        DIRECTORY include/
+        DIRECTORY include
         DESTINATION include/${PROJECT_NAME}
 )
 
-install(DIRECTORY test/include/
+install(DIRECTORY test/include
         DESTINATION include/${PROJECT_NAME}
 )
 

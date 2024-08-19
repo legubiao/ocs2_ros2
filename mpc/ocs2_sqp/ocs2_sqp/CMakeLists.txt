@@ -41,8 +41,8 @@ if (cmake_clang_tools_FOUND)
     message(STATUS "Run clang tooling for target " ${PROJECT_NAME})
     add_clang_tooling(
             TARGETS ${PROJECT_NAME}
-            SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/test
-            CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
+            SOURCE_DIRS src include test
+            CT_HEADER_DIRS include
             CF_WERROR
     )
 endif (cmake_clang_tools_FOUND)
@@ -59,7 +59,7 @@ install(
         INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 
-install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
+install(DIRECTORY include DESTINATION include/${PROJECT_NAME})
 
 ament_export_dependencies(${dependencies})
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)

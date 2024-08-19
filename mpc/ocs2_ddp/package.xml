@@ -13,9 +13,8 @@
     <buildtool_depend>ament_cmake</buildtool_depend>
     <build_depend>cmake_modules</build_depend>
     <build_depend>cmake_clang_tools</build_depend>
+
     <depend>ocs2_qp_solver</depend>
-    <depend>ocs2_core</depend>
-    <depend>ocs2_oc</depend>
     <depend>ocs2_mpc</depend>
 
     <test_depend>ament_cmake_gtest</test_depend>

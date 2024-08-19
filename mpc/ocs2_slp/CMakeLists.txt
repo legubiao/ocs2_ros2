@@ -1,50 +1,49 @@
 cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
-project(ocs2_ipm)
+project(ocs2_slp)
 
 set(dependencies
         ocs2_mpc
-        blasfeo_colcon
-        hpipm_colcon
+        ocs2_qp_solver
 )
 
-find_package(ament_cmake REQUIRED)
 
+find_package(ament_cmake REQUIRED)
 find_package(ocs2_mpc REQUIRED)
-find_package(blasfeo_colcon REQUIRED)
-find_package(hpipm_colcon REQUIRED)
+find_package(ocs2_qp_solver REQUIRED)
 
 ###########
 ## Build ##
 ###########
-# Multiple shooting solver library
 add_library(${PROJECT_NAME}
-        src/IpmHelpers.cpp
-        src/IpmInitialization.cpp
-        src/IpmPerformanceIndexComputation.cpp
-        src/IpmSettings.cpp
-        src/IpmSolver.cpp
+        src/pipg/PipgSettings.cpp
+        src/pipg/PipgSolver.cpp
+        src/pipg/SingleThreadPipg.cpp
+        src/Helpers.cpp
+        src/SlpSettings.cpp
+        src/SlpSolver.cpp
 )
-
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
-target_link_libraries(${PROJECT_NAME} hpipm)
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
-# #########################
-# ###   CLANG TOOLING   ###
-# #########################
+add_executable(${PROJECT_NAME}_lintTarget src/lintTarget.cpp)
+ament_target_dependencies(${PROJECT_NAME}_lintTarget ${dependencies})
+target_link_libraries(${PROJECT_NAME}_lintTarget ${PROJECT_NAME})
+
+#########################
+###   CLANG TOOLING   ###
+#########################
 find_package(cmake_clang_tools QUIET)
 if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling for target " ${PROJECT_NAME})
+    message(STATUS "Run clang tooling for target " ${PROJECT_NAME}_lintTarget)
     add_clang_tooling(
-            TARGETS ${PROJECT_NAME}
-            SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/test
-            CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
+            TARGETS ${PROJECT_NAME}_lintTarget ${PROJECT_NAME}
+            SOURCE_DIRS src include test
+            CT_HEADER_DIRS include
             CF_WERROR
     )
 endif (cmake_clang_tools_FOUND)
@@ -53,9 +52,10 @@ endif (cmake_clang_tools_FOUND)
 ## Install ##
 #############
 install(
-        DIRECTORY include/
+        DIRECTORY include
         DESTINATION include/${PROJECT_NAME}
 )
+
 install(
         TARGETS ${PROJECT_NAME}
         EXPORT export_${PROJECT_NAME}
@@ -78,12 +78,9 @@ if (BUILD_TESTING)
     find_package(ament_cmake_gtest REQUIRED)
 
     ament_add_gtest(test_${PROJECT_NAME}
-            test/Exp0Test.cpp
-            test/Exp1Test.cpp
-            test/testCircularKinematics.cpp
-            test/testSwitchedProblem.cpp
-            test/testUnconstrained.cpp
-            test/testValuefunction.cpp
+            test/testHelpers.cpp
+            test/testPipgSolver.cpp
+            test/testSlpSolver.cpp
     )
     ament_target_dependencies(test_${PROJECT_NAME} ${dependencies})
     target_link_libraries(test_${PROJECT_NAME} ${PROJECT_NAME})

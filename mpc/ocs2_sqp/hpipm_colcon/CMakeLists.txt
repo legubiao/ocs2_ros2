@@ -81,8 +81,8 @@ if (cmake_clang_tools_FOUND)
     add_clang_tooling(
             TARGETS
             ${PROJECT_NAME}
-            SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include
-            CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
+            SOURCE_DIRS src include
+            CT_HEADER_DIRS include
             CF_WERROR
     )
 endif (cmake_clang_tools_FOUND)
@@ -99,7 +99,7 @@ install(
         INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 
-install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
+install(DIRECTORY include DESTINATION include/${PROJECT_NAME})
 
 ament_export_dependencies(${dependencies} hpipm)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)

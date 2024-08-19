@@ -1,41 +1,49 @@
 cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
-project(ocs2_qp_solver)
-
-find_package(ament_cmake REQUIRED)
-find_package(ocs2_oc REQUIRED)
+project(ocs2_ipm)
 
 set(dependencies
-        ocs2_oc
+        ocs2_mpc
+        blasfeo_colcon
+        hpipm_colcon
 )
 
-# Declare a C++ library
+find_package(ament_cmake REQUIRED)
+
+find_package(ocs2_mpc REQUIRED)
+find_package(blasfeo_colcon REQUIRED)
+find_package(hpipm_colcon REQUIRED)
+
+###########
+## Build ##
+###########
+# Multiple shooting solver library
 add_library(${PROJECT_NAME}
-        src/Ocs2QpSolver.cpp
-        src/QpDiscreteTranscription.cpp
-        src/QpSolver.cpp
-        src/QpTrajectories.cpp
+        src/IpmHelpers.cpp
+        src/IpmInitialization.cpp
+        src/IpmPerformanceIndexComputation.cpp
+        src/IpmSettings.cpp
+        src/IpmSolver.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/include>"
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
+target_link_libraries(${PROJECT_NAME} hpipm)
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
-#########################
-###   CLANG TOOLING   ###
-#########################
+# #########################
+# ###   CLANG TOOLING   ###
+# #########################
 find_package(cmake_clang_tools QUIET)
 if (cmake_clang_tools_FOUND)
     message(STATUS "Run clang tooling for target " ${PROJECT_NAME})
     add_clang_tooling(
-            TARGETS
-            ${PROJECT_NAME}
-            SOURCE_DIRS src include test/include
+            TARGETS ${PROJECT_NAME}
+            SOURCE_DIRS src include test
             CT_HEADER_DIRS include
             CF_WERROR
     )
@@ -45,14 +53,9 @@ endif (cmake_clang_tools_FOUND)
 ## Install ##
 #############
 install(
-        DIRECTORY include/
+        DIRECTORY include
         DESTINATION include/${PROJECT_NAME}
 )
-
-install(DIRECTORY test/include/
-        DESTINATION include/${PROJECT_NAME}
-)
-
 install(
         TARGETS ${PROJECT_NAME}
         EXPORT export_${PROJECT_NAME}
@@ -75,12 +78,16 @@ if (BUILD_TESTING)
     find_package(ament_cmake_gtest REQUIRED)
 
     ament_add_gtest(test_${PROJECT_NAME}
-            test/testDiscreteTranscription.cpp
-            test/testQpSolver.cpp
-            test/testOcs2QpSolver.cpp
+            test/Exp0Test.cpp
+            test/Exp1Test.cpp
+            test/testCircularKinematics.cpp
+            test/testSwitchedProblem.cpp
+            test/testUnconstrained.cpp
+            test/testValuefunction.cpp
     )
     ament_target_dependencies(test_${PROJECT_NAME} ${dependencies})
     target_link_libraries(test_${PROJECT_NAME} ${PROJECT_NAME})
 
 endif ()
+
 ament_package()
