@@ -70,11 +70,7 @@ endif (cmake_clang_tools_FOUND)
 ## Install ##
 #############
 install(
-        DIRECTORY include
-        DESTINATION include/${PROJECT_NAME}
-)
-
-install(DIRECTORY test/include
+        DIRECTORY include/ test/include/
         DESTINATION include/${PROJECT_NAME}
 )
 
@@ -84,7 +80,6 @@ install(
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 
 ament_export_dependencies(${dependencies})

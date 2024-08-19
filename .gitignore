@@ -18,7 +18,7 @@ Doxyfile
 __pycache__
 *.pyc
 *.pydevproject
-ocs2_core/test/cppad_cg/testCppADCG_generated/
+core/ocs2_core/test/cppad_cg/testCppADCG_generated/
 mpc/ocs2_ddp/test/ddp_test_generated/
 *.aux
 *.log

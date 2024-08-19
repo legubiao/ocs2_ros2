@@ -1,36 +1,49 @@
 cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
-project(ocs2_sqp)
+project(ocs2_quadruped_interface)
 
+## ament_cmake Dependencies
 set(dependencies
-        ocs2_mpc
-        blasfeo_colcon
-        hpipm_colcon
+        tf2
+        kdl_parser
+        robot_state_publisher
+        ocs2_anymal_commands
+        ocs2_ddp
+        ocs2_sqp
+        segmented_planes_terrain_model
 )
 
 find_package(ament_cmake REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(kdl_parser REQUIRED)
+find_package(robot_state_publisher REQUIRED)
 
-find_package(blasfeo_colcon REQUIRED)
-find_package(hpipm_colcon REQUIRED)
-find_package(ocs2_mpc REQUIRED)
+find_package(ocs2_anymal_commands REQUIRED)
+find_package(ocs2_ddp REQUIRED)
+find_package(ocs2_sqp REQUIRED)
+find_package(segmented_planes_terrain_model REQUIRED)
 
 ###########
 ## Build ##
 ###########
-
-# Multiple shooting solver library
 add_library(${PROJECT_NAME}
-        src/SqpLogging.cpp
-        src/SqpSettings.cpp
-        src/SqpSolver.cpp
+        src/QuadrupedDummyNode.cpp
+        src/QuadrupedInterface.cpp
+        src/QuadrupedLogger.cpp
+        src/QuadrupedMpc.cpp
+        src/QuadrupedMpcNode.cpp
+        src/QuadrupedPointfootInterface.cpp
+        src/QuadrupedTfPublisher.cpp
+        src/QuadrupedVisualizer.cpp
+        src/SwingPlanningVisualizer.cpp
+        src/TerrainPlaneVisualizer.cpp
+        src/TerrainReceiver.cpp
 )
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
-target_link_libraries(${PROJECT_NAME} hpipm)
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 #########################
@@ -38,10 +51,10 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 #########################
 find_package(cmake_clang_tools QUIET)
 if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling for target " ${PROJECT_NAME})
+    message(STATUS "Run clang tooling")
     add_clang_tooling(
             TARGETS ${PROJECT_NAME}
-            SOURCE_DIRS src include test
+            SOURCE_DIRS src include
             CT_HEADER_DIRS include
             CF_WERROR
     )
@@ -50,10 +63,6 @@ endif (cmake_clang_tools_FOUND)
 #############
 ## Install ##
 #############
-install(
-        DIRECTORY include/
-        DESTINATION include/${PROJECT_NAME}
-)
 
 install(
         TARGETS ${PROJECT_NAME}
@@ -62,32 +71,16 @@ install(
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
 )
+install(
+        DIRECTORY include/
+        DESTINATION include/${PROJECT_NAME}
+)
+install(
+        DIRECTORY config launch
+        DESTINATION share/${PROJECT_NAME}/
+)
 
 ament_export_dependencies(${dependencies})
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-
-#############
-## Testing ##
-#############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
-
-if (BUILD_TESTING)
-    find_package(ament_cmake_gtest REQUIRED)
-
-    ament_add_gtest(test_${PROJECT_NAME}
-            test/testCircularKinematics.cpp
-            test/testSwitchedProblem.cpp
-            test/testUnconstrained.cpp
-            test/testValuefunction.cpp
-    )
-    ament_target_dependencies(test_${PROJECT_NAME}
-            ${dependencies}
-    )
-    target_link_libraries(test_${PROJECT_NAME}
-            ${PROJECT_NAME}
-    )
-
-endif ()
 
 ament_package()

@@ -91,15 +91,18 @@ endif (cmake_clang_tools_FOUND)
 ## Install ##
 #############
 install(
-        TARGETS ${PROJECT_NAME}
-        EXPORT export_${PROJECT_NAME}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/${PROJECT_NAME}
+        DIRECTORY include/
+        DESTINATION include/${PROJECT_NAME}
 )
 
-install(DIRECTORY include DESTINATION include/${PROJECT_NAME})
+install(
+        TARGETS ${PROJECT_NAME}
+        EXPORT export_${PROJECT_NAME}
+        ARCHIVE DESTINATION ib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
+)
+
 
 ament_export_dependencies(${dependencies} hpipm)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)

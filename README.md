@@ -13,7 +13,9 @@ Todo List:
 - [x] Fix Quadrotor example's unexpected behavior
 - [x] Fix Mobile Manipolator's interactive marker
 - [x] perceptive locomotion demo
-- [ ] tinyxml2 problem in Ubuntu 24.04 ROS2 Jazzy
+- [x] tinyxml2 problem in Ubuntu 24.04 ROS2 Jazzy
+- [ ] raisim demo
+- [ ] mpc_net demo
 
 The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up the IDE.
 
@@ -49,17 +51,7 @@ cd ~/ocs2_ws
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
-#### 2.3.1 Extra steps for Ubuntu 24.04 ROS2 Jazzy
-Since the grid_map package is not released yet in ROS2 Jazzy, you need to build it from source. 
-* [grid_map](https://github.com/ANYbotics/grid_map)
-```bash
-git clone https://github.com/ANYbotics/grid_map.git
-cd grid_map
-git checkout jazzy
-cd ../..
-colcon build --packages-up-to grid_map --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-```
-### 2.4 Build Basic Robotic Examples
+### 2.4 Basic Examples
 **⚠️ Warning:**
 
 * **If build without "-DCMAKE_BUILD_TYPE=RelWithDebInfo", the mpc will have poor performance.**
@@ -174,6 +166,6 @@ Before tried this example, you need to clone the [Plane Segmentation ROS2](https
 git clone https://github.com/legubiao/plane_segmentation_ros2
 ```
 For detailed instructions, please refer to the following link:
-* [OCS2_Anymal_Models](ocs2_robotic_examples/ocs2_perceptive_anymal/ocs2_anymal_models/)
-* [OCS2_Anymal_MPC](ocs2_robotic_examples/ocs2_perceptive_anymal/ocs2_anymal_mpc/)
-* [OCS2_Anymal_Loopshaping_MPC](ocs2_robotic_examples/ocs2_perceptive_anymal/ocs2_anymal_loopshaping_mpc/)
+* [OCS2_Anymal_Models](advance%20examples/ocs2_perceptive_anymal/ocs2_anymal_models/)
+* [OCS2_Anymal_MPC](advance%20examples/ocs2_perceptive_anymal/ocs2_anymal_mpc/)
+* [OCS2_Anymal_Loopshaping_MPC](advance%20examples/ocs2_perceptive_anymal/ocs2_anymal_loopshaping_mpc/)

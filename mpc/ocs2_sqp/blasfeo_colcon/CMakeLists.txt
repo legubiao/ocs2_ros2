@@ -36,10 +36,10 @@ FetchContent_MakeAvailable(blasfeoDownload)
 
 # Copy header to where ament_cmake expects them
 file(GLOB_RECURSE HEADERS "${BLASFEO_DOWNLOAD_DIR}/include/*.h")
-foreach(HEADER_FILE ${HEADERS})
+foreach (HEADER_FILE ${HEADERS})
     message(STATUS "FOUND HEADER: ${HEADER_FILE}")
     file(COPY ${HEADER_FILE} DESTINATION ${BLASFEO_INCLUDE_DIR})
-endforeach()
+endforeach ()
 
 # Install the library where ament_cmake expects them
 set_target_properties(blasfeo PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${BLASFEO_LIB_DIR})

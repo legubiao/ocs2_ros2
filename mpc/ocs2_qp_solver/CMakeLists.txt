@@ -9,7 +9,6 @@ set(dependencies
         ocs2_oc
 )
 
-# Declare a C++ library
 add_library(${PROJECT_NAME}
         src/Ocs2QpSolver.cpp
         src/QpDiscreteTranscription.cpp
@@ -24,7 +23,7 @@ target_include_directories(${PROJECT_NAME}
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
-target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
+#target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 #########################
 ###   CLANG TOOLING   ###
@@ -45,21 +44,16 @@ endif (cmake_clang_tools_FOUND)
 ## Install ##
 #############
 install(
-        DIRECTORY include
-        DESTINATION include/${PROJECT_NAME}
-)
-
-install(DIRECTORY test/include
+        DIRECTORY include/ test/include/
         DESTINATION include/${PROJECT_NAME}
 )
 
 install(
         TARGETS ${PROJECT_NAME}
         EXPORT export_${PROJECT_NAME}
-        ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 
 ament_export_dependencies(${dependencies})
