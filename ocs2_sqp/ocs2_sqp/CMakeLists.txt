@@ -3,28 +3,16 @@ set(CMAKE_CXX_STANDARD 17)
 project(ocs2_sqp)
 
 set(dependencies
-        ocs2_core
         ocs2_mpc
-        ocs2_oc
-        ocs2_qp_solver
         blasfeo_colcon
         hpipm_colcon
-        Boost
 )
 
 find_package(ament_cmake REQUIRED)
-find_package(ocs2_core REQUIRED)
-find_package(ocs2_mpc REQUIRED)
-find_package(ocs2_oc REQUIRED)
-find_package(ocs2_qp_solver REQUIRED)
+
 find_package(blasfeo_colcon REQUIRED)
 find_package(hpipm_colcon REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
+find_package(ocs2_mpc REQUIRED)
 
 ###########
 ## Build ##

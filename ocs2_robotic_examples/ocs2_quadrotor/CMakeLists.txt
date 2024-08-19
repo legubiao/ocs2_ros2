@@ -7,7 +7,6 @@ set(dependencies
         ocs2_ddp
         ocs2_robotic_assets
         ocs2_python_interface
-        Boost
 )
 
 find_package(ament_cmake REQUIRED)
@@ -16,13 +15,6 @@ find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(ocs2_ddp REQUIRED)
 find_package(ocs2_python_interface REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
-
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 ###########
 ## Build ##

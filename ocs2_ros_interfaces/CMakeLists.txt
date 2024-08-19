@@ -3,6 +3,7 @@ project(ocs2_ros_interfaces)
 
 ## Find ament_cmake macros and libraries
 find_package(ament_cmake REQUIRED)
+
 find_package(rclcpp REQUIRED)
 find_package(ocs2_msgs REQUIRED)
 find_package(ocs2_mpc REQUIRED)
@@ -11,24 +12,14 @@ find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(interactive_markers REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
-
 set(dependencies
         rclcpp
         ocs2_msgs
-        ocs2_core
         ocs2_mpc
         std_msgs
         visualization_msgs
         geometry_msgs
         interactive_markers
-        Boost
 )
 
 ###########

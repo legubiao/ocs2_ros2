@@ -7,14 +7,6 @@ find_package(ament_cmake REQUIRED)
 find_package(ocs2_anymal_mpc REQUIRED)
 find_package(ocs2_quadruped_loopshaping_interface REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
-
 set(dependencies
         ocs2_anymal_mpc
         ocs2_quadruped_loopshaping_interface

@@ -17,12 +17,6 @@ find_package(urdfdom REQUIRED)
 
 find_package(hpp-fcl REQUIRED)
 find_package(pinocchio REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 # Add pinocchio configurations
 include(cmake/pinocchio_config.cmake)

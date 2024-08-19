@@ -7,12 +7,6 @@ find_package(ament_cmake REQUIRED)
 
 find_package(ocs2_mpc REQUIRED)
 find_package(ocs2_qp_solver REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 ###################################
 ## ament_cmake specific configuration ##
@@ -21,7 +15,6 @@ find_package(Boost REQUIRED COMPONENTS
 set(dependencies
         ocs2_mpc
         ocs2_qp_solver
-        Boost
 )
 
 ###########

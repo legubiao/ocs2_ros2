@@ -8,17 +8,9 @@ set(dependencies
         urdf
         kdl_parser
         robot_state_publisher
-        visualization_msgs
-        ocs2_core
-        ocs2_ddp
-        ocs2_mpc
-        ocs2_sqp
-        ocs2_slp
         ocs2_ros_interfaces
-        ocs2_robotic_tools
         ocs2_ballbot
         ocs2_robotic_assets
-        Boost
         ament_index_cpp
 )
 
@@ -32,16 +24,6 @@ find_package(ocs2_ballbot REQUIRED)
 
 find_package(kdl_parser REQUIRED)
 find_package(robot_state_publisher REQUIRED)
-
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-
 
 ###########
 ## Build ##

@@ -14,13 +14,6 @@ find_package(ocs2_ros_interfaces REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)
 find_package(ocs2_switched_model_msgs REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
 
 ###########
 ## Build ##

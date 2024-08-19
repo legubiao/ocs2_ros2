@@ -4,13 +4,8 @@ project(ocs2_robotic_tools)
 
 
 find_package(ament_cmake REQUIRED)
+
 find_package(ocs2_oc REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 set(dependencies
         ocs2_oc

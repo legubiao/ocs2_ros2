@@ -23,14 +23,6 @@ find_package(ocs2_ddp REQUIRED)
 find_package(ocs2_sqp REQUIRED)
 find_package(segmented_planes_terrain_model REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
-
 ###########
 ## Build ##
 ###########

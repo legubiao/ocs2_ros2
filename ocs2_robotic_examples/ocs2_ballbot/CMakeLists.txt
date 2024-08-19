@@ -4,30 +4,21 @@ project(ocs2_ballbot)
 
 
 set(dependencies
-        ocs2_core
-        ocs2_mpc
         ocs2_ddp
         ocs2_slp
         ocs2_sqp
         ocs2_robotic_tools
         ocs2_python_interface
-        Boost
 )
 
 find_package(ament_cmake REQUIRED)
+
 find_package(pybind11 REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(ocs2_ddp REQUIRED)
 find_package(ocs2_slp REQUIRED)
 find_package(ocs2_sqp REQUIRED)
 find_package(ocs2_python_interface REQUIRED)
-
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 ###########
 ## Build ##

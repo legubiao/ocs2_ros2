@@ -8,13 +8,6 @@ find_package(grid_map_sdf REQUIRED)
 find_package(ocs2_anymal_models REQUIRED)
 find_package(ocs2_quadruped_interface REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
 set(dependencies
         grid_map_sdf
         ocs2_anymal_models

@@ -9,14 +9,9 @@ set(dependencies
 )
 
 find_package(ament_cmake REQUIRED)
+
 find_package(ocs2_self_collision REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 ###########
 ## Build ##

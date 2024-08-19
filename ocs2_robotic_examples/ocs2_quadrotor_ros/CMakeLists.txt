@@ -18,13 +18,6 @@ find_package(tf2_ros REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
 find_package(ocs2_quadrotor REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
 ###########
 ## Build ##
 ###########

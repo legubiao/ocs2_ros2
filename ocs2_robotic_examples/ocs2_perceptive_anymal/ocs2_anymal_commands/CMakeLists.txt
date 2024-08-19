@@ -11,13 +11,6 @@ find_package(ament_cmake REQUIRED)
 find_package(ocs2_switched_model_interface REQUIRED)
 find_package(grid_map_filters_rsl REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
 
 ###########
 ## Build ##

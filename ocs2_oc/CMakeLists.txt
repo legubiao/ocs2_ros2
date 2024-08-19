@@ -5,19 +5,11 @@ project(ocs2_oc)
 
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_core REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 ###########
 ## Build ##
 ###########
 set(dependencies
-        Boost
-        Eigen3
         ocs2_core
 )
 

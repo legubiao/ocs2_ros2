@@ -5,14 +5,9 @@ project(ocs2_cartpole_ros)
 
 set(dependencies
         rclcpp
-        ocs2_core
-        ocs2_ddp
-        ocs2_mpc
         ocs2_ros_interfaces
-        ocs2_robotic_tools
         ocs2_cartpole
         ocs2_robotic_assets
-        Boost
         ament_index_cpp
 )
 
@@ -21,13 +16,6 @@ find_package(ament_index_cpp REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
 find_package(ocs2_cartpole REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
-
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 ###########
 ## Build ##

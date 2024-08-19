@@ -3,24 +3,14 @@ set(CMAKE_CXX_STANDARD 17)
 project(ocs2_double_integrator)
 
 set(dependencies
-        ocs2_core
-        ocs2_mpc
-        ocs2_ddp
         ocs2_python_interface
-        ocs2_robotic_tools
-        Boost
 )
 
 find_package(ament_cmake REQUIRED)
+
 find_package(pybind11 REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(ocs2_python_interface REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 ###########
 ## Build ##

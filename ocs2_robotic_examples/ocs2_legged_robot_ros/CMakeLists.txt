@@ -18,13 +18,6 @@ find_package(kdl_parser REQUIRED)
 find_package(robot_state_publisher REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
 ###########
 ## Build ##
 ###########
@@ -108,19 +101,6 @@ endif(cmake_clang_tools_FOUND)
 #############
 ## Install ##
 #############
-install(
-        DIRECTORY include/
-        DESTINATION include/${PROJECT_NAME}
-)
-
-install(
-        TARGETS ${PROJECT_NAME}
-        EXPORT export_${PROJECT_NAME}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/${PROJECT_NAME}
-)
 install(
         TARGETS
         legged_robot_ddp_mpc

@@ -15,13 +15,6 @@ find_package(ocs2_switched_model_interface REQUIRED)
 find_package(grid_map_sdf REQUIRED)
 find_package(PCL REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
 # Cpp standard version
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

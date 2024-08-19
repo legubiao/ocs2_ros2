@@ -18,13 +18,6 @@ find_package(ocs2_sqp REQUIRED)
 find_package(ocs2_ipm REQUIRED)
 find_package(ocs2_centroidal_model REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
 ###########
 ## Build ##
 ###########

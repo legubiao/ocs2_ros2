@@ -3,13 +3,6 @@ project(ocs2_core)
 
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_thirdparty REQUIRED)
-
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 
@@ -248,7 +241,7 @@ if (BUILD_TESTING)
             test/loopshaping/testLoopshapingPreComputation.cpp
     )
     target_link_libraries(${PROJECT_NAME}_loopshaping ${PROJECT_NAME} ${Boost_LIBRARIES} -lstdc++fs)
-    ament_target_dependencies(${PROJECT_NAME}_loopshaping ${dependencies} Boost)
+    ament_target_dependencies(${PROJECT_NAME}_loopshaping ${dependencies})
 
 
     ament_add_gtest(${PROJECT_NAME}_test_misc

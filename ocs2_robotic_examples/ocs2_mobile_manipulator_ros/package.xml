@@ -20,7 +20,6 @@
     <depend>robot_state_publisher</depend>
     <depend>ocs2_self_collision_visualization</depend>
     <depend>ocs2_mobile_manipulator</depend>
-    <depend>pinocchio</depend>
 
     <export>
         <build_type>ament_cmake</build_type>

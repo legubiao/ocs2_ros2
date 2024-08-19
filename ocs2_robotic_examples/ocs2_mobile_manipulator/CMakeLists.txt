@@ -13,12 +13,6 @@ find_package(ament_cmake REQUIRED)
 find_package(ocs2_ddp REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
 find_package(ocs2_self_collision REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 ###########
 ## Build ##

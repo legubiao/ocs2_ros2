@@ -10,12 +10,6 @@ set(dependencies
 find_package(ament_cmake REQUIRED)
 
 find_package(ocs2_quadruped_interface REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 
 ###########

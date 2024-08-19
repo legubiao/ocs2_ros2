@@ -3,23 +3,14 @@ set(CMAKE_CXX_STANDARD 17)
 project(ocs2_slp)
 
 set(dependencies
-        ocs2_core
         ocs2_mpc
-        ocs2_oc
         ocs2_qp_solver
-        Boost
 )
 
 
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_mpc REQUIRED)
 find_package(ocs2_qp_solver REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 ###########
 ## Build ##

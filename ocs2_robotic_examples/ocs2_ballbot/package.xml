@@ -16,9 +16,6 @@
     <depend>pybind11_vendor</depend>
 
     <depend>rclcpp</depend>
-    <depend>rclpy</depend>
-    <depend>ocs2_core</depend>
-    <depend>ocs2_mpc</depend>
     <depend>ocs2_ddp</depend>
     <depend>ocs2_slp</depend>
     <depend>ocs2_sqp</depend>

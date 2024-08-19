@@ -20,13 +20,6 @@ find_package(robot_state_publisher REQUIRED)
 find_package(ocs2_self_collision_visualization REQUIRED)
 find_package(ocs2_mobile_manipulator REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
-
 ###########
 ## Build ##
 ###########

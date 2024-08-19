@@ -25,3 +25,10 @@ list(APPEND OCS2_CXX_FLAGS
 # Cpp standard version
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Boost REQUIRED COMPONENTS
+        system
+        filesystem
+        log_setup
+        log
+)

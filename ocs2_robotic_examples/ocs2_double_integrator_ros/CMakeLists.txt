@@ -4,29 +4,20 @@ project(ocs2_double_integrator_ros)
 
 
 set(dependencies
-        ocs2_core
-        ocs2_ddp
-        ocs2_mpc
         ocs2_ros_interfaces
         ocs2_double_integrator
         ocs2_robotic_tools
         ocs2_robotic_assets
-        Boost
         ament_index_cpp
 )
 
 find_package(ament_cmake REQUIRED)
+
 find_package(ament_index_cpp REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
 find_package(ocs2_double_integrator REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
-
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
+find_package(ocs2_robotic_tools REQUIRED)
 
 ###########
 ## Build ##
@@ -87,8 +78,6 @@ endif (cmake_clang_tools_FOUND)
 ## Install ##
 #############
 
-install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(
         TARGETS
         double_integrator_mpc

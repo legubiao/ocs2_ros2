@@ -5,13 +5,6 @@ project(hpipm_colcon)
 find_package(ament_cmake REQUIRED)
 find_package(blasfeo_colcon REQUIRED)
 find_package(ocs2_qp_solver REQUIRED)
-
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 include(FetchContent)
 
 # Define directories
@@ -62,10 +55,7 @@ set_target_properties(hpipm PROPERTIES LIBRARY_OUTPUT_PATH ${HPIPM_LIB_DIR})
 ###########
 set(dependencies
         blasfeo_colcon
-        ocs2_core
-        ocs2_oc
         ocs2_qp_solver
-        Eigen3
 )
 
 # Hpipm interface

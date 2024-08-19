@@ -11,7 +11,7 @@
     <license>BSD</license>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
-    <depend>boost</depend>
+
     <depend>ocs2_thirdparty</depend>
 
     <test_depend>ament_cmake_gtest</test_depend>

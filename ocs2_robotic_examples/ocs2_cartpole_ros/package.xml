@@ -15,11 +15,8 @@
   <build_depend>rclcpp </build_depend>
   <build_depend>cmake_clang_tools</build_depend>
 
-  <depend>ocs2_core</depend>
-  <depend>ocs2_ddp</depend>
-  <depend>ocs2_mpc</depend>
+
   <depend>ocs2_ros_interfaces</depend>
-  <depend>ocs2_robotic_tools</depend>
   <depend>ocs2_cartpole</depend>
   <depend>robot_state_publisher</depend>
   <depend>ocs2_robotic_assets</depend>

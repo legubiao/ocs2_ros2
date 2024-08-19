@@ -10,11 +10,8 @@
     <license>BSD3</license>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
-    <depend>ocs2_core</depend>
-    <depend>ocs2_mpc</depend>
-    <depend>ocs2_oc</depend>
 
-    <!-- Test dependancy -->
+    <depend>ocs2_mpc</depend>
     <depend>ocs2_qp_solver</depend>
 
     <export>

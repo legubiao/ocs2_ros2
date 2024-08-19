@@ -4,17 +4,10 @@ project(ocs2_mpc)
 
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_oc REQUIRED)
-find_package(Boost REQUIRED COMPONENTS
-        system
-        filesystem
-        log_setup
-        log
-)
 
 ############# Build #############
 set(dependencies
         ocs2_oc
-        Boost
 )
 
 add_library(${PROJECT_NAME}
