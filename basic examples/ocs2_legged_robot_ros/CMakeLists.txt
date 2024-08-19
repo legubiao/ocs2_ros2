@@ -130,4 +130,7 @@ install(DIRECTORY launch rviz
         DESTINATION share/${PROJECT_NAME}/
 )
 
+ament_export_dependencies(${dependencies})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
 ament_package()

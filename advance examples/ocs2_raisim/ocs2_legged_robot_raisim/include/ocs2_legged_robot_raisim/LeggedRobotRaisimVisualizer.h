@@ -29,22 +29,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <raisim/object/terrain/HeightMap.hpp>
-
 #include <ocs2_legged_robot_ros/visualization/LeggedRobotVisualizer.h>
 
-namespace ocs2 {
-namespace legged_robot {
+#include <raisim/object/terrain/HeightMap.hpp>
+
+namespace ocs2::legged_robot {
 
 class LeggedRobotRaisimVisualizer : public LeggedRobotVisualizer {
  public:
-  LeggedRobotRaisimVisualizer(PinocchioInterface pinocchioInterface, CentroidalModelInfo centroidalModelInfo,
-                              const PinocchioEndEffectorKinematics& endEffectorKinematics, rclcpp::Node::SharedPtr node,
-                              scalar_t maxUpdateFrequency = 100.0);
+  LeggedRobotRaisimVisualizer(
+      PinocchioInterface pinocchioInterface,
+      CentroidalModelInfo centroidalModelInfo,
+      const PinocchioEndEffectorKinematics& endEffectorKinematics,
+      rclcpp::Node::SharedPtr node, scalar_t maxUpdateFrequency = 100.0);
 
   ~LeggedRobotRaisimVisualizer() override = default;
 
-  void update(const SystemObservation& observation, const PrimalSolution& primalSolution, const CommandData& command) override;
+  void update(const SystemObservation& observation,
+              const PrimalSolution& primalSolution,
+              const CommandData& command) override;
 
   /**
    * @brief Update the terrain (RaiSim height map) from ROS.
@@ -56,5 +59,4 @@ class LeggedRobotRaisimVisualizer : public LeggedRobotVisualizer {
   std::unique_ptr<raisim::HeightMap> terrainPtr_;
 };
 
-}  // namespace legged_robot
-}  // namespace ocs2
+}  // namespace ocs2::legged_robot

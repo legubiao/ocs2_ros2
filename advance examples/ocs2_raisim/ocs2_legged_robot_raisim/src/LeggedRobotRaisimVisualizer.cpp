@@ -33,9 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <utility>
 
-namespace ocs2 {
-namespace legged_robot {
-
+namespace ocs2::legged_robot {
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
@@ -88,6 +86,4 @@ void LeggedRobotRaisimVisualizer::updateTerrain(double timeout) {
   terrainPtr_ = std::move(
       RaisimHeightmapRosConverter::getHeightmapFromRos(node_, timeout).first);
 }
-
-}  // namespace legged_robot
-}  // namespace ocs2
+}  // namespace ocs2::legged_robot

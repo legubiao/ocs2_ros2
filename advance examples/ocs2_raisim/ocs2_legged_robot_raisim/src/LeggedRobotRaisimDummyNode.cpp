@@ -35,6 +35,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_ros_interfaces/mrt/MRT_ROS_Dummy_Loop.h>
 #include <ocs2_ros_interfaces/mrt/MRT_ROS_Interface.h>
 
+#include <memory>
+
 #include "ocs2_legged_robot_raisim/LeggedRobotRaisimConversions.h"
 #include "ocs2_legged_robot_raisim/LeggedRobotRaisimVisualizer.h"
 
@@ -97,7 +99,7 @@ int main(int argc, char** argv) {
     terrainProperties.seed = raisimRolloutSettings.terrainSeed_;
     terrainPtr = raisimRollout.generateTerrain(terrainProperties);
     conversions.setTerrain(*terrainPtr);
-    heightmapPub.reset(new ocs2::RaisimHeightmapRosConverter());
+    heightmapPub = std::make_unique<RaisimHeightmapRosConverter>();
     heightmapPub->publishGridmap(*terrainPtr, node, "odom");
   }
 
@@ -126,7 +128,7 @@ int main(int argc, char** argv) {
 
   // initial state
   SystemObservation initObservation;
-  initObservation.mode = ModeNumber::STANCE;
+  initObservation.mode = STANCE;
   initObservation.time = 0.0;
   initObservation.state = interface.getInitialState();
   initObservation.input =

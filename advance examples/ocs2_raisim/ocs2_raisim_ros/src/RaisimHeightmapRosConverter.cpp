@@ -99,7 +99,8 @@ RaisimHeightmapRosConverter::convertGridmapToHeightmap(
 }
 
 void RaisimHeightmapRosConverter::publishGridmap(
-    const raisim::HeightMap& heightMap, rclcpp::Node::SharedPtr node, const std::string& frameId) {
+    const raisim::HeightMap& heightMap, rclcpp::Node::SharedPtr node,
+    const std::string& frameId) {
   if (!gridmapPublisher_) {
     gridmapPublisher_ = node->create_publisher<grid_map_msgs::msg::GridMap>(
         "raisim_heightmap", 1);
@@ -110,7 +111,8 @@ void RaisimHeightmapRosConverter::publishGridmap(
 
 std::pair<std::unique_ptr<raisim::HeightMap>,
           grid_map_msgs::msg::GridMap::ConstSharedPtr>
-RaisimHeightmapRosConverter::getHeightmapFromRos(rclcpp::Node::SharedPtr node, double timeout) {
+RaisimHeightmapRosConverter::getHeightmapFromRos(rclcpp::Node::SharedPtr node,
+                                                 double timeout) {
   grid_map_msgs::msg::GridMap::SharedPtr gridMapMsg = nullptr;
   auto sub = node->create_subscription<grid_map_msgs::msg::GridMap>(
       "raisim_heightmap", 1,
@@ -121,7 +123,7 @@ RaisimHeightmapRosConverter::getHeightmapFromRos(rclcpp::Node::SharedPtr node, d
       });
   std::chrono::nanoseconds duration = std::chrono::seconds(1);
   rclcpp::sleep_for(duration);
-  rclcpp::spin(node);
+  spin(node);
   return {gridMapMsg ? convertGridmapToHeightmap(gridMapMsg) : nullptr,
           gridMapMsg};
 }
