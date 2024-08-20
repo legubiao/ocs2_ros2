@@ -6,14 +6,16 @@ set(CMAKE_PREFIX_PATH "~/raisimLib/raisim/linux" ${CMAKE_PREFIX_PATH})
 
 set(dependencies
         ocs2_legged_robot_ros
-        ocs2_raisim_ros
+        ocs2_raisim_core
         ament_index_cpp
+        grid_map_msgs
 )
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(ocs2_legged_robot_ros REQUIRED)
-find_package(ocs2_raisim_ros REQUIRED)
+find_package(ocs2_raisim_core REQUIRED)
+find_package(grid_map_msgs REQUIRED)
 
 ###########
 ## Build ##
@@ -21,8 +23,8 @@ find_package(ocs2_raisim_ros REQUIRED)
 
 # main library
 add_library(${PROJECT_NAME}
-        src/LeggedRobotRaisimConversions.cpp
-        src/LeggedRobotRaisimVisualizer.cpp
+        src/RaiSimConversions.cpp
+        src/RaiSimVisualizer.cpp
 )
 target_include_directories(${PROJECT_NAME}
         PUBLIC
@@ -34,15 +36,9 @@ ament_target_dependencies(${PROJECT_NAME}
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 # RaiSim dummy
-add_executable(legged_robot_raisim_dummy
-        src/LeggedRobotRaisimDummyNode.cpp
-)
-ament_target_dependencies(legged_robot_raisim_dummy
-        ${dependencies}
-)
-target_link_libraries(legged_robot_raisim_dummy
-        ${PROJECT_NAME}
-)
+add_executable(legged_robot_raisim_dummy src/RaiSimDummy.cpp)
+ament_target_dependencies(legged_robot_raisim_dummy ${dependencies})
+target_link_libraries(legged_robot_raisim_dummy ${PROJECT_NAME})
 target_compile_options(legged_robot_raisim_dummy PRIVATE ${OCS2_CXX_FLAGS})
 
 #########################

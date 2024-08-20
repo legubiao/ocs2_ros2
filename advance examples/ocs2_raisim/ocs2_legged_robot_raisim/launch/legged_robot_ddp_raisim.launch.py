@@ -21,7 +21,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             name='taskFile',
             default_value=get_package_share_directory(
-                'ocs2_legged_robot') + '/config/mpc/task.info'
+                'ocs2_legged_robot_raisim') + '/config/task.info'
         ),
         DeclareLaunchArgument(
             name='referenceFile',

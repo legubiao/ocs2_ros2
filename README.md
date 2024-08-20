@@ -14,7 +14,7 @@ Todo List:
 - [x] Fix Mobile Manipolator's interactive marker
 - [x] perceptive locomotion demo
 - [x] tinyxml2 problem in Ubuntu 24.04 ROS2 Jazzy
-- [ ] raisim demo
+- [x] raisim demo
 - [ ] mpc_net demo
 
 The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up the IDE.
@@ -169,3 +169,7 @@ For detailed instructions, please refer to the following link:
 * [OCS2_Anymal_Models](advance%20examples/ocs2_perceptive_anymal/ocs2_anymal_models/)
 * [OCS2_Anymal_MPC](advance%20examples/ocs2_perceptive_anymal/ocs2_anymal_mpc/)
 * [OCS2_Anymal_Loopshaping_MPC](advance%20examples/ocs2_perceptive_anymal/ocs2_anymal_loopshaping_mpc/)
+
+### 3.2 RaiSim Simulation
+Raisim provided education license for free, you can apply it from [here](https://www.raisim.com/education). After you get the license, you can follow the instructions to install the RaiSim and RaiSimUnity. 
+* [OCS2_RaiSim](advance%20examples/ocs2_raisim/)

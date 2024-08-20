@@ -1,5 +1,5 @@
 /******************************************************************************
-Copyright (c) 2017, Farbod Farshidian. All rights reserved.
+Copyright (c) 2021, Farbod Farshidian. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -25,36 +25,32 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************/
+******************************************************************************/
 
-#include <gtest/gtest.h>
+#pragma once
 
-#include "ocs2_raisim_ros/RaisimHeightmapRosConverter.h"
+#include <ocs2_legged_robot_ros/visualization/LeggedRobotVisualizer.h>
 
-TEST(ocs2_raisim_ros, HeightmapRosConversion) {
-  const raisim::TerrainProperties terrainProperties;
-  constexpr double centerX = 0.2;
-  constexpr double centerY = -2.1;
+#include <raisim/object/terrain/HeightMap.hpp>
 
-  const raisim::HeightMap heightMap1(centerX, centerY, terrainProperties);
-  auto gridMap1 = ocs2::RaisimHeightmapRosConverter::convertHeightmapToGridmap(heightMap1);
-  auto heightMap2 = ocs2::RaisimHeightmapRosConverter::convertGridmapToHeightmap(gridMap1);
-  auto gridMap2 = ocs2::RaisimHeightmapRosConverter::convertHeightmapToGridmap(*heightMap2);
+namespace ocs2::legged_robot {
+    class RaiSimVisualizer final : public LeggedRobotVisualizer {
+    public:
+        RaiSimVisualizer(
+            PinocchioInterface interface,
+            CentroidalModelInfo model_info,
+            const PinocchioEndEffectorKinematics &endEffectorKinematics,
+            rclcpp::Node::SharedPtr node, scalar_t maxUpdateFrequency = 100.0);
 
-  // Test heightMap1 against heightMap2
-  constexpr double probeResolution = 0.01;
-  for (double pos_x = centerX - terrainProperties.xSize / 2.0; pos_x < centerX + terrainProperties.xSize / 2.0; pos_x += probeResolution) {
-    for (double pos_y = centerY - terrainProperties.ySize / 2.0; pos_y < centerY + terrainProperties.ySize / 2.0;
-         pos_y += probeResolution) {
-      ASSERT_NEAR(heightMap1.getHeight(pos_x, pos_y), heightMap2->getHeight(pos_x, pos_y), 1e-7);
-    }
-  }
+        ~RaiSimVisualizer() override = default;
 
-  // Test gridMap1 against gridMap2
-  ASSERT_TRUE(gridMap1->data[0].data == gridMap2->data[0].data);
-}
+        void update(const SystemObservation &observation,
+                    const PrimalSolution &primalSolution,
+                    const CommandData &command) override;
 
-int main(int argc, char** argv) {
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+        void updateTerrain(std::chrono::seconds timeout = std::chrono::seconds(5));
+
+    private:
+        std::unique_ptr<raisim::HeightMap> terrainPtr_;
+    };
+} // namespace ocs2::legged_robot
