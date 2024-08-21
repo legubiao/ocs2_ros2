@@ -103,9 +103,13 @@ install(
         ballbot_mpc_mrt
         DESTINATION lib/${PROJECT_NAME}
 )
+
 install(DIRECTORY launch rviz
         DESTINATION share/${PROJECT_NAME}/
 )
+
+ament_export_dependencies(${dependencies})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 #########################
 ###   CLANG TOOLING   ###
