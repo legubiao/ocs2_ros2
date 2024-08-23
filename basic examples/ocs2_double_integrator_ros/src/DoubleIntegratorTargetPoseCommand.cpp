@@ -39,28 +39,28 @@ using namespace double_integrator;
  * @param [in] observation : the current observation
  */
 TargetTrajectories commandLineToTargetTrajectories(
-    const vector_t& commadLineTarget, const SystemObservation& observation) {
-  const vector_t displacement =
-      (vector_t(STATE_DIM) << observation.state(0) + commadLineTarget(0), 0.0)
-          .finished();
-  return TargetTrajectories({observation.time}, {displacement},
-                            {vector_t::Zero(INPUT_DIM)});
+    const vector_t &commadLineTarget, const SystemObservation &observation) {
+    const vector_t displacement =
+            (vector_t(STATE_DIM) << observation.state(0) + commadLineTarget(0), 0.0)
+            .finished();
+    return TargetTrajectories({observation.time}, {displacement},
+                              {vector_t::Zero(INPUT_DIM)});
 }
 
-int main(const int argc, char* argv[]) {
-  const std::string robotName = "double_integrator";
-  rclcpp::init(argc, argv);
-  const rclcpp::Node::SharedPtr node =
-      rclcpp::Node::make_shared(robotName + "_target");
+int main(const int argc, char *argv[]) {
+    const std::string robotName = "double_integrator";
+    rclcpp::init(argc, argv);
+    const rclcpp::Node::SharedPtr node =
+            rclcpp::Node::make_shared(robotName + "_target");
 
-  const scalar_array_t goalLimit{10.0};  // [deltaX]
-  TargetTrajectoriesKeyboardPublisher targetPoseCommand(
-      node, robotName, goalLimit, &commandLineToTargetTrajectories);
+    const scalar_array_t goalLimit{10.0}; // [deltaX]
+    TargetTrajectoriesKeyboardPublisher targetPoseCommand(
+        node, robotName, goalLimit, &commandLineToTargetTrajectories);
 
-  const std::string commadMsg =
-      "Enter the desired displacement for the double-integrator";
-  targetPoseCommand.publishKeyboardCommand(commadMsg);
+    const std::string commadMsg =
+            "Enter the desired displacement for the double-integrator";
+    targetPoseCommand.publishKeyboardCommand(commadMsg);
 
-  // Successful exit
-  return 0;
+    // Successful exit
+    return 0;
 }

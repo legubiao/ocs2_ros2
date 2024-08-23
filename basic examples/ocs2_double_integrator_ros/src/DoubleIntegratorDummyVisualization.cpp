@@ -32,27 +32,26 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_double_integrator_ros/DoubleIntegratorDummyVisualization.h"
 
 namespace ocs2::double_integrator {
+    DoubleIntegratorDummyVisualization::DoubleIntegratorDummyVisualization(
+        rclcpp::Node::SharedPtr node)
+        : node_(std::move(node)),
+          jointPublisher_(node_->create_publisher<sensor_msgs::msg::JointState>(
+              "joint_states", 1)) {
+    }
 
-DoubleIntegratorDummyVisualization::DoubleIntegratorDummyVisualization(
-    rclcpp::Node::SharedPtr  node)
-    : node_(std::move(node)),
-      jointPublisher_(node_->create_publisher<sensor_msgs::msg::JointState>(
-          "joint_states", 1)) {}
+    void DoubleIntegratorDummyVisualization::update(
+        const SystemObservation &observation, const PrimalSolution &policy,
+        const CommandData &command) {
+        const auto &targetTrajectories = command.mpcTargetTrajectories_;
+        sensor_msgs::msg::JointState joint_state;
+        joint_state.header.stamp = node_->get_clock()->now();
+        joint_state.name.resize(2);
+        joint_state.position.resize(2);
+        joint_state.name[0] = "slider_to_cart";
+        joint_state.position[0] = observation.state(0);
+        joint_state.name[1] = "slider_to_target";
+        joint_state.position[1] = targetTrajectories.stateTrajectory[0](0);
 
-void DoubleIntegratorDummyVisualization::update(
-    const SystemObservation& observation, const PrimalSolution& policy,
-    const CommandData& command) {
-  const auto& targetTrajectories = command.mpcTargetTrajectories_;
-  sensor_msgs::msg::JointState joint_state;
-  joint_state.header.stamp = node_->get_clock()->now();
-  joint_state.name.resize(2);
-  joint_state.position.resize(2);
-  joint_state.name[0] = "slider_to_cart";
-  joint_state.position[0] = observation.state(0);
-  joint_state.name[1] = "slider_to_target";
-  joint_state.position[1] = targetTrajectories.stateTrajectory[0](0);
-
-  jointPublisher_->publish(joint_state);
-}
-
-}  // namespace ocs2::double_integrator
+        jointPublisher_->publish(joint_state);
+    }
+} // namespace ocs2::double_integrator

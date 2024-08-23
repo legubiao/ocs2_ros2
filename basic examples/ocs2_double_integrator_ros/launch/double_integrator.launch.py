@@ -1,3 +1,4 @@
+import shutil
 from launch import LaunchDescription
 from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
@@ -18,11 +19,14 @@ def is_wsl():
 
 
 def generate_launch_description():
-    prefix = "gnome-terminal --"
     if is_wsl():
         prefix = "xterm -e"
         print("Current system is WSL, use xterm as terminal")
+    elif shutil.which("terminator"):
+        prefix = "terminator --new-tab -x"
+        print("Terminator is installed, use terminator as terminal")
     else:
+        prefix = "gnome-terminal --"
         print("Current system is not WSL, use gnome-terminal as terminal")
 
     return LaunchDescription([

@@ -36,22 +36,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rclcpp/rclcpp.hpp"
 
 namespace ocs2 {
-namespace double_integrator {
+    namespace double_integrator {
+        class DoubleIntegratorDummyVisualization final : public DummyObserver {
+        public:
+            explicit DoubleIntegratorDummyVisualization(rclcpp::Node::SharedPtr node);
 
-class DoubleIntegratorDummyVisualization final : public DummyObserver {
- public:
-  explicit DoubleIntegratorDummyVisualization(rclcpp::Node::SharedPtr node);
+            ~DoubleIntegratorDummyVisualization() override = default;
 
-  ~DoubleIntegratorDummyVisualization() override = default;
+            void update(const SystemObservation &observation,
+                        const PrimalSolution &policy,
+                        const CommandData &command) override;
 
-  void update(const SystemObservation& observation,
-              const PrimalSolution& policy,
-              const CommandData& command) override;
-
- private:
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointPublisher_;
-};
-
-}  // namespace double_integrator
-}  // namespace ocs2
+        private:
+            rclcpp::Node::SharedPtr node_;
+            rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointPublisher_;
+        };
+    } // namespace double_integrator
+} // namespace ocs2
