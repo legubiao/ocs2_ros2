@@ -38,54 +38,56 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_robotic_tools/common/RobotInterface.h"
 
 namespace ocs2 {
+    class LoopshapingRobotInterface : public RobotInterface {
+    public:
+        /**
+         * Constructor.
+         * @param [in] robotInterfacePtr: A unique pointer to the original robot interface.
+         * @param [in] loopshapingDefinitionPtr: A shared pointer to the loopshaping definition.
+         */
+        LoopshapingRobotInterface(std::unique_ptr<RobotInterface> robotInterfacePtr,
+                                  std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr);
 
-class LoopshapingRobotInterface : public RobotInterface {
- public:
-  /**
-   * Constructor.
-   * @param [in] robotInterfacePtr: A unique pointer to the original robot interface.
-   * @param [in] loopshapingDefinitionPtr: A shared pointer to the loopshaping definition.
-   */
-  LoopshapingRobotInterface(std::unique_ptr<RobotInterface> robotInterfacePtr,
-                            std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr);
+        /** Destructor */
+        ~LoopshapingRobotInterface() override = default;
 
-  /** Destructor */
-  ~LoopshapingRobotInterface() override = default;
+        /**
+         * @brief getLoopshapingDefinition
+         * @return a shared pointer to the loopshaping definition.
+         */
+        std::shared_ptr<LoopshapingDefinition> getLoopshapingDefinition() const { return loopshapingDefinitionPtr_; };
 
-  /**
-   * @brief getLoopshapingDefinition
-   * @return a shared pointer to the loopshaping definition.
-   */
-  std::shared_ptr<LoopshapingDefinition> getLoopshapingDefinition() const { return loopshapingDefinitionPtr_; };
+        /**
+         * @brief Gets a const reference to the underlying robot interface.
+         * @tparam Derived: Derived class type (default: RobotInterface)
+         * @return a const reference to the underlying robot interface.
+         */
+        template<class Derived = RobotInterface>
+        const Derived &get() const {
+            static_assert(std::is_base_of<RobotInterface, Derived>::value,
+                          "Template argument must derive from RobotInterface");
+            const auto *p = dynamic_cast<Derived *>(robotInterfacePtr_.get());
+            if (p == nullptr) {
+                throw std::runtime_error(
+                    "Loopshaping does not wrap a RobotInterface of type " + std::string(typeid(Derived).name()));
+            }
+            return *p;
+        }
 
-  /**
-   * @brief Gets a const reference to the underlying robot interface.
-   * @tparam Derived: Derived class type (default: RobotInterface)
-   * @return a const reference to the underlying robot interface.
-   */
-  template <class Derived = RobotInterface>
-  const Derived& get() const {
-    static_assert(std::is_base_of<RobotInterface, Derived>::value, "Template argument must derive from RobotInterface");
-    const auto* p = dynamic_cast<Derived*>(robotInterfacePtr_.get());
-    if (p == nullptr) {
-      throw std::runtime_error("Loopshaping does not wrap a RobotInterface of type " + std::string(typeid(Derived).name()));
-    }
-    return *p;
-  }
+        std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const override {
+            return loopshapingReferenceManager_;
+        }
 
-  std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const override { return loopshapingReferenceManager_; }
+        const OptimalControlProblem &getOptimalControlProblem() const override { return optimalControlProblem_; }
 
-  const OptimalControlProblem& getOptimalControlProblem() const override { return optimalControlProblem_; }
+        const LoopshapingInitializer &getInitializer() const override { return *initializerPtr_; }
 
-  const LoopshapingInitializer& getInitializer() const override { return *initializerPtr_; }
+    private:
+        std::unique_ptr<RobotInterface> robotInterfacePtr_;
+        std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr_;
 
- private:
-  std::unique_ptr<RobotInterface> robotInterfacePtr_;
-  std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr_;
-
-  OptimalControlProblem optimalControlProblem_;
-  std::unique_ptr<LoopshapingInitializer> initializerPtr_;
-  std::shared_ptr<LoopshapingReferenceManager> loopshapingReferenceManager_;
-};
-
-}  // namespace ocs2
+        OptimalControlProblem optimalControlProblem_;
+        std::unique_ptr<LoopshapingInitializer> initializerPtr_;
+        std::shared_ptr<LoopshapingReferenceManager> loopshapingReferenceManager_;
+    };
+} // namespace ocs2

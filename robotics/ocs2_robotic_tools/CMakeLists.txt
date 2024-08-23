@@ -27,7 +27,6 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 
 add_executable(${PROJECT_NAME}_lintTarget src/lintTarget.cpp)
-ament_target_dependencies(${PROJECT_NAME}_lintTarget ${dependencies})
 target_link_libraries(${PROJECT_NAME}_lintTarget ${PROJECT_NAME})
 
 #########################

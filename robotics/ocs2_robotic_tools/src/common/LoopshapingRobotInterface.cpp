@@ -31,24 +31,26 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_oc/oc_problem/LoopshapingOptimalControlProblem.h>
 
+#include <memory>
+
 namespace ocs2 {
+    LoopshapingRobotInterface::LoopshapingRobotInterface(std::unique_ptr<RobotInterface> robotInterfacePtr,
+                                                         std::shared_ptr<LoopshapingDefinition>
+                                                         loopshapingDefinitionPtr)
+        : robotInterfacePtr_(std::move(robotInterfacePtr)),
+          loopshapingDefinitionPtr_(std::move(loopshapingDefinitionPtr)) {
+        // wrap with loopshaping
+        optimalControlProblem_ =
+                LoopshapingOptimalControlProblem::create(robotInterfacePtr_->getOptimalControlProblem(),
+                                                         loopshapingDefinitionPtr_);
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-LoopshapingRobotInterface::LoopshapingRobotInterface(std::unique_ptr<RobotInterface> robotInterfacePtr,
-                                                     std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr)
-    : robotInterfacePtr_(std::move(robotInterfacePtr)), loopshapingDefinitionPtr_(std::move(loopshapingDefinitionPtr)) {
-  // wrap with loopshaping
-  optimalControlProblem_ =
-      LoopshapingOptimalControlProblem::create(robotInterfacePtr_->getOptimalControlProblem(), loopshapingDefinitionPtr_);
+        initializerPtr_ = std::make_unique<LoopshapingInitializer>(
+            robotInterfacePtr_->getInitializer(), loopshapingDefinitionPtr_);
 
-  initializerPtr_.reset(new ocs2::LoopshapingInitializer(robotInterfacePtr_->getInitializer(), loopshapingDefinitionPtr_));
-
-  if (robotInterfacePtr_->getReferenceManagerPtr() != nullptr) {
-    loopshapingReferenceManager_ =
-        std::make_shared<LoopshapingReferenceManager>(robotInterfacePtr_->getReferenceManagerPtr(), loopshapingDefinitionPtr_);
-  }
-}
-
-}  // namespace ocs2
+        if (robotInterfacePtr_->getReferenceManagerPtr() != nullptr) {
+            loopshapingReferenceManager_ =
+                    std::make_shared<LoopshapingReferenceManager>(robotInterfacePtr_->getReferenceManagerPtr(),
+                                                                  loopshapingDefinitionPtr_);
+        }
+    }
+} // namespace ocs2

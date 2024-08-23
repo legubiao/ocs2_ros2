@@ -40,7 +40,6 @@ target_link_libraries(BallbotMpcnetPybindings PRIVATE ${PROJECT_NAME})
 
 # MPC-Net dummy node
 add_executable(ballbot_mpcnet_dummy src/BallbotMpcnetDummyNode.cpp)
-ament_target_dependencies(ballbot_mpcnet_dummy ${dependencies})
 target_link_libraries(ballbot_mpcnet_dummy ${PROJECT_NAME})
 target_compile_options(ballbot_mpcnet_dummy PRIVATE ${OCS2_CXX_FLAGS})
 
@@ -74,12 +73,6 @@ install(
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
 )
-install(
-        TARGETS BallbotMpcnetPybindings
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-)
 
 install(
         TARGETS
@@ -87,8 +80,13 @@ install(
         DESTINATION lib/${PROJECT_NAME}
 )
 
+install(TARGETS BallbotMpcnetPybindings
+        DESTINATION "${PYTHON_INSTALL_DIR}/${PROJECT_NAME}"
+)
+
 install(DIRECTORY launch policy
         DESTINATION share/${PROJECT_NAME}/
 )
 
+ament_python_install_package(${PROJECT_NAME})
 ament_package()

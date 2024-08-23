@@ -43,63 +43,61 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Ballbot
 #include "ocs2_ballbot/dynamics/BallbotSystemDynamics.h"
 
-namespace ocs2 {
-namespace ballbot {
+namespace ocs2::ballbot {
+    /**
+    * BallbotInterface class
+    * General interface for mpc implementation on the ballbot model
+    */
+    class BallbotInterface final : public RobotInterface {
+    public:
+        /**
+         * Constructor
+         *
+         * @note Creates directory for generated library into if it does not exist.
+         * @throw Invalid argument error if input task file does not exist.
+         *
+         * @param [in] taskFile: The absolute path to the configuration file for the MPC.
+         * @param [in] libraryFolder: The absolute path to the directory to generate CppAD library into.
+         */
+        BallbotInterface(const std::string &taskFile, const std::string &libraryFolder);
 
-/**
- * BallbotInterface class
- * General interface for mpc implementation on the ballbot model
- */
-class BallbotInterface final : public RobotInterface {
- public:
-  /**
-   * Constructor
-   *
-   * @note Creates directory for generated library into if it does not exist.
-   * @throw Invalid argument error if input task file does not exist.
-   *
-   * @param [in] taskFile: The absolute path to the configuration file for the MPC.
-   * @param [in] libraryFolder: The absolute path to the directory to generate CppAD library into.
-   */
-  BallbotInterface(const std::string& taskFile, const std::string& libraryFolder);
+        /**
+         * Destructor
+         */
+        ~BallbotInterface() override = default;
 
-  /**
-   * Destructor
-   */
-  ~BallbotInterface() override = default;
+        const vector_t &getInitialState() { return initialState_; }
 
-  const vector_t& getInitialState() { return initialState_; }
+        slp::Settings &slpSettings() { return slpSettings_; }
 
-  slp::Settings& slpSettings() { return slpSettings_; }
+        sqp::Settings &sqpSettings() { return sqpSettings_; }
 
-  sqp::Settings& sqpSettings() { return sqpSettings_; }
+        ddp::Settings &ddpSettings() { return ddpSettings_; }
 
-  ddp::Settings& ddpSettings() { return ddpSettings_; }
+        mpc::Settings &mpcSettings() { return mpcSettings_; }
 
-  mpc::Settings& mpcSettings() { return mpcSettings_; }
+        const OptimalControlProblem &getOptimalControlProblem() const override { return problem_; }
 
-  const OptimalControlProblem& getOptimalControlProblem() const override { return problem_; }
+        std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const override {
+            return referenceManagerPtr_;
+        }
 
-  std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const override { return referenceManagerPtr_; }
+        const RolloutBase &getRollout() const { return *rolloutPtr_; }
 
-  const RolloutBase& getRollout() const { return *rolloutPtr_; }
+        const Initializer &getInitializer() const override { return *ballbotInitializerPtr_; }
 
-  const Initializer& getInitializer() const override { return *ballbotInitializerPtr_; }
+    private:
+        ddp::Settings ddpSettings_;
+        mpc::Settings mpcSettings_;
+        sqp::Settings sqpSettings_;
+        slp::Settings slpSettings_;
 
- private:
-  ddp::Settings ddpSettings_;
-  mpc::Settings mpcSettings_;
-  sqp::Settings sqpSettings_;
-  slp::Settings slpSettings_;
+        OptimalControlProblem problem_;
+        std::shared_ptr<ReferenceManager> referenceManagerPtr_;
 
-  OptimalControlProblem problem_;
-  std::shared_ptr<ReferenceManager> referenceManagerPtr_;
+        std::unique_ptr<RolloutBase> rolloutPtr_;
+        std::unique_ptr<Initializer> ballbotInitializerPtr_;
 
-  std::unique_ptr<RolloutBase> rolloutPtr_;
-  std::unique_ptr<Initializer> ballbotInitializerPtr_;
-
-  vector_t initialState_{STATE_DIM};
-};
-
-}  // namespace ballbot
-}  // namespace ocs2
+        vector_t initialState_{STATE_DIM};
+    };
+}

@@ -28,6 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include "ocs2_ballbot/BallbotInterface.h"
@@ -41,69 +42,62 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
-namespace ocs2 {
-namespace ballbot {
+namespace ocs2::ballbot {
+    BallbotInterface::BallbotInterface(const std::string &taskFile, const std::string &libraryFolder) {
+        // check that task file exists
+        boost::filesystem::path taskFilePath(taskFile);
+        if (boost::filesystem::exists(taskFilePath)) {
+            std::cerr << "[BallbotInterface] Loading task file: " << taskFilePath << std::endl;
+        } else {
+            throw std::invalid_argument("[BallbotInterface] Task file not found: " + taskFilePath.string());
+        }
+        // create library folder if it does not exist
+        boost::filesystem::path libraryFolderPath(libraryFolder);
+        boost::filesystem::create_directories(libraryFolderPath);
+        std::cerr << "[BallbotInterface] Generated library path: " << libraryFolderPath << std::endl;
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-BallbotInterface::BallbotInterface(const std::string& taskFile, const std::string& libraryFolder) {
-  // check that task file exists
-  boost::filesystem::path taskFilePath(taskFile);
-  if (boost::filesystem::exists(taskFilePath)) {
-    std::cerr << "[BallbotInterface] Loading task file: " << taskFilePath << std::endl;
-  } else {
-    throw std::invalid_argument("[BallbotInterface] Task file not found: " + taskFilePath.string());
-  }
-  // create library folder if it does not exist
-  boost::filesystem::path libraryFolderPath(libraryFolder);
-  boost::filesystem::create_directories(libraryFolderPath);
-  std::cerr << "[BallbotInterface] Generated library path: " << libraryFolderPath << std::endl;
+        // Default initial condition
+        loadData::loadEigenMatrix(taskFile, "initialState", initialState_);
+        std::cerr << "x_init:   " << initialState_.transpose() << std::endl;
 
-  // Default initial condition
-  loadData::loadEigenMatrix(taskFile, "initialState", initialState_);
-  std::cerr << "x_init:   " << initialState_.transpose() << std::endl;
+        // DDP SQP MPC settings
+        ddpSettings_ = ddp::loadSettings(taskFile, "ddp");
+        mpcSettings_ = mpc::loadSettings(taskFile, "mpc");
+        sqpSettings_ = sqp::loadSettings(taskFile, "sqp");
+        slpSettings_ = slp::loadSettings(taskFile, "slp");
 
-  // DDP SQP MPC settings
-  ddpSettings_ = ddp::loadSettings(taskFile, "ddp");
-  mpcSettings_ = mpc::loadSettings(taskFile, "mpc");
-  sqpSettings_ = sqp::loadSettings(taskFile, "sqp");
-  slpSettings_ = slp::loadSettings(taskFile, "slp");
+        /*
+        * ReferenceManager & SolverSynchronizedModule
+        */
+        referenceManagerPtr_ = std::make_shared<ReferenceManager>();
 
-  /*
-   * ReferenceManager & SolverSynchronizedModule
-   */
-  referenceManagerPtr_.reset(new ReferenceManager);
+        /*
+        * Optimal control problem
+        */
+        // Cost
+        matrix_t Q(STATE_DIM, STATE_DIM);
+        matrix_t R(INPUT_DIM, INPUT_DIM);
+        matrix_t Qf(STATE_DIM, STATE_DIM);
+        loadData::loadEigenMatrix(taskFile, "Q", Q);
+        loadData::loadEigenMatrix(taskFile, "R", R);
+        loadData::loadEigenMatrix(taskFile, "Q_final", Qf);
+        std::cerr << "Q:  \n" << Q << "\n";
+        std::cerr << "R:  \n" << R << "\n";
+        std::cerr << "Q_final:\n" << Qf << "\n";
 
-  /*
-   * Optimal control problem
-   */
-  // Cost
-  matrix_t Q(STATE_DIM, STATE_DIM);
-  matrix_t R(INPUT_DIM, INPUT_DIM);
-  matrix_t Qf(STATE_DIM, STATE_DIM);
-  loadData::loadEigenMatrix(taskFile, "Q", Q);
-  loadData::loadEigenMatrix(taskFile, "R", R);
-  loadData::loadEigenMatrix(taskFile, "Q_final", Qf);
-  std::cerr << "Q:  \n" << Q << "\n";
-  std::cerr << "R:  \n" << R << "\n";
-  std::cerr << "Q_final:\n" << Qf << "\n";
+        problem_.costPtr->add("cost", std::make_unique<QuadraticStateInputCost>(Q, R));
+        problem_.finalCostPtr->add("finalCost", std::make_unique<QuadraticStateCost>(Qf));
 
-  problem_.costPtr->add("cost", std::make_unique<QuadraticStateInputCost>(Q, R));
-  problem_.finalCostPtr->add("finalCost", std::make_unique<QuadraticStateCost>(Qf));
+        // Dynamics
+        bool recompileLibraries; // load the flag to generate library files from taskFile
+        loadData::loadCppDataType(taskFile, "ballbot_interface.recompileLibraries", recompileLibraries);
+        problem_.dynamicsPtr = std::make_unique<BallbotSystemDynamics>(libraryFolder, recompileLibraries);
 
-  // Dynamics
-  bool recompileLibraries;  // load the flag to generate library files from taskFile
-  ocs2::loadData::loadCppDataType(taskFile, "ballbot_interface.recompileLibraries", recompileLibraries);
-  problem_.dynamicsPtr.reset(new BallbotSystemDynamics(libraryFolder, recompileLibraries));
+        // Rollout
+        auto rolloutSettings = rollout::loadSettings(taskFile, "rollout");
+        rolloutPtr_ = std::make_unique<TimeTriggeredRollout>(*problem_.dynamicsPtr, rolloutSettings);
 
-  // Rollout
-  auto rolloutSettings = rollout::loadSettings(taskFile, "rollout");
-  rolloutPtr_.reset(new TimeTriggeredRollout(*problem_.dynamicsPtr, rolloutSettings));
-
-  // Initialization
-  ballbotInitializerPtr_.reset(new DefaultInitializer(INPUT_DIM));
+        // Initialization
+        ballbotInitializerPtr_ = std::make_unique<DefaultInitializer>(INPUT_DIM);
+    }
 }
-
-}  // namespace ballbot
-}  // namespace ocs2

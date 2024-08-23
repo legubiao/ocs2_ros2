@@ -35,39 +35,38 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_ballbot/BallbotInterface.h"
 #include "ocs2_ballbot/definitions.h"
 
-namespace ocs2 {
-namespace ballbot {
+namespace ocs2::ballbot {
+    class BallbotPyBindings final : public PythonInterface {
+    public:
+        /**
+         * Constructor
+         *
+         * @note Creates directory for generated library into if it does not exist.
+         * @throw Invalid argument error if input task file does not exist.
+         *
+         * @param [in] taskFile: The absolute path to the configuration file for the MPC.
+         * @param [in] libraryFolder: The absolute path to the directory to generate CppAD library into.
+         * @param [in] urdfFile: The absolute path to the URDF of the robot. This is not used for ballbot.
+         */
+        BallbotPyBindings(const std::string &taskFile, const std::string &libraryFolder,
+                          const std::string urdfFile = "") {
+            // System dimensions
+            stateDim_ = static_cast<int>(STATE_DIM);
+            inputDim_ = static_cast<int>(INPUT_DIM);
 
-class BallbotPyBindings final : public PythonInterface {
- public:
-  /**
-   * Constructor
-   *
-   * @note Creates directory for generated library into if it does not exist.
-   * @throw Invalid argument error if input task file does not exist.
-   *
-   * @param [in] taskFile: The absolute path to the configuration file for the MPC.
-   * @param [in] libraryFolder: The absolute path to the directory to generate CppAD library into.
-   * @param [in] urdfFile: The absolute path to the URDF of the robot. This is not used for ballbot.
-   */
-  BallbotPyBindings(const std::string& taskFile, const std::string& libraryFolder, const std::string urdfFile = "") {
-    // System dimensions
-    stateDim_ = static_cast<int>(STATE_DIM);
-    inputDim_ = static_cast<int>(INPUT_DIM);
+            // Robot interface
+            BallbotInterface ballbotInterface(taskFile, libraryFolder);
 
-    // Robot interface
-    BallbotInterface ballbotInterface(taskFile, libraryFolder);
+            // MPC
+            auto mpcPtr =
+                    std::make_unique<GaussNewtonDDP_MPC>(ballbotInterface.mpcSettings(), ballbotInterface.ddpSettings(),
+                                                         ballbotInterface.getRollout(),
+                                                         ballbotInterface.getOptimalControlProblem(),
+                                                         ballbotInterface.getInitializer());
+            mpcPtr->getSolverPtr()->setReferenceManager(ballbotInterface.getReferenceManagerPtr());
 
-    // MPC
-    auto mpcPtr =
-        std::make_unique<GaussNewtonDDP_MPC>(ballbotInterface.mpcSettings(), ballbotInterface.ddpSettings(), ballbotInterface.getRollout(),
-                                             ballbotInterface.getOptimalControlProblem(), ballbotInterface.getInitializer());
-    mpcPtr->getSolverPtr()->setReferenceManager(ballbotInterface.getReferenceManagerPtr());
-
-    // Python interface
-    PythonInterface::init(ballbotInterface, std::move(mpcPtr));
-  }
-};
-
-}  // namespace ballbot
-}  // namespace ocs2
+            // Python interface
+            PythonInterface::init(ballbotInterface, std::move(mpcPtr));
+        }
+    };
+}

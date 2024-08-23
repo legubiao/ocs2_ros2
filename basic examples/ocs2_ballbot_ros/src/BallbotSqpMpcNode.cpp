@@ -36,47 +36,47 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rclcpp/rclcpp.hpp"
 
-int main(int argc, char** argv) {
-  const std::string robotName = "ballbot";
+int main(int argc, char **argv) {
+    const std::string robotName = "ballbot";
 
-  // task file
-  std::vector<std::string> programArgs =
-      rclcpp::remove_ros_arguments(argc, argv);
+    // task file
+    std::vector<std::string> programArgs =
+            rclcpp::remove_ros_arguments(argc, argv);
 
-  if (programArgs.size() <= 1) {
-    throw std::runtime_error("No task file specified. Aborting.");
-  }
-  std::string taskFileFolderName = std::string(programArgs[1]);
+    if (programArgs.size() <= 1) {
+        throw std::runtime_error("No task file specified. Aborting.");
+    }
+    auto taskFileFolderName = std::string(programArgs[1]);
 
-  // Initialize ros node
-  rclcpp::init(argc, argv);
-  rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(robotName + "_mpc");
+    // Initialize ros node
+    rclcpp::init(argc, argv);
+    rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(robotName + "_mpc");
 
-  // Robot interface
-  const std::string taskFile =
-      ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
-      "/config/" + taskFileFolderName + "/task.info";
-  const std::string libFolder =
-      ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
-      "/auto_generated";
-  ocs2::ballbot::BallbotInterface ballbotInterface(taskFile, libFolder);
+    // Robot interface
+    const std::string taskFile =
+            ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
+            "/config/" + taskFileFolderName + "/task.info";
+    const std::string libFolder =
+            ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
+            "/auto_generated";
+    ocs2::ballbot::BallbotInterface ballbotInterface(taskFile, libFolder);
 
-  // ROS ReferenceManager
-  auto rosReferenceManagerPtr = std::make_shared<ocs2::RosReferenceManager>(
-      robotName, ballbotInterface.getReferenceManagerPtr());
-  rosReferenceManagerPtr->subscribe(node);
+    // ROS ReferenceManager
+    auto rosReferenceManagerPtr = std::make_shared<ocs2::RosReferenceManager>(
+        robotName, ballbotInterface.getReferenceManagerPtr());
+    rosReferenceManagerPtr->subscribe(node);
 
-  // MPC
-  ocs2::SqpMpc mpc(ballbotInterface.mpcSettings(),
-                   ballbotInterface.sqpSettings(),
-                   ballbotInterface.getOptimalControlProblem(),
-                   ballbotInterface.getInitializer());
-  mpc.getSolverPtr()->setReferenceManager(rosReferenceManagerPtr);
+    // MPC
+    ocs2::SqpMpc mpc(ballbotInterface.mpcSettings(),
+                     ballbotInterface.sqpSettings(),
+                     ballbotInterface.getOptimalControlProblem(),
+                     ballbotInterface.getInitializer());
+    mpc.getSolverPtr()->setReferenceManager(rosReferenceManagerPtr);
 
-  // Launch MPC ROS node
-  ocs2::MPC_ROS_Interface mpcNode(mpc, robotName);
-  mpcNode.launchNodes(node);
+    // Launch MPC ROS node
+    ocs2::MPC_ROS_Interface mpcNode(mpc, robotName);
+    mpcNode.launchNodes(node);
 
-  // Successful exit
-  return 0;
+    // Successful exit
+    return 0;
 }

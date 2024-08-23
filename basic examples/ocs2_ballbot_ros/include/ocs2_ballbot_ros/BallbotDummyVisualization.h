@@ -35,22 +35,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
-namespace ocs2 {
-namespace ballbot {
-class BallbotDummyVisualization final : public DummyObserver {
- public:
-  explicit BallbotDummyVisualization(const rclcpp::Node::SharedPtr& node);
+namespace ocs2::ballbot {
+    class BallbotDummyVisualization final : public DummyObserver {
+    public:
+        explicit BallbotDummyVisualization(const rclcpp::Node::SharedPtr &node);
 
-  ~BallbotDummyVisualization() override = default;
+        ~BallbotDummyVisualization() override = default;
 
-  void update(const SystemObservation& observation,
-              const PrimalSolution& policy,
-              const CommandData& command) override;
+        void update(const SystemObservation &observation,
+                    const PrimalSolution &policy,
+                    const CommandData &command) override;
 
- private:
-  rclcpp::Node::SharedPtr node_;
-  tf2_ros::TransformBroadcaster tfBroadcaster_;
-  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointPublisher_;
-};
-}  // namespace ballbot
-}  // namespace ocs2
+    private:
+        rclcpp::Node::SharedPtr node_;
+        tf2_ros::TransformBroadcaster tfBroadcaster_;
+        rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointPublisher_;
+    };
+}

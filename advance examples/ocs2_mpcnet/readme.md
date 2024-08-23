@@ -1,3 +1,4 @@
+## Install ONNX Runtime
 ONNX Runtime is an inferencing and training accelerator. Here, it is used for deploying learned MPC-Net policies in C++ code. To locally install it, do the following:
 
 ```bash
@@ -10,6 +11,12 @@ sudo rsync -a /tmp/onnxruntime-linux-x64-1.7.0/lib/ /usr/local/lib
 sudo rsync -a ~/ocs2_ws/src/ocs2_ros2/advance\ examples/ocs2_mpcnet/ocs2_mpcnet_core/misc/onnxruntime/cmake/ /usr/local/share/cmake/onnxruntime
 
 sudo ldconfig
+```
+
+## Build and Run pretrained MPC-Net
+```bash
+cd ~/ocs2_ws
+colcon build --packages-up-to ocs2_ballbot_mpcnet --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
 
 ## Create a python venv

@@ -46,7 +46,7 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 # python bindings
 pybind11_add_module(BallbotPyBindings SHARED src/pyBindModule.cpp)
-target_link_libraries(BallbotPyBindings PUBLIC ${PROJECT_NAME})
+target_link_libraries(BallbotPyBindings PRIVATE ${PROJECT_NAME})
 
 #########################
 ###   CLANG TOOLING   ###
@@ -82,12 +82,6 @@ install(
 
 install(DIRECTORY config
         DESTINATION share/${PROJECT_NAME}/
-)
-
-install(TARGETS BallbotPyBindings
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
 )
 
 ament_export_dependencies(${dependencies})

@@ -78,14 +78,12 @@ install(
         RUNTIME DESTINATION bin
 )
 
-install(
-        TARGETS MpcnetPybindings
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
+install(TARGETS MpcnetPybindings
+        DESTINATION "${PYTHON_INSTALL_DIR}/${PROJECT_NAME}"
 )
 
 ament_export_dependencies(${dependencies})
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_python_install_package(${PROJECT_NAME})
 
 ament_package()

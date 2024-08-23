@@ -15,7 +15,6 @@
     <build_depend>cmake_clang_tools</build_depend>
     <depend>ament_index_cpp</depend>
 
-    <depend>rclcpp</depend>
     <depend>tf2</depend>
     <depend>urdf</depend>
     <depend>kdl_parser</depend>
@@ -24,7 +23,6 @@
 
     <depend>ocs2_ros_interfaces</depend>
     <depend>ocs2_ballbot</depend>
-    <depend>ocs2_robotic_tools</depend>
     <depend>ocs2_robotic_assets</depend>
 
     <export>

@@ -31,45 +31,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 
-#include <ocs2_core/Types.h>
-#include <ocs2_core/dynamics/SystemDynamicsBase.h>
 #include <ocs2_core/initialization/Initializer.h>
 #include <ocs2_oc/oc_problem/OptimalControlProblem.h>
 #include <ocs2_oc/synchronized_module/ReferenceManagerInterface.h>
 
 namespace ocs2 {
+    /**
+     * This class implements an interface class to all the robotic examples.
+     *
+     * The lifetime of the returned objects is tied to the lifetime of the robot interface.
+     * The exposed objects are not thread-safe and should be cloned to get an exclusive copy.
+     */
+    class RobotInterface {
+    public:
+        /** Constructor */
+        RobotInterface() = default;
 
-/**
- * This class implements an interface class to all the robotic examples.
- *
- * The lifetime of the returned objects is tied to the lifetime of the robot interface.
- * The exposed objects are not thread-safe and should be cloned to get an exclusive copy.
- */
-class RobotInterface {
- public:
-  /** Constructor */
-  RobotInterface() = default;
+        /** Destructor */
+        virtual ~RobotInterface() = default;
 
-  /** Destructor */
-  virtual ~RobotInterface() = default;
+        /**
+         * Gets the ReferenceManager.
+         * @return a shared pointer to the ReferenceManager.
+         */
+        virtual std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const { return nullptr; }
 
-  /**
-   * Gets the ReferenceManager.
-   * @return a shared pointer to the ReferenceManager.
-   */
-  virtual std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const { return nullptr; }
+        /**
+         * @brief Get the optimal control problem definition
+         * @return reference to the problem object
+         */
+        virtual const OptimalControlProblem &getOptimalControlProblem() const = 0;
 
-  /**
-   * @brief Get the optimal control problem definition
-   * @return reference to the problem object
-   */
-  virtual const OptimalControlProblem& getOptimalControlProblem() const = 0;
-
-  /**
-   * @brief getInitializer
-   * @return reference to the internal solver initializer
-   */
-  virtual const Initializer& getInitializer() const = 0;
-};
-
-}  // namespace ocs2
+        /**
+         * @brief getInitializer
+         * @return reference to the internal solver initializer
+         */
+        virtual const Initializer &getInitializer() const = 0;
+    };
+} // namespace ocs2

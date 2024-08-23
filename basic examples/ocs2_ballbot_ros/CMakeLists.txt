@@ -3,7 +3,6 @@ set(CMAKE_CXX_STANDARD 17)
 project(ocs2_ballbot_ros)
 
 set(dependencies
-        rclcpp
         tf2
         urdf
         kdl_parser

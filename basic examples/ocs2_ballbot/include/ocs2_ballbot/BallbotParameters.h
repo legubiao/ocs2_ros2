@@ -33,22 +33,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/Types.h>
 
-namespace ocs2 {
-namespace ballbot {
+namespace ocs2::ballbot {
+    struct BallbotParameters {
+        void display() {
+            std::cerr << "Ballbot parameters: " << std::endl;
+            std::cerr << "ballRadius:   " << ballRadius_ << std::endl;
+            std::cerr << "wheelRadius:   " << wheelRadius_ << std::endl;
+            std::cerr << "heightBallCenterToBase:   " << heightBallCenterToBase_ << std::endl;
+        }
 
-struct BallbotParameters {
-  void display() {
-    std::cerr << "Ballbot parameters: " << std::endl;
-    std::cerr << "ballRadius:   " << ballRadius_ << std::endl;
-    std::cerr << "wheelRadius:   " << wheelRadius_ << std::endl;
-    std::cerr << "heightBallCenterToBase:   " << heightBallCenterToBase_ << std::endl;
-  }
-
-  // For safety, these parameters cannot be modified
-  scalar_t ballRadius_ = 0.125;              // [m]
-  scalar_t wheelRadius_ = 0.064;             // [m]
-  scalar_t heightBallCenterToBase_ = 0.275;  // [m]
-};
-
-}  // namespace ballbot
-}  // namespace ocs2
+        // For safety, these parameters cannot be modified
+        scalar_t ballRadius_ = 0.125; // [m]
+        scalar_t wheelRadius_ = 0.064; // [m]
+        scalar_t heightBallCenterToBase_ = 0.275; // [m]
+    };
+}
