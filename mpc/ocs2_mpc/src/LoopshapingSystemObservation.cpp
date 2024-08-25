@@ -30,14 +30,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mpc/LoopshapingSystemObservation.h"
 
 namespace ocs2 {
-
-SystemObservation loopshapingToSystemObservation(const SystemObservation& observation, const LoopshapingDefinition& loopshapingDefinition) {
-  SystemObservation systemObservation;
-  systemObservation.time = observation.time;
-  systemObservation.state = loopshapingDefinition.getSystemState(observation.state);
-  systemObservation.input = loopshapingDefinition.getSystemInput(observation.state, observation.input);
-  systemObservation.mode = observation.mode;
-  return systemObservation;
-}
-
-}  // namespace ocs2
+    SystemObservation loopshapingToSystemObservation(const SystemObservation &observation,
+                                                     const LoopshapingDefinition &loopshapingDefinition) {
+        SystemObservation systemObservation;
+        systemObservation.time = observation.time;
+        systemObservation.state = loopshapingDefinition.getSystemState(observation.state);
+        systemObservation.input = loopshapingDefinition.getSystemInput(observation.state, observation.input);
+        systemObservation.mode = observation.mode;
+        return systemObservation;
+    }
+} // namespace ocs2

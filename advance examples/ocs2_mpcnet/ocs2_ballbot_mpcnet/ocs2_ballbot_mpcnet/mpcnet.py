@@ -121,14 +121,22 @@ class BallbotMpcnet(mpcnet.Mpcnet):
         """
         initial_mode = 0
         initial_time = 0.0
+        print("Generating tasks...")
         initial_observations = helper.get_system_observation_array(tasks_number)
         mode_schedules = helper.get_mode_schedule_array(tasks_number)
         target_trajectories = helper.get_target_trajectories_array(tasks_number)
         for i in range(tasks_number):
-            initial_observations[i] = helper.get_system_observation(
+            print(f"Generating task {i + 1}/{tasks_number}...")
+            
+            system_observation = helper.get_system_observation(
                 initial_mode, initial_time, self.get_random_initial_state(), np.zeros(self.config.INPUT_DIM)
             )
+
+            print(system_observation)
+            initial_observations[i] = system_observation
+            print("Generating mode schedule...")
             mode_schedules[i] = helper.get_mode_schedule(*self.get_default_event_times_and_mode_sequence(duration))
+            print("Generating target trajectories...")
             target_trajectories[i] = helper.get_target_trajectories(
                 duration * np.ones((1, 1)),
                 self.get_random_target_state().reshape((1, self.config.TARGET_STATE_DIM)),

@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_ballbot)
 
+if(NOT DEFINED PYTHON_INSTALL_DIR)
+    set(PYTHON_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
+endif()
+
 
 set(dependencies
         ocs2_ddp
@@ -78,6 +82,10 @@ install(
         ARCHIVE DESTINATION ib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
+)
+
+install(TARGETS BallbotPyBindings
+        DESTINATION "${PYTHON_INSTALL_DIR}/${PROJECT_NAME}"
 )
 
 install(DIRECTORY config

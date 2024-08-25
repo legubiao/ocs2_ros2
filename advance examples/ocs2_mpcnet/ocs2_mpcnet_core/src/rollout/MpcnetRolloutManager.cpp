@@ -27,217 +27,241 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include <memory>
+
 #include "ocs2_mpcnet_core/rollout/MpcnetRolloutManager.h"
 
-namespace ocs2 {
-namespace mpcnet {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-MpcnetRolloutManager::MpcnetRolloutManager(size_t nDataGenerationThreads, size_t nPolicyEvaluationThreads,
-                                           std::vector<std::unique_ptr<MPC_BASE>> mpcPtrs,
-                                           std::vector<std::unique_ptr<MpcnetControllerBase>> mpcnetPtrs,
-                                           std::vector<std::unique_ptr<RolloutBase>> rolloutPtrs,
-                                           std::vector<std::shared_ptr<MpcnetDefinitionBase>> mpcnetDefinitionPtrs,
-                                           std::vector<std::shared_ptr<ReferenceManagerInterface>> referenceManagerPtrs) {
-  // data generation
-  nDataGenerationThreads_ = nDataGenerationThreads;
-  if (nDataGenerationThreads_ > 0) {
-    dataGenerationThreadPoolPtr_.reset(new ThreadPool(nDataGenerationThreads_));
-    dataGenerationPtrs_.reserve(nDataGenerationThreads);
-    for (int i = 0; i < nDataGenerationThreads; i++) {
-      dataGenerationPtrs_.push_back(
-          std::make_unique<MpcnetDataGeneration>(std::move(mpcPtrs.at(i)), std::move(mpcnetPtrs.at(i)), std::move(rolloutPtrs.at(i)),
-                                                 std::move(mpcnetDefinitionPtrs.at(i)), referenceManagerPtrs.at(i)));
+namespace ocs2::mpcnet {
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    MpcnetRolloutManager::MpcnetRolloutManager(size_t nDataGenerationThreads, size_t nPolicyEvaluationThreads,
+                                               std::vector<std::unique_ptr<MPC_BASE> > mpcPtrs,
+                                               std::vector<std::unique_ptr<MpcnetControllerBase> > mpcnetPtrs,
+                                               std::vector<std::unique_ptr<RolloutBase> > rolloutPtrs,
+                                               std::vector<std::shared_ptr<MpcnetDefinitionBase> > mpcnetDefinitionPtrs,
+                                               std::vector<std::shared_ptr<ReferenceManagerInterface> >
+                                               referenceManagerPtrs) {
+        // data generation
+        nDataGenerationThreads_ = nDataGenerationThreads;
+        if (nDataGenerationThreads_ > 0) {
+            dataGenerationThreadPoolPtr_ = std::make_unique<ThreadPool>(nDataGenerationThreads_);
+            dataGenerationPtrs_.reserve(nDataGenerationThreads);
+            for (int i = 0; i < nDataGenerationThreads; i++) {
+                dataGenerationPtrs_.push_back(
+                    std::make_unique<MpcnetDataGeneration>(std::move(mpcPtrs.at(i)), std::move(mpcnetPtrs.at(i)),
+                                                           std::move(rolloutPtrs.at(i)),
+                                                           std::move(mpcnetDefinitionPtrs.at(i)),
+                                                           referenceManagerPtrs.at(i)));
+            }
+        }
+
+        // policy evaluation
+        nPolicyEvaluationThreads_ = nPolicyEvaluationThreads;
+        if (nPolicyEvaluationThreads_ > 0) {
+            policyEvaluationThreadPoolPtr_ = std::make_unique<ThreadPool>(nPolicyEvaluationThreads_);
+            policyEvaluationPtrs_.reserve(nPolicyEvaluationThreads_);
+            for (int i = nDataGenerationThreads_; i < (nDataGenerationThreads_ + nPolicyEvaluationThreads_); i++) {
+                policyEvaluationPtrs_.push_back(
+                    std::make_unique<MpcnetPolicyEvaluation>(std::move(mpcPtrs.at(i)), std::move(mpcnetPtrs.at(i)),
+                                                             std::move(rolloutPtrs.at(i)),
+                                                             std::move(mpcnetDefinitionPtrs.at(i)),
+                                                             referenceManagerPtrs.at(i)));
+            }
+        }
     }
-  }
 
-  // policy evaluation
-  nPolicyEvaluationThreads_ = nPolicyEvaluationThreads;
-  if (nPolicyEvaluationThreads_ > 0) {
-    policyEvaluationThreadPoolPtr_.reset(new ThreadPool(nPolicyEvaluationThreads_));
-    policyEvaluationPtrs_.reserve(nPolicyEvaluationThreads_);
-    for (int i = nDataGenerationThreads_; i < (nDataGenerationThreads_ + nPolicyEvaluationThreads_); i++) {
-      policyEvaluationPtrs_.push_back(
-          std::make_unique<MpcnetPolicyEvaluation>(std::move(mpcPtrs.at(i)), std::move(mpcnetPtrs.at(i)), std::move(rolloutPtrs.at(i)),
-                                                   std::move(mpcnetDefinitionPtrs.at(i)), referenceManagerPtrs.at(i)));
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    void MpcnetRolloutManager::startDataGeneration(scalar_t alpha, const std::string &policyFilePath, scalar_t timeStep,
+                                                   size_t dataDecimation,
+                                                   size_t nSamples, const matrix_t &samplingCovariance,
+                                                   const std::vector<SystemObservation> &initialObservations,
+                                                   const std::vector<ModeSchedule> &modeSchedules,
+                                                   const std::vector<TargetTrajectories> &targetTrajectories) {
+        if (nDataGenerationThreads_ <= 0) {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::startDataGeneration] cannot work without at least one data generation thread.");
+        }
+
+        // reset variables
+        dataGenerationFtrs_.clear();
+        nDataGenerationTasksDone_ = 0;
+
+        // push tasks into pool
+        for (int i = 0; i < initialObservations.size(); i++) {
+            dataGenerationFtrs_.push_back(dataGenerationThreadPoolPtr_->run([=](int threadNumber) {
+                const auto *result =
+                        dataGenerationPtrs_[threadNumber]->run(alpha, policyFilePath, timeStep, dataDecimation,
+                                                               nSamples, samplingCovariance,
+                                                               initialObservations.at(i), modeSchedules.at(i),
+                                                               targetTrajectories.at(i));
+                ++nDataGenerationTasksDone_;
+                // print thread and task number
+                std::cerr << "Data generation thread " << threadNumber << " finished task " << nDataGenerationTasksDone_
+                        << "\n";
+                return result;
+            }));
+        }
     }
-  }
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void MpcnetRolloutManager::startDataGeneration(scalar_t alpha, const std::string& policyFilePath, scalar_t timeStep, size_t dataDecimation,
-                                               size_t nSamples, const matrix_t& samplingCovariance,
-                                               const std::vector<SystemObservation>& initialObservations,
-                                               const std::vector<ModeSchedule>& modeSchedules,
-                                               const std::vector<TargetTrajectories>& targetTrajectories) {
-  if (nDataGenerationThreads_ <= 0) {
-    throw std::runtime_error("[MpcnetRolloutManager::startDataGeneration] cannot work without at least one data generation thread.");
-  }
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    bool MpcnetRolloutManager::isDataGenerationDone() const {
+        if (nDataGenerationThreads_ <= 0) {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::isDataGenerationDone] cannot work without at least one data generation thread.");
+        }
+        if (dataGenerationFtrs_.empty()) {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::isDataGenerationDone] cannot return if startDataGeneration has not been triggered once.");
+        }
 
-  // reset variables
-  dataGenerationFtrs_.clear();
-  nDataGenerationTasksDone_ = 0;
-
-  // push tasks into pool
-  for (int i = 0; i < initialObservations.size(); i++) {
-    dataGenerationFtrs_.push_back(dataGenerationThreadPoolPtr_->run([=](int threadNumber) {
-      const auto* result =
-          dataGenerationPtrs_[threadNumber]->run(alpha, policyFilePath, timeStep, dataDecimation, nSamples, samplingCovariance,
-                                                 initialObservations.at(i), modeSchedules.at(i), targetTrajectories.at(i));
-      nDataGenerationTasksDone_++;
-      // print thread and task number
-      std::cerr << "Data generation thread " << threadNumber << " finished task " << nDataGenerationTasksDone_ << "\n";
-      return result;
-    }));
-  }
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-bool MpcnetRolloutManager::isDataGenerationDone() {
-  if (nDataGenerationThreads_ <= 0) {
-    throw std::runtime_error("[MpcnetRolloutManager::isDataGenerationDone] cannot work without at least one data generation thread.");
-  }
-  if (dataGenerationFtrs_.size() <= 0) {
-    throw std::runtime_error(
-        "[MpcnetRolloutManager::isDataGenerationDone] cannot return if startDataGeneration has not been triggered once.");
-  }
-
-  // check if done
-  if (nDataGenerationTasksDone_ < dataGenerationFtrs_.size()) {
-    return false;
-  } else if (nDataGenerationTasksDone_ == dataGenerationFtrs_.size()) {
-    return true;
-  } else {
-    throw std::runtime_error("[MpcnetRolloutManager::isDataGenerationDone] error since more tasks done than futures available.");
-  }
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-const data_array_t& MpcnetRolloutManager::getGeneratedData() {
-  if (nDataGenerationThreads_ <= 0) {
-    throw std::runtime_error("[MpcnetRolloutManager::getGeneratedData] cannot work without at least one data generation thread.");
-  }
-  if (!isDataGenerationDone()) {
-    throw std::runtime_error("[MpcnetRolloutManager::getGeneratedData] cannot get data when data generation is not done.");
-  }
-
-  // clear data array
-  dataArray_.clear();
-
-  // get pointers to data
-  std::vector<const data_array_t*> dataPtrs;
-  dataPtrs.reserve(dataGenerationFtrs_.size());
-  for (auto& dataGenerationFtr : dataGenerationFtrs_) {
-    try {
-      // get results from futures of the tasks
-      dataPtrs.push_back(dataGenerationFtr.get());
-    } catch (const std::exception& e) {
-      // print error for exceptions
-      std::cerr << "[MpcnetRolloutManager::getGeneratedData] a standard exception was caught, with message: " << e.what() << "\n";
+        // check if done
+        if (nDataGenerationTasksDone_ < dataGenerationFtrs_.size()) {
+            return false;
+        }
+        if (nDataGenerationTasksDone_ == dataGenerationFtrs_.size()) {
+            return true;
+        }
+        throw std::runtime_error(
+            "[MpcnetRolloutManager::isDataGenerationDone] error since more tasks done than futures available.");
     }
-  }
 
-  // find number of data points
-  int nDataPoints = 0;
-  for (int i = 0; i < dataPtrs.size(); i++) {
-    nDataPoints += dataPtrs[i]->size();
-  }
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    const data_array_t &MpcnetRolloutManager::getGeneratedData() {
+        if (nDataGenerationThreads_ <= 0) {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::getGeneratedData] cannot work without at least one data generation thread.");
+        }
+        if (!isDataGenerationDone()) {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::getGeneratedData] cannot get data when data generation is not done.");
+        }
 
-  // fill data array
-  dataArray_.reserve(nDataPoints);
-  for (const auto dataPtr : dataPtrs) {
-    dataArray_.insert(dataArray_.end(), dataPtr->begin(), dataPtr->end());
-  }
+        // clear data array
+        dataArray_.clear();
 
-  // return data array
-  return dataArray_;
-}
+        // get pointers to data
+        std::vector<const data_array_t *> dataPtrs;
+        dataPtrs.reserve(dataGenerationFtrs_.size());
+        for (auto &dataGenerationFtr: dataGenerationFtrs_) {
+            try {
+                // get results from futures of the tasks
+                dataPtrs.push_back(dataGenerationFtr.get());
+            } catch (const std::exception &e) {
+                // print error for exceptions
+                std::cerr << "[MpcnetRolloutManager::getGeneratedData] a standard exception was caught, with message: "
+                        << e.what() << "\n";
+            }
+        }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void MpcnetRolloutManager::startPolicyEvaluation(scalar_t alpha, const std::string& policyFilePath, scalar_t timeStep,
-                                                 const std::vector<SystemObservation>& initialObservations,
-                                                 const std::vector<ModeSchedule>& modeSchedules,
-                                                 const std::vector<TargetTrajectories>& targetTrajectories) {
-  if (nPolicyEvaluationThreads_ <= 0) {
-    throw std::runtime_error("[MpcnetRolloutManager::startPolicyEvaluation] cannot work without at least one policy evaluation thread.");
-  }
+        // find number of data points
+        int nDataPoints = 0;
+        for (const auto & dataPtr : dataPtrs) {
+            nDataPoints += dataPtr->size();
+        }
 
-  // reset variables
-  policyEvaluationFtrs_.clear();
-  nPolicyEvaluationTasksDone_ = 0;
+        // fill data array
+        dataArray_.reserve(nDataPoints);
+        for (const auto dataPtr: dataPtrs) {
+            dataArray_.insert(dataArray_.end(), dataPtr->begin(), dataPtr->end());
+        }
 
-  // push tasks into pool
-  for (int i = 0; i < initialObservations.size(); i++) {
-    policyEvaluationFtrs_.push_back(policyEvaluationThreadPoolPtr_->run([=](int threadNumber) {
-      const auto result = policyEvaluationPtrs_[threadNumber]->run(alpha, policyFilePath, timeStep, initialObservations.at(i),
-                                                                   modeSchedules.at(i), targetTrajectories.at(i));
-      nPolicyEvaluationTasksDone_++;
-      // print thread and task number
-      std::cerr << "Policy evaluation thread " << threadNumber << " finished task " << nPolicyEvaluationTasksDone_ << "\n";
-      return result;
-    }));
-  }
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-bool MpcnetRolloutManager::isPolicyEvaluationDone() {
-  if (nPolicyEvaluationThreads_ <= 0) {
-    throw std::runtime_error("[MpcnetRolloutManager::isPolicyEvaluationDone] cannot work without at least one policy evaluation thread.");
-  }
-  if (policyEvaluationFtrs_.size() <= 0) {
-    throw std::runtime_error(
-        "[MpcnetRolloutManager::isPolicyEvaluationDone] cannot return if startPolicyEvaluation has not been triggered once.");
-  }
-
-  // check if done
-  if (nPolicyEvaluationTasksDone_ < policyEvaluationFtrs_.size()) {
-    return false;
-  } else if (nPolicyEvaluationTasksDone_ == policyEvaluationFtrs_.size()) {
-    return true;
-  } else {
-    throw std::runtime_error("[MpcnetRolloutManager::isPolicyEvaluationDone] error since more tasks done than futures available.");
-  }
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-metrics_array_t MpcnetRolloutManager::getComputedMetrics() {
-  if (nPolicyEvaluationThreads_ <= 0) {
-    throw std::runtime_error("[MpcnetRolloutManager::getComputedMetrics] cannot work without at least one policy evaluation thread.");
-  }
-  if (!isPolicyEvaluationDone()) {
-    throw std::runtime_error("[MpcnetRolloutManager::getComputedMetrics] cannot get metrics when policy evaluation is not done.");
-  }
-
-  // get metrics and fill metrics array
-  metrics_array_t metricsArray;
-  metricsArray.reserve(policyEvaluationFtrs_.size());
-  for (auto& policyEvaluationFtr : policyEvaluationFtrs_) {
-    try {
-      // get results from futures of the tasks
-      metricsArray.push_back(policyEvaluationFtr.get());
-    } catch (const std::exception& e) {
-      // print error for exceptions
-      std::cerr << "[MpcnetRolloutManager::getComputedMetrics] a standard exception was caught, with message: " << e.what() << "\n";
+        // return data array
+        return dataArray_;
     }
-  }
 
-  // return metrics array
-  return metricsArray;
-}
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    void MpcnetRolloutManager::startPolicyEvaluation(scalar_t alpha, const std::string &policyFilePath,
+                                                     scalar_t timeStep,
+                                                     const std::vector<SystemObservation> &initialObservations,
+                                                     const std::vector<ModeSchedule> &modeSchedules,
+                                                     const std::vector<TargetTrajectories> &targetTrajectories) {
+        if (nPolicyEvaluationThreads_ <= 0) {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::startPolicyEvaluation] cannot work without at least one policy evaluation thread.");
+        }
 
-}  // namespace mpcnet
-}  // namespace ocs2
+        // reset variables
+        policyEvaluationFtrs_.clear();
+        nPolicyEvaluationTasksDone_ = 0;
+
+        // push tasks into pool
+        for (int i = 0; i < initialObservations.size(); i++) {
+            policyEvaluationFtrs_.push_back(policyEvaluationThreadPoolPtr_->run([=](int threadNumber) {
+                const auto result = policyEvaluationPtrs_[threadNumber]->run(
+                    alpha, policyFilePath, timeStep, initialObservations.at(i),
+                    modeSchedules.at(i), targetTrajectories.at(i));
+                nPolicyEvaluationTasksDone_++;
+                // print thread and task number
+                std::cerr << "Policy evaluation thread " << threadNumber << " finished task " <<
+                        nPolicyEvaluationTasksDone_ << "\n";
+                return result;
+            }));
+        }
+    }
+
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    bool MpcnetRolloutManager::isPolicyEvaluationDone() {
+        if (nPolicyEvaluationThreads_ <= 0) {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::isPolicyEvaluationDone] cannot work without at least one policy evaluation thread.");
+        }
+        if (policyEvaluationFtrs_.empty()) {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::isPolicyEvaluationDone] cannot return if startPolicyEvaluation has not been triggered once.");
+        }
+
+        // check if done
+        if (nPolicyEvaluationTasksDone_ < policyEvaluationFtrs_.size()) {
+            return false;
+        } else if (nPolicyEvaluationTasksDone_ == policyEvaluationFtrs_.size()) {
+            return true;
+        } else {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::isPolicyEvaluationDone] error since more tasks done than futures available.");
+        }
+    }
+
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    /******************************************************************************************************/
+    metrics_array_t MpcnetRolloutManager::getComputedMetrics() {
+        if (nPolicyEvaluationThreads_ <= 0) {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::getComputedMetrics] cannot work without at least one policy evaluation thread.");
+        }
+        if (!isPolicyEvaluationDone()) {
+            throw std::runtime_error(
+                "[MpcnetRolloutManager::getComputedMetrics] cannot get metrics when policy evaluation is not done.");
+        }
+
+        // get metrics and fill metrics array
+        metrics_array_t metricsArray;
+        metricsArray.reserve(policyEvaluationFtrs_.size());
+        for (auto &policyEvaluationFtr: policyEvaluationFtrs_) {
+            try {
+                // get results from futures of the tasks
+                metricsArray.push_back(policyEvaluationFtr.get());
+            } catch (const std::exception &e) {
+                // print error for exceptions
+                std::cerr <<
+                        "[MpcnetRolloutManager::getComputedMetrics] a standard exception was caught, with message: " <<
+                        e.what() << "\n";
+            }
+        }
+
+        // return metrics array
+        return metricsArray;
+    }
+} // namespace ocs2::mpcnet

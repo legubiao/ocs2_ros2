@@ -32,64 +32,65 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mpcnet_core/rollout/MpcnetData.h"
 #include "ocs2_mpcnet_core/rollout/MpcnetRolloutBase.h"
 
-namespace ocs2 {
-namespace mpcnet {
+namespace ocs2::mpcnet {
+    /**
+    *  A class for generating data from a system that is forward simulated with a behavioral controller.
+    *  @note Usually the behavioral controller moves from the MPC policy to the MPC-Net policy throughout the training process.
+    */
+    class MpcnetDataGeneration final : public MpcnetRolloutBase {
+    public:
+        /**
+         * Constructor.
+         * @param [in] mpcPtr : Pointer to the MPC solver to be used (this class takes ownership).
+         * @param [in] mpcnetPtr : Pointer to the MPC-Net policy to be used (this class takes ownership).
+         * @param [in] rolloutPtr : Pointer to the rollout to be used (this class takes ownership).
+         * @param [in] mpcnetDefinitionPtr : Pointer to the MPC-Net definitions to be used (shared ownership).
+         * @param [in] referenceManagerPtr : Pointer to the reference manager to be used (shared ownership).
+         */
+        MpcnetDataGeneration(std::unique_ptr<MPC_BASE> mpcPtr, std::unique_ptr<MpcnetControllerBase> mpcnetPtr,
+                             std::unique_ptr<RolloutBase> rolloutPtr,
+                             std::shared_ptr<MpcnetDefinitionBase> mpcnetDefinitionPtr,
+                             std::shared_ptr<ReferenceManagerInterface> referenceManagerPtr)
+            : MpcnetRolloutBase(std::move(mpcPtr), std::move(mpcnetPtr), std::move(rolloutPtr),
+                                std::move(mpcnetDefinitionPtr),
+                                std::move(referenceManagerPtr)) {
+        }
 
-/**
- *  A class for generating data from a system that is forward simulated with a behavioral controller.
- *  @note Usually the behavioral controller moves from the MPC policy to the MPC-Net policy throughout the training process.
- */
-class MpcnetDataGeneration final : public MpcnetRolloutBase {
- public:
-  /**
-   * Constructor.
-   * @param [in] mpcPtr : Pointer to the MPC solver to be used (this class takes ownership).
-   * @param [in] mpcnetPtr : Pointer to the MPC-Net policy to be used (this class takes ownership).
-   * @param [in] rolloutPtr : Pointer to the rollout to be used (this class takes ownership).
-   * @param [in] mpcnetDefinitionPtr : Pointer to the MPC-Net definitions to be used (shared ownership).
-   * @param [in] referenceManagerPtr : Pointer to the reference manager to be used (shared ownership).
-   */
-  MpcnetDataGeneration(std::unique_ptr<MPC_BASE> mpcPtr, std::unique_ptr<MpcnetControllerBase> mpcnetPtr,
-                       std::unique_ptr<RolloutBase> rolloutPtr, std::shared_ptr<MpcnetDefinitionBase> mpcnetDefinitionPtr,
-                       std::shared_ptr<ReferenceManagerInterface> referenceManagerPtr)
-      : MpcnetRolloutBase(std::move(mpcPtr), std::move(mpcnetPtr), std::move(rolloutPtr), std::move(mpcnetDefinitionPtr),
-                          std::move(referenceManagerPtr)) {}
+        /**
+         * Default destructor.
+         */
+        ~MpcnetDataGeneration() override = default;
 
-  /**
-   * Default destructor.
-   */
-  ~MpcnetDataGeneration() override = default;
+        /**
+         * Deleted copy constructor.
+         */
+        MpcnetDataGeneration(const MpcnetDataGeneration &) = delete;
 
-  /**
-   * Deleted copy constructor.
-   */
-  MpcnetDataGeneration(const MpcnetDataGeneration&) = delete;
+        /**
+         * Deleted copy assignment.
+         */
+        MpcnetDataGeneration &operator=(const MpcnetDataGeneration &) = delete;
 
-  /**
-   * Deleted copy assignment.
-   */
-  MpcnetDataGeneration& operator=(const MpcnetDataGeneration&) = delete;
+        /**
+         * Run the data generation.
+         * @param [in] alpha : The mixture parameter for the behavioral controller.
+         * @param [in] policyFilePath : The path to the file with the learned policy for the behavioral controller.
+         * @param [in] timeStep : The time step for the forward simulation of the system with the behavioral controller.
+         * @param [in] dataDecimation : The integer factor used for downsampling the data signal.
+         * @param [in] nSamples : The number of samples drawn from a multivariate normal distribution around the nominal states.
+         * @param [in] samplingCovariance : The covariance matrix used for sampling from a multivariate normal distribution.
+         * @param [in] initialObservation : The initial system observation to start from (time and state required).
+         * @param [in] modeSchedule : The mode schedule providing the event times and mode sequence.
+         * @param [in] targetTrajectories : The target trajectories to be tracked.
+         * @return Pointer to the data array with the generated data.
+         */
+        const data_array_t *run(scalar_t alpha, const std::string &policyFilePath, scalar_t timeStep,
+                                size_t dataDecimation, size_t nSamples,
+                                const matrix_t &samplingCovariance, const SystemObservation &initialObservation,
+                                const ModeSchedule &modeSchedule,
+                                const TargetTrajectories &targetTrajectories);
 
-  /**
-   * Run the data generation.
-   * @param [in] alpha : The mixture parameter for the behavioral controller.
-   * @param [in] policyFilePath : The path to the file with the learned policy for the behavioral controller.
-   * @param [in] timeStep : The time step for the forward simulation of the system with the behavioral controller.
-   * @param [in] dataDecimation : The integer factor used for downsampling the data signal.
-   * @param [in] nSamples : The number of samples drawn from a multivariate normal distribution around the nominal states.
-   * @param [in] samplingCovariance : The covariance matrix used for sampling from a multivariate normal distribution.
-   * @param [in] initialObservation : The initial system observation to start from (time and state required).
-   * @param [in] modeSchedule : The mode schedule providing the event times and mode sequence.
-   * @param [in] targetTrajectories : The target trajectories to be tracked.
-   * @return Pointer to the data array with the generated data.
-   */
-  const data_array_t* run(scalar_t alpha, const std::string& policyFilePath, scalar_t timeStep, size_t dataDecimation, size_t nSamples,
-                          const matrix_t& samplingCovariance, const SystemObservation& initialObservation, const ModeSchedule& modeSchedule,
-                          const TargetTrajectories& targetTrajectories);
-
- private:
-  data_array_t dataArray_;
-};
-
-}  // namespace mpcnet
-}  // namespace ocs2
+    private:
+        data_array_t dataArray_;
+    };
+}

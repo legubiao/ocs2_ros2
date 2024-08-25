@@ -36,5 +36,5 @@ python3 -m venv mpcnet
 * install the required packages
 ```bash
 source ~/venvs/mpcnet/bin/activate
-python3 -m pip install -r ocs2_mpcnet_core/requirements.txt
+pip install -r ocs2_mpcnet_core/requirements.txt
 ```

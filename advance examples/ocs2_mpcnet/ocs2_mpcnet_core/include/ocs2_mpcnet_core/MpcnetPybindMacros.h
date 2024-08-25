@@ -39,7 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mpcnet_core/rollout/MpcnetData.h"
 #include "ocs2_mpcnet_core/rollout/MpcnetMetrics.h"
 
-using namespace pybind11::literals;
+namespace py = pybind11;
 
 /**
  * Convenience macro to bind general MPC-Net functionalities and other classes with all required vectors.
@@ -68,7 +68,7 @@ using namespace pybind11::literals;
     VECTOR_TYPE_BINDING(ocs2::mpcnet::data_array_t, "DataArray")                                            \
     VECTOR_TYPE_BINDING(ocs2::mpcnet::metrics_array_t, "MetricsArray")                                      \
     /* bind approximation classes */                                                                        \
-    pybind11::class_<ocs2::ScalarFunctionQuadraticApproximation>(m, "ScalarFunctionQuadraticApproximation") \
+    py::class_<ocs2::ScalarFunctionQuadraticApproximation>(m, "ScalarFunctionQuadraticApproximation") \
         .def_readwrite("f", &ocs2::ScalarFunctionQuadraticApproximation::f)                                 \
         .def_readwrite("dfdx", &ocs2::ScalarFunctionQuadraticApproximation::dfdx)                           \
         .def_readwrite("dfdu", &ocs2::ScalarFunctionQuadraticApproximation::dfdu)                           \
@@ -76,25 +76,25 @@ using namespace pybind11::literals;
         .def_readwrite("dfdux", &ocs2::ScalarFunctionQuadraticApproximation::dfdux)                         \
         .def_readwrite("dfduu", &ocs2::ScalarFunctionQuadraticApproximation::dfduu);                        \
     /* bind system observation struct */                                                                    \
-    pybind11::class_<ocs2::SystemObservation>(m, "SystemObservation")                                       \
+    py::class_<ocs2::SystemObservation>(m, "SystemObservation")                                       \
         .def(pybind11::init<>())                                                                            \
         .def_readwrite("mode", &ocs2::SystemObservation::mode)                                              \
         .def_readwrite("time", &ocs2::SystemObservation::time)                                              \
-        .def_readwrite("state", &ocs2::SystemObservation::state)                                            \
-        .def_readwrite("input", &ocs2::SystemObservation::input);                                           \
+        .def_property("state", &ocs2::SystemObservation::getState, &ocs2::SystemObservation::setState)      \
+        .def_property("input", &ocs2::SystemObservation::getInput, &ocs2::SystemObservation::setInput);      \
     /* bind mode schedule struct */                                                                         \
-    pybind11::class_<ocs2::ModeSchedule>(m, "ModeSchedule")                                                 \
+    py::class_<ocs2::ModeSchedule>(m, "ModeSchedule")                                                 \
         .def(pybind11::init<ocs2::scalar_array_t, ocs2::size_array_t>())                                    \
         .def_readwrite("eventTimes", &ocs2::ModeSchedule::eventTimes)                                       \
         .def_readwrite("modeSequence", &ocs2::ModeSchedule::modeSequence);                                  \
     /* bind target trajectories class */                                                                    \
-    pybind11::class_<ocs2::TargetTrajectories>(m, "TargetTrajectories")                                     \
+    py::class_<ocs2::TargetTrajectories>(m, "TargetTrajectories")                                     \
         .def(pybind11::init<ocs2::scalar_array_t, ocs2::vector_array_t, ocs2::vector_array_t>())            \
         .def_readwrite("timeTrajectory", &ocs2::TargetTrajectories::timeTrajectory)                         \
         .def_readwrite("stateTrajectory", &ocs2::TargetTrajectories::stateTrajectory)                       \
         .def_readwrite("inputTrajectory", &ocs2::TargetTrajectories::inputTrajectory);                      \
     /* bind data point struct */                                                                            \
-    pybind11::class_<ocs2::mpcnet::data_point_t>(m, "DataPoint")                                            \
+    py::class_<ocs2::mpcnet::data_point_t>(m, "DataPoint")                                            \
         .def(pybind11::init<>())                                                                            \
         .def_readwrite("mode", &ocs2::mpcnet::data_point_t::mode)                                           \
         .def_readwrite("t", &ocs2::mpcnet::data_point_t::t)                                                 \
@@ -104,7 +104,7 @@ using namespace pybind11::literals;
         .def_readwrite("actionTransformation", &ocs2::mpcnet::data_point_t::actionTransformation)           \
         .def_readwrite("hamiltonian", &ocs2::mpcnet::data_point_t::hamiltonian);                            \
     /* bind metrics struct */                                                                               \
-    pybind11::class_<ocs2::mpcnet::metrics_t>(m, "Metrics")                                                 \
+    py::class_<ocs2::mpcnet::metrics_t>(m, "Metrics")                                                 \
         .def(pybind11::init<>())                                                                            \
         .def_readwrite("survivalTime", &ocs2::mpcnet::metrics_t::survivalTime)                              \
         .def_readwrite("incurredHamiltonian", &ocs2::mpcnet::metrics_t::incurredHamiltonian);               \
@@ -117,9 +117,9 @@ using namespace pybind11::literals;
   /* create a python module */                                                                                                 \
   PYBIND11_MODULE(LIB_NAME, m) {                                                                                               \
     /* import the general MPC-Net module */                                                                                    \
-    pybind11::module::import("ocs2_mpcnet_core.MpcnetPybindings");                                                             \
+    py::module::import("ocs2_mpcnet_core.MpcnetPybindings");                                                             \
     /* bind actual MPC-Net interface for specific robot */                                                                     \
-    pybind11::class_<MPCNET_INTERFACE>(m, "MpcnetInterface")                                                                   \
+    py::class_<MPCNET_INTERFACE>(m, "MpcnetInterface")                                                                   \
         .def(pybind11::init<size_t, size_t, bool>())                                                                           \
         .def("startDataGeneration", &MPCNET_INTERFACE::startDataGeneration, "alpha"_a, "policyFilePath"_a, "timeStep"_a,       \
              "dataDecimation"_a, "nSamples"_a, "samplingCovariance"_a.noconvert(), "initialObservations"_a, "modeSchedules"_a, \

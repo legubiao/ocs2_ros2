@@ -34,35 +34,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/misc/LoadData.h>
 
-namespace ocs2 {
-namespace mpc {
+namespace ocs2::mpc {
+    Settings loadSettings(const std::string &filename, const std::string &fieldName, bool verbose) {
+        boost::property_tree::ptree pt;
+        read_info(filename, pt);
 
-Settings loadSettings(const std::string& filename, const std::string& fieldName, bool verbose) {
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_info(filename, pt);
+        Settings settings;
 
-  Settings settings;
+        if (verbose) {
+            std::cerr << "\n #### MPC Settings:";
+            std::cerr << "\n #### =============================================================================\n";
+        }
 
-  if (verbose) {
-    std::cerr << "\n #### MPC Settings:";
-    std::cerr << "\n #### =============================================================================\n";
-  }
+        loadData::loadPtreeValue(pt, settings.timeHorizon_, fieldName + ".timeHorizon", verbose);
+        loadData::loadPtreeValue(pt, settings.solutionTimeWindow_, fieldName + ".solutionTimeWindow", verbose);
+        loadData::loadPtreeValue(pt, settings.coldStart_, fieldName + ".coldStart", verbose);
 
-  loadData::loadPtreeValue(pt, settings.timeHorizon_, fieldName + ".timeHorizon", verbose);
-  loadData::loadPtreeValue(pt, settings.solutionTimeWindow_, fieldName + ".solutionTimeWindow", verbose);
-  loadData::loadPtreeValue(pt, settings.coldStart_, fieldName + ".coldStart", verbose);
+        loadData::loadPtreeValue(pt, settings.debugPrint_, fieldName + ".debugPrint", verbose);
 
-  loadData::loadPtreeValue(pt, settings.debugPrint_, fieldName + ".debugPrint", verbose);
+        loadData::loadPtreeValue(pt, settings.mpcDesiredFrequency_, fieldName + ".mpcDesiredFrequency", verbose);
+        loadData::loadPtreeValue(pt, settings.mrtDesiredFrequency_, fieldName + ".mrtDesiredFrequency", verbose);
 
-  loadData::loadPtreeValue(pt, settings.mpcDesiredFrequency_, fieldName + ".mpcDesiredFrequency", verbose);
-  loadData::loadPtreeValue(pt, settings.mrtDesiredFrequency_, fieldName + ".mrtDesiredFrequency", verbose);
+        if (verbose) {
+            std::cerr << " #### =============================================================================" <<
+                    std::endl;
+        }
 
-  if (verbose) {
-    std::cerr << " #### =============================================================================" << std::endl;
-  }
-
-  return settings;
+        return settings;
+    }
 }
-
-}  // namespace mpc
-}  // namespace ocs2

@@ -30,36 +30,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mpc/SystemObservation.h"
 
 namespace ocs2 {
+    
+    void swap(SystemObservation &a, SystemObservation &b) noexcept {
+        std::swap(a.mode, b.mode);
+        std::swap(a.time, b.time);
+        a.state.swap(b.state);
+        a.input.swap(b.input);
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void swap(SystemObservation& a, SystemObservation& b) noexcept {
-  std::swap(a.mode, b.mode);
-  std::swap(a.time, b.time);
-  a.state.swap(b.state);
-  a.input.swap(b.input);
-}
+    
+    std::ostream &operator<<(std::ostream &out, const SystemObservation &observation) {
+        out << "Observation: \n";
+        out << "\t time:      " << observation.time << '\n';
+        out << "\t mode:      " << observation.mode << '\n';
+        out << "\t state:    [";
+        for (int i = 0; i < observation.state.size() - 1; i++) {
+            out << observation.state(i) << ", ";
+        }
+        out << observation.state(observation.state.size() - 1) << "]\n";
+        out << "\t input:    [";
+        for (int i = 0; i < observation.input.size() - 1; i++) {
+            out << observation.input(i) << ", ";
+        }
+        out << observation.input(observation.input.size() - 1) << "]";
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::ostream& operator<<(std::ostream& out, const SystemObservation& observation) {
-  out << "Observation: \n";
-  out << "\t time:      " << observation.time << '\n';
-  out << "\t mode:      " << observation.mode << '\n';
-  out << "\t state:    [";
-  for (int i = 0; i < observation.state.size() - 1; i++) {
-    out << observation.state(i) << ", ";
-  }
-  out << observation.state(observation.state.size() - 1) << "]\n";
-  out << "\t input:    [";
-  for (int i = 0; i < observation.input.size() - 1; i++) {
-    out << observation.input(i) << ", ";
-  }
-  out << observation.input(observation.input.size() - 1) << "]";
-
-  return out;
-}
-
-}  // namespace ocs2
+        return out;
+    }
+} // namespace ocs2

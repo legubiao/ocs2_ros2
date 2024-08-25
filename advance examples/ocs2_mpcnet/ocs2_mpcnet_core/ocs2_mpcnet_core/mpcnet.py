@@ -32,6 +32,7 @@
 Provides a class that handles the MPC-Net training.
 """
 
+import sys
 import os
 import time
 import datetime
@@ -132,11 +133,14 @@ class Mpcnet(metaclass=ABCMeta):
             policy: The current learned policy.
             alpha: The weight of the MPC policy in the rollouts.
         """
+        print("starting data generation with alpha", alpha)
         policy_file_path = "/tmp/data_generation_" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".onnx"
         torch.onnx.export(model=policy, args=self.dummy_observation, f=policy_file_path)
+        print("policy file path", policy_file_path)
         initial_observations, mode_schedules, target_trajectories = self.get_tasks(
             self.config.DATA_GENERATION_TASKS, self.config.DATA_GENERATION_DURATION
         )
+        print("starting data generation with alpha 1", alpha)
         self.interface.startDataGeneration(
             alpha,
             policy_file_path,
@@ -148,6 +152,7 @@ class Mpcnet(metaclass=ABCMeta):
             mode_schedules,
             target_trajectories,
         )
+        sys.stdout.flush()
 
     def start_policy_evaluation(self, policy: BasePolicy, alpha: float = 0.0):
         """Start policy evaluation.

@@ -36,6 +36,8 @@ import torch
 import numpy as np
 from typing import Tuple, Dict
 
+from torch.ao.quantization.backend_config.onednn import observation_type
+
 from ocs2_mpcnet_core import (
     size_array,
     scalar_array,
@@ -166,9 +168,11 @@ def get_system_observation(mode: int, time: float, state: np.ndarray, input: np.
         An OCS2 system observation object.
     """
     system_observation = SystemObservation()
+    print(dir(system_observation))
     system_observation.mode = mode
     system_observation.time = time
-    system_observation.state = state
+    system_observation.state[0] = 1.0
+    print(system_observation.state)
     system_observation.input = input
     return system_observation
 

@@ -31,20 +31,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/Types.h>
 
-namespace ocs2 {
-namespace mpcnet {
+namespace ocs2::mpcnet {
+    /**
+    * Metrics computed during the policy evaluation rollout.
+    */
+    struct Metrics {
+        /** Survival time. */
+        scalar_t survivalTime = 0.0;
+        /** Hamiltonian incurred over time. */
+        scalar_t incurredHamiltonian = 0.0;
+    };
 
-/**
- * Metrics computed during the policy evaluation rollout.
- */
-struct Metrics {
-  /** Survival time. */
-  scalar_t survivalTime = 0.0;
-  /** Hamiltonian incurred over time. */
-  scalar_t incurredHamiltonian = 0.0;
-};
-using metrics_t = Metrics;
-using metrics_array_t = std::vector<metrics_t>;
-
-}  // namespace mpcnet
-}  // namespace ocs2
+    using metrics_t = Metrics;
+    using metrics_array_t = std::vector<metrics_t>;
+}

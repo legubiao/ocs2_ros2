@@ -32,69 +32,67 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/reference/ModeSchedule.h>
 #include <ocs2_core/reference/TargetTrajectories.h>
 
-namespace ocs2 {
-namespace mpcnet {
+namespace ocs2::mpcnet {
+    /**
+    * Base class for MPC-Net definitions.
+    */
+    class MpcnetDefinitionBase {
+    public:
+        /**
+         * Default constructor.
+         */
+        MpcnetDefinitionBase() = default;
 
-/**
- * Base class for MPC-Net definitions.
- */
-class MpcnetDefinitionBase {
- public:
-  /**
-   * Default constructor.
-   */
-  MpcnetDefinitionBase() = default;
+        /**
+         * Default destructor.
+         */
+        virtual ~MpcnetDefinitionBase() = default;
 
-  /**
-   * Default destructor.
-   */
-  virtual ~MpcnetDefinitionBase() = default;
+        /**
+         * Deleted copy constructor.
+         */
+        MpcnetDefinitionBase(const MpcnetDefinitionBase &) = delete;
 
-  /**
-   * Deleted copy constructor.
-   */
-  MpcnetDefinitionBase(const MpcnetDefinitionBase&) = delete;
+        /**
+         * Deleted copy assignment.
+         */
+        MpcnetDefinitionBase &operator=(const MpcnetDefinitionBase &) = delete;
 
-  /**
-   * Deleted copy assignment.
-   */
-  MpcnetDefinitionBase& operator=(const MpcnetDefinitionBase&) = delete;
+        /**
+         * Get the observation.
+         * @note The observation o is the input to the policy.
+         * @param[in] t : Absolute time.
+         * @param[in] x : Robot state.
+         * @param[in] modeSchedule : Mode schedule.
+         * @param[in] targetTrajectories : Target trajectories.
+         * @return The observation.
+         */
+        virtual vector_t getObservation(scalar_t t, const vector_t &x, const ModeSchedule &modeSchedule,
+                                        const TargetTrajectories &targetTrajectories) = 0;
 
-  /**
-   * Get the observation.
-   * @note The observation o is the input to the policy.
-   * @param[in] t : Absolute time.
-   * @param[in] x : Robot state.
-   * @param[in] modeSchedule : Mode schedule.
-   * @param[in] targetTrajectories : Target trajectories.
-   * @return The observation.
-   */
-  virtual vector_t getObservation(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
-                                  const TargetTrajectories& targetTrajectories) = 0;
+        /**
+         * Get the action transformation.
+         * @note Used for computing the control input u = A * a + b from the action a predicted by the policy.
+         * @param[in] t : Absolute time.
+         * @param[in] x : Robot state.
+         * @param[in] modeSchedule : Mode schedule.
+         * @param[in] targetTrajectories : Target trajectories.
+         * @return The action transformation pair {A, b}.
+         */
+        virtual std::pair<matrix_t, vector_t> getActionTransformation(scalar_t t, const vector_t &x,
+                                                                      const ModeSchedule &modeSchedule,
+                                                                      const TargetTrajectories &targetTrajectories) = 0;
 
-  /**
-   * Get the action transformation.
-   * @note Used for computing the control input u = A * a + b from the action a predicted by the policy.
-   * @param[in] t : Absolute time.
-   * @param[in] x : Robot state.
-   * @param[in] modeSchedule : Mode schedule.
-   * @param[in] targetTrajectories : Target trajectories.
-   * @return The action transformation pair {A, b}.
-   */
-  virtual std::pair<matrix_t, vector_t> getActionTransformation(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
-                                                                const TargetTrajectories& targetTrajectories) = 0;
-
-  /**
-   * Check if the tuple (t, x, modeSchedule, targetTrajectories) is valid.
-   * @note E.g., check if the state diverged or if tracking is poor.
-   * @param[in] t : Absolute time.
-   * @param[in] x : Robot state.
-   * @param[in] modeSchedule : Mode schedule.
-   * @param[in] targetTrajectories : Target trajectories.
-   * @return True if valid.
-   */
-  virtual bool isValid(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule, const TargetTrajectories& targetTrajectories) = 0;
-};
-
-}  // namespace mpcnet
-}  // namespace ocs2
+        /**
+         * Check if the tuple (t, x, modeSchedule, targetTrajectories) is valid.
+         * @note E.g., check if the state diverged or if tracking is poor.
+         * @param[in] t : Absolute time.
+         * @param[in] x : Robot state.
+         * @param[in] modeSchedule : Mode schedule.
+         * @param[in] targetTrajectories : Target trajectories.
+         * @return True if valid.
+         */
+        virtual bool isValid(scalar_t t, const vector_t &x, const ModeSchedule &modeSchedule,
+                             const TargetTrajectories &targetTrajectories) = 0;
+    };
+}

@@ -29,26 +29,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ostream>
-
 #include <ocs2_core/Types.h>
 
 namespace ocs2 {
+    /**
+     * This class contains the observation information.
+     */
+    struct SystemObservation {
+        size_t mode = 0;
+        scalar_t time = 0.0;
+        vector_t state;
+        vector_t input;
 
-/**
- * This class contains the observation information.
- */
-struct SystemObservation {
-  size_t mode = 0;
-  scalar_t time = 0.0;
-  vector_t state;
-  vector_t input;
+        // Custom getter and setter for state
+        const vector_t &getState() const { return state; }
+        void setState(const vector_t &newState) { state = newState; }
 
-  friend void swap(SystemObservation& a, SystemObservation& b) noexcept;
-};
+        // Custom getter and setter for input
+        const vector_t &getInput() const { return input; }
+        void setInput(const vector_t &newInput) { input = newInput; }
 
-void swap(SystemObservation& a, SystemObservation& b) noexcept;
 
-std::ostream& operator<<(std::ostream& out, const SystemObservation& observation);
+        friend void swap(SystemObservation &a, SystemObservation &b) noexcept;
+    };
 
-}  // namespace ocs2
+    void swap(SystemObservation &a, SystemObservation &b) noexcept;
+
+    std::ostream &operator<<(std::ostream &out, const SystemObservation &observation);
+} // namespace ocs2

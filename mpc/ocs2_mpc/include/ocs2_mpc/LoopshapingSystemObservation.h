@@ -34,14 +34,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mpc/SystemObservation.h"
 
 namespace ocs2 {
-
-/**
- * Converts a systemObservation obtained for loopshaping wrapped system to the systemObservation of the original system.
- *
- * @param observation : SystemObservation for the augmented (=loopshaped) system
- * @param loopshapingDefinition : loopshaping filter definition
- * @return SystemObservation of the original system
- */
-SystemObservation loopshapingToSystemObservation(const SystemObservation& observation, const LoopshapingDefinition& loopshapingDefinition);
-
-}  // namespace ocs2
+    /**
+     * Converts a systemObservation obtained for loopshaping wrapped system to the systemObservation of the original system.
+     *
+     * @param observation : SystemObservation for the augmented (=loopshaped) system
+     * @param loopshapingDefinition : loopshaping filter definition
+     * @return SystemObservation of the original system
+     */
+    SystemObservation loopshapingToSystemObservation(const SystemObservation &observation,
+                                                     const LoopshapingDefinition &loopshapingDefinition);
+} // namespace ocs2

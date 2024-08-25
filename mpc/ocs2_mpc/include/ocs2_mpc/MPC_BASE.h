@@ -37,66 +37,64 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mpc/MPC_Settings.h"
 
 namespace ocs2 {
+    /**
+     * This class is an interface class for the MPC method.
+     */
+    class MPC_BASE {
+    public:
+        /**
+         * Constructor
+         *
+         * @param [in] mpcSettings: Structure containing the settings for the MPC algorithm.
+         */
+        explicit MPC_BASE(const mpc::Settings &mpcSettings);
 
-/**
- * This class is an interface class for the MPC method.
- */
-class MPC_BASE {
- public:
-  /**
-   * Constructor
-   *
-   * @param [in] mpcSettings: Structure containing the settings for the MPC algorithm.
-   */
-  explicit MPC_BASE(mpc::Settings mpcSettings);
+        /** Destructor. */
+        virtual ~MPC_BASE() = default;
 
-  /** Destructor. */
-  virtual ~MPC_BASE() = default;
+        /**
+         * Resets the class to its state after construction.
+         * @note reset() must not be called while the solver is running.
+         */
+        virtual void reset();
 
-  /**
-   * Resets the class to its state after construction.
-   * @note reset() must not be called while the solver is running.
-   */
-  virtual void reset();
+        /**
+         * The main routine of MPC which runs MPC for the given state and time.
+         *
+         * @param [in] currentTime: The given time.
+         * @param [in] currentState: The given state.
+         */
+        virtual bool run(scalar_t currentTime, const vector_t &currentState);
 
-  /**
-   * The main routine of MPC which runs MPC for the given state and time.
-   *
-   * @param [in] currentTime: The given time.
-   * @param [in] currentState: The given state.
-   */
-  virtual bool run(scalar_t currentTime, const vector_t& currentState);
+        /** Gets a pointer to the underlying solver used in the MPC. */
+        virtual SolverBase *getSolverPtr() = 0;
 
-  /** Gets a pointer to the underlying solver used in the MPC. */
-  virtual SolverBase* getSolverPtr() = 0;
+        /** Gets a const pointer to the underlying solver used in the MPC. */
+        virtual const SolverBase *getSolverPtr() const = 0;
 
-  /** Gets a const pointer to the underlying solver used in the MPC. */
-  virtual const SolverBase* getSolverPtr() const = 0;
+        /** Returns the time horizon for which the optimizer is called. */
+        scalar_t getTimeHorizon() const { return mpcSettings_.timeHorizon_; }
 
-  /** Returns the time horizon for which the optimizer is called. */
-  scalar_t getTimeHorizon() const { return mpcSettings_.timeHorizon_; }
+        /** Gets the MPC settings. */
+        const mpc::Settings &settings() const { return mpcSettings_; }
 
-  /** Gets the MPC settings. */
-  const mpc::Settings& settings() const { return mpcSettings_; }
+    protected:
+        /**
+         * Solves the optimal control problem for the given state and time period ([initTime,finalTime]).
+         *
+         * @param [out] initTime: Initial time. This value can be adjusted by the optimizer.
+         * @param [in] initState: Initial state.
+         * @param [in] finalTime: Final time. This value can be adjusted by the optimizer.
+         */
+        virtual void calculateController(scalar_t initTime, const vector_t &initState, scalar_t finalTime) = 0;
 
- protected:
-  /**
-   * Solves the optimal control problem for the given state and time period ([initTime,finalTime]).
-   *
-   * @param [out] initTime: Initial time. This value can be adjusted by the optimizer.
-   * @param [in] initState: Initial state.
-   * @param [in] finalTime: Final time. This value can be adjusted by the optimizer.
-   */
-  virtual void calculateController(scalar_t initTime, const vector_t& initState, scalar_t finalTime) = 0;
+        /** Whether this is the first iteration of MPC or not. */
+        bool isFirstMpcRun() const { return initRun_; }
 
-  /** Whether this is the first iteration of MPC or not. */
-  bool isFirstMpcRun() const { return initRun_; }
+    private:
+        bool initRun_ = true;
+        const mpc::Settings mpcSettings_;
 
- private:
-  bool initRun_ = true;
-  const mpc::Settings mpcSettings_;
-
-  benchmark::RepeatedTimer mpcTimer_;
-};
-
-}  // namespace ocs2
+        benchmark::RepeatedTimer mpcTimer_;
+    };
+} // namespace ocs2

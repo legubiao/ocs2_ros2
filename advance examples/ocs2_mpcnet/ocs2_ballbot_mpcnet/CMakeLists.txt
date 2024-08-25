@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_ballbot_mpcnet)
 
+if(NOT DEFINED PYTHON_INSTALL_DIR)
+    set(PYTHON_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
+endif()
 
 set(dependencies
         ocs2_ballbot_ros
@@ -9,11 +12,11 @@ set(dependencies
 )
 
 find_package(ament_cmake REQUIRED)
+find_package(Python COMPONENTS Interpreter Development)
+find_package(pybind11 REQUIRED)
+
 find_package(ocs2_mpcnet_core REQUIRED)
 find_package(ocs2_ballbot_ros REQUIRED)
-
-find_package(pybind11 REQUIRED)
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
 # Generate compile_commands.json for clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

@@ -31,10 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <condition_variable>
 #include <csignal>
-#include <ctime>
-#include <iostream>
-#include <string>
-#include <thread>
 
 #include <ocs2_core/misc/Benchmark.h>
 #include <ocs2_core/model_data/Multiplier.h>
@@ -42,93 +38,92 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mpc/MRT_BASE.h"
 
 namespace ocs2 {
+    /**
+     * A lean ROS independent interface to OCS2. In incorporates the functionality of the MPC and the MRT (trajectory tracking) modules.
+     * Please refer to ocs2_double_integrator_example for a minimal example and tests
+     */
+    class MPC_MRT_Interface final : public MRT_BASE {
+    public:
+        /**
+         * Constructor
+         * @param [in] mpc: The underlying MPC class to be used.
+         */
+        explicit MPC_MRT_Interface(MPC_BASE &mpc);
 
-/**
- * A lean ROS independent interface to OCS2. In incorporates the functionality of the MPC and the MRT (trajectory tracking) modules.
- * Please refer to ocs2_double_integrator_example for a minimal example and tests
- */
-class MPC_MRT_Interface final : public MRT_BASE {
- public:
-  /**
-   * Constructor
-   * @param [in] mpc: The underlying MPC class to be used.
-   */
-  explicit MPC_MRT_Interface(MPC_BASE& mpc);
+        ~MPC_MRT_Interface() override = default;
 
-  ~MPC_MRT_Interface() override = default;
+        void resetMpcNode(const TargetTrajectories &initTargetTrajectories) override;
 
-  void resetMpcNode(const TargetTrajectories& initTargetTrajectories) override;
+        void setCurrentObservation(const SystemObservation &currentObservation) override;
 
-  void setCurrentObservation(const SystemObservation& currentObservation) override;
+        /*
+         * Gets the ReferenceManager which manages both ModeSchedule and TargetTrajectories.
+         */
+        ReferenceManagerInterface &getReferenceManager();
 
-  /*
-   * Gets the ReferenceManager which manages both ModeSchedule and TargetTrajectories.
-   */
-  ReferenceManagerInterface& getReferenceManager();
-  const ReferenceManagerInterface& getReferenceManager() const;
+        const ReferenceManagerInterface &getReferenceManager() const;
 
-  /**
-   * Advance the mpc module for one iteration. The evaluation methods can be called while this method is running. They will evaluate the
-   * control law that was up-to-date at the last updatePolicy() call.
-   */
-  void advanceMpc();
+        /**
+         * Advance the mpc module for one iteration. The evaluation methods can be called while this method is running. They will evaluate the
+         * control law that was up-to-date at the last updatePolicy() call.
+         */
+        void advanceMpc();
 
-  /**
-   * @brief Retrieves the gain matrix from solver capable of optimizing over LinearController type.
-   *
-   * @note This method is not thread-safe, meaning you can only access this data safely at the end of each MPC iteration.
-   *
-   * @param [in] time: query time
-   * @return The gain matrix.
-   */
-  matrix_t getLinearFeedbackGain(scalar_t time);
+        /**
+         * @brief Retrieves the gain matrix from solver capable of optimizing over LinearController type.
+         *
+         * @note This method is not thread-safe, meaning you can only access this data safely at the end of each MPC iteration.
+         *
+         * @param [in] time: query time
+         * @return The gain matrix.
+         */
+        matrix_t getLinearFeedbackGain(scalar_t time);
 
-  /**
-   * @brief Access the solver's internal value function.
-   *
-   * @note This method is not thread-safe, meaning you can only access this data safely at the end of each MPC iteration.
-   *
-   * @param [in] time: query time
-   * @param [in] state: query state
-   * @return The quadratic approximation of the value function at the requested time and state.
-   */
-  ScalarFunctionQuadraticApproximation getValueFunction(scalar_t time, const vector_t& state) const;
+        /**
+         * @brief Access the solver's internal value function.
+         *
+         * @note This method is not thread-safe, meaning you can only access this data safely at the end of each MPC iteration.
+         *
+         * @param [in] time: query time
+         * @param [in] state: query state
+         * @return The quadratic approximation of the value function at the requested time and state.
+         */
+        ScalarFunctionQuadraticApproximation getValueFunction(scalar_t time, const vector_t &state) const;
 
-  /**
-   * @brief Computes the Lagrange multiplier related to the state-input constraints
-   *
-   * @note This method is not thread-safe, meaning you can only access this data safely at the end of each MPC iteration.
-   *
-   * @param [in] time: query time
-   * @param [in] state: query state
-   * @return The Lagrange multiplier at the requested time and state
-   */
-  vector_t getStateInputEqualityConstraintLagrangian(scalar_t time, const vector_t& state) const;
+        /**
+         * @brief Computes the Lagrange multiplier related to the state-input constraints
+         *
+         * @note This method is not thread-safe, meaning you can only access this data safely at the end of each MPC iteration.
+         *
+         * @param [in] time: query time
+         * @param [in] state: query state
+         * @return The Lagrange multiplier at the requested time and state
+         */
+        vector_t getStateInputEqualityConstraintLagrangian(scalar_t time, const vector_t &state) const;
 
-  /**
-   * @brief Returns the intermediate dual solution at the given time.
-   *
-   * @note This method is not thread-safe, meaning you can only access this data safely at the end of each MPC iteration.
-   *
-   * @param [in] time: The inquiry time
-   * @return The collection of multipliers associated to state/state-input, equality/inequality Lagrangian terms.
-   */
-  MultiplierCollection getIntermediateDualSolution(scalar_t time) const;
+        /**
+         * @brief Returns the intermediate dual solution at the given time.
+         *
+         * @note This method is not thread-safe, meaning you can only access this data safely at the end of each MPC iteration.
+         *
+         * @param [in] time: The inquiry time
+         * @return The collection of multipliers associated to state/state-input, equality/inequality Lagrangian terms.
+         */
+        MultiplierCollection getIntermediateDualSolution(scalar_t time) const;
 
- private:
-  /**
-   * Updates the buffer variables from the MPC object. This method is automatically called by advanceMpc()
-   *
-   * @param [in] mpcInitObservation: The observation used to run the MPC.
-   */
-  void copyToBuffer(const SystemObservation& mpcInitObservation);
+    private:
+        /**
+         * Updates the buffer variables from the MPC object. This method is automatically called by advanceMpc()
+         *
+         * @param [in] mpcInitObservation: The observation used to run the MPC.
+         */
+        void copyToBuffer(const SystemObservation &mpcInitObservation);
 
-  MPC_BASE& mpc_;
-  benchmark::RepeatedTimer mpcTimer_;
+        MPC_BASE &mpc_;
+        benchmark::RepeatedTimer mpcTimer_;
 
-  // MPC inputs
-  SystemObservation currentObservation_;
-  std::mutex observationMutex_;
-};
-
-}  // namespace ocs2
+        // MPC inputs
+        SystemObservation currentObservation_;
+        std::mutex observationMutex_;
+    };
+} // namespace ocs2

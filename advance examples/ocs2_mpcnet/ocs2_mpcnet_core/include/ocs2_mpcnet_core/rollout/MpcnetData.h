@@ -34,53 +34,52 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_mpcnet_core/MpcnetDefinitionBase.h"
 
-namespace ocs2 {
-namespace mpcnet {
+namespace ocs2::mpcnet {
+    /**
+    * Data point collected during the data generation rollout.
+    */
+    struct DataPoint {
+        /** Mode of the system. */
+        size_t mode;
+        /** Absolute time. */
+        scalar_t t;
+        /** Observed state. */
+        vector_t x;
+        /** Optimal control input. */
+        vector_t u;
+        /** Observation given as input to the policy. */
+        vector_t observation;
+        /** Action transformation applied to the output of the policy. */
+        std::pair<matrix_t, vector_t> actionTransformation;
+        /** Linear-quadratic approximation of the Hamiltonian, using x and u as development/expansion points. */
+        ScalarFunctionQuadraticApproximation hamiltonian;
+    };
 
-/**
- * Data point collected during the data generation rollout.
- */
-struct DataPoint {
-  /** Mode of the system. */
-  size_t mode;
-  /** Absolute time. */
-  scalar_t t;
-  /** Observed state. */
-  vector_t x;
-  /** Optimal control input. */
-  vector_t u;
-  /** Observation given as input to the policy. */
-  vector_t observation;
-  /** Action transformation applied to the output of the policy. */
-  std::pair<matrix_t, vector_t> actionTransformation;
-  /** Linear-quadratic approximation of the Hamiltonian, using x and u as development/expansion points. */
-  ScalarFunctionQuadraticApproximation hamiltonian;
-};
-using data_point_t = DataPoint;
-using data_array_t = std::vector<data_point_t>;
+    using data_point_t = DataPoint;
+    using data_array_t = std::vector<data_point_t>;
 
-/**
- * Get a data point.
- * @param [in] mpc : The MPC with a pointer to the underlying solver.
- * @param [in] mpcnetDefinition : The MPC-Net definitions.
- * @param [in] deviation : The state deviation from the nominal state where to get the data point from.
- * @return A data point.
- */
-inline data_point_t getDataPoint(MPC_BASE& mpc, MpcnetDefinitionBase& mpcnetDefinition, const vector_t& deviation) {
-  data_point_t dataPoint;
-  const auto& referenceManager = mpc.getSolverPtr()->getReferenceManager();
-  const auto primalSolution = mpc.getSolverPtr()->primalSolution(mpc.getSolverPtr()->getFinalTime());
-  dataPoint.t = primalSolution.timeTrajectory_.front();
-  dataPoint.x = primalSolution.stateTrajectory_.front() + deviation;
-  dataPoint.u = primalSolution.controllerPtr_->computeInput(dataPoint.t, dataPoint.x);
-  dataPoint.mode = primalSolution.modeSchedule_.modeAtTime(dataPoint.t);
-  dataPoint.observation = mpcnetDefinition.getObservation(dataPoint.t, dataPoint.x, referenceManager.getModeSchedule(),
-                                                          referenceManager.getTargetTrajectories());
-  dataPoint.actionTransformation = mpcnetDefinition.getActionTransformation(dataPoint.t, dataPoint.x, referenceManager.getModeSchedule(),
-                                                                            referenceManager.getTargetTrajectories());
-  dataPoint.hamiltonian = mpc.getSolverPtr()->getHamiltonian(dataPoint.t, dataPoint.x, dataPoint.u);
-  return dataPoint;
+    /**
+    * Get a data point.
+    * @param [in] mpc : The MPC with a pointer to the underlying solver.
+    * @param [in] mpcnetDefinition : The MPC-Net definitions.
+    * @param [in] deviation : The state deviation from the nominal state where to get the data point from.
+    * @return A data point.
+    */
+    inline data_point_t getDataPoint(MPC_BASE &mpc, MpcnetDefinitionBase &mpcnetDefinition, const vector_t &deviation) {
+        data_point_t dataPoint;
+        const auto &referenceManager = mpc.getSolverPtr()->getReferenceManager();
+        const auto primalSolution = mpc.getSolverPtr()->primalSolution(mpc.getSolverPtr()->getFinalTime());
+        dataPoint.t = primalSolution.timeTrajectory_.front();
+        dataPoint.x = primalSolution.stateTrajectory_.front() + deviation;
+        dataPoint.u = primalSolution.controllerPtr_->computeInput(dataPoint.t, dataPoint.x);
+        dataPoint.mode = primalSolution.modeSchedule_.modeAtTime(dataPoint.t);
+        dataPoint.observation = mpcnetDefinition.getObservation(dataPoint.t, dataPoint.x,
+                                                                referenceManager.getModeSchedule(),
+                                                                referenceManager.getTargetTrajectories());
+        dataPoint.actionTransformation = mpcnetDefinition.getActionTransformation(
+            dataPoint.t, dataPoint.x, referenceManager.getModeSchedule(),
+            referenceManager.getTargetTrajectories());
+        dataPoint.hamiltonian = mpc.getSolverPtr()->getHamiltonian(dataPoint.t, dataPoint.x, dataPoint.u);
+        return dataPoint;
+    }
 }
-
-}  // namespace mpcnet
-}  // namespace ocs2

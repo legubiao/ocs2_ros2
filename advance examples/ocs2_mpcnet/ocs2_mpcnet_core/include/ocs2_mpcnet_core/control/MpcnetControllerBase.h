@@ -31,27 +31,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/control/ControllerBase.h>
 
-namespace ocs2 {
-namespace mpcnet {
+namespace ocs2::mpcnet {
+    /**
+    * The base class for all controllers that use a MPC-Net policy.
+    */
+    class MpcnetControllerBase : public ControllerBase {
+    public:
+        MpcnetControllerBase() = default;
 
-/**
- * The base class for all controllers that use a MPC-Net policy.
- */
-class MpcnetControllerBase : public ControllerBase {
- public:
-  MpcnetControllerBase() = default;
-  ~MpcnetControllerBase() override = default;
-  MpcnetControllerBase* clone() const override = 0;
+        ~MpcnetControllerBase() override = default;
 
-  /**
-   * Load the model of the policy.
-   * @param [in] policyFilePath : Path to the file with the model of the policy.
-   */
-  virtual void loadPolicyModel(const std::string& policyFilePath) = 0;
+        MpcnetControllerBase *clone() const override = 0;
 
- protected:
-  MpcnetControllerBase(const MpcnetControllerBase& other) = default;
-};
+        /**
+         * Load the model of the policy.
+         * @param [in] policyFilePath : Path to the file with the model of the policy.
+         */
+        virtual void loadPolicyModel(const std::string &policyFilePath) = 0;
 
-}  // namespace mpcnet
-}  // namespace ocs2
+    protected:
+        MpcnetControllerBase(const MpcnetControllerBase &other) = default;
+    };
+}
