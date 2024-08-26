@@ -29,29 +29,26 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_ballbot_mpcnet/BallbotMpcnetDefinition.h"
 
-namespace ocs2 {
-namespace ballbot {
 
-vector_t BallbotMpcnetDefinition::getObservation(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
-                                                 const TargetTrajectories& targetTrajectories) {
-  vector_t observation = x - targetTrajectories.getDesiredState(t);
-  const Eigen::Matrix<scalar_t, 2, 2> R =
-      (Eigen::Matrix<scalar_t, 2, 2>() << cos(x(2)), -sin(x(2)), sin(x(2)), cos(x(2))).finished().transpose();
-  observation.segment<2>(0) = R * observation.segment<2>(0);
-  observation.segment<2>(5) = R * observation.segment<2>(5);
-  return observation;
-}
+namespace ocs2::ballbot {
+    vector_t BallbotMpcnetDefinition::getObservation(scalar_t t, const vector_t &x, const ModeSchedule &modeSchedule,
+                                                     const TargetTrajectories &targetTrajectories) {
+        vector_t observation = x - targetTrajectories.getDesiredState(t);
+        const Eigen::Matrix<scalar_t, 2, 2> R =
+                (Eigen::Matrix<scalar_t, 2, 2>() << cos(x(2)), -sin(x(2)), sin(x(2)), cos(x(2))).finished().transpose();
+        observation.segment<2>(0) = R * observation.segment<2>(0);
+        observation.segment<2>(5) = R * observation.segment<2>(5);
+        return observation;
+    }
 
-std::pair<matrix_t, vector_t> BallbotMpcnetDefinition::getActionTransformation(scalar_t t, const vector_t& x,
-                                                                               const ModeSchedule& modeSchedule,
-                                                                               const TargetTrajectories& targetTrajectories) {
-  return {matrix_t::Identity(3, 3), vector_t::Zero(3)};
-}
+    std::pair<matrix_t, vector_t> BallbotMpcnetDefinition::getActionTransformation(scalar_t t, const vector_t &x,
+        const ModeSchedule &modeSchedule,
+        const TargetTrajectories &targetTrajectories) {
+        return {matrix_t::Identity(3, 3), vector_t::Zero(3)};
+    }
 
-bool BallbotMpcnetDefinition::isValid(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
-                                      const TargetTrajectories& targetTrajectories) {
-  return true;
-}
-
-}  // namespace ballbot
-}  // namespace ocs2
+    bool BallbotMpcnetDefinition::isValid(scalar_t t, const vector_t &x, const ModeSchedule &modeSchedule,
+                                          const TargetTrajectories &targetTrajectories) {
+        return true;
+    }
+} // namespace ocs2::ballbot

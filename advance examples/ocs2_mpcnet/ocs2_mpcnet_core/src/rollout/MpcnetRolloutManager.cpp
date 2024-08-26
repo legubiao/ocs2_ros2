@@ -33,9 +33,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 namespace ocs2::mpcnet {
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     MpcnetRolloutManager::MpcnetRolloutManager(size_t nDataGenerationThreads, size_t nPolicyEvaluationThreads,
                                                std::vector<std::unique_ptr<MPC_BASE> > mpcPtrs,
                                                std::vector<std::unique_ptr<MpcnetControllerBase> > mpcnetPtrs,
@@ -72,9 +69,7 @@ namespace ocs2::mpcnet {
         }
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
+
     void MpcnetRolloutManager::startDataGeneration(scalar_t alpha, const std::string &policyFilePath, scalar_t timeStep,
                                                    size_t dataDecimation,
                                                    size_t nSamples, const matrix_t &samplingCovariance,
@@ -92,7 +87,7 @@ namespace ocs2::mpcnet {
 
         // push tasks into pool
         for (int i = 0; i < initialObservations.size(); i++) {
-            dataGenerationFtrs_.push_back(dataGenerationThreadPoolPtr_->run([=](int threadNumber) {
+            dataGenerationFtrs_.push_back(dataGenerationThreadPoolPtr_->run([=](const int threadNumber) {
                 const auto *result =
                         dataGenerationPtrs_[threadNumber]->run(alpha, policyFilePath, timeStep, dataDecimation,
                                                                nSamples, samplingCovariance,
@@ -107,9 +102,7 @@ namespace ocs2::mpcnet {
         }
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
+
     bool MpcnetRolloutManager::isDataGenerationDone() const {
         if (nDataGenerationThreads_ <= 0) {
             throw std::runtime_error(
@@ -131,9 +124,7 @@ namespace ocs2::mpcnet {
             "[MpcnetRolloutManager::isDataGenerationDone] error since more tasks done than futures available.");
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
+
     const data_array_t &MpcnetRolloutManager::getGeneratedData() {
         if (nDataGenerationThreads_ <= 0) {
             throw std::runtime_error(
@@ -163,7 +154,7 @@ namespace ocs2::mpcnet {
 
         // find number of data points
         int nDataPoints = 0;
-        for (const auto & dataPtr : dataPtrs) {
+        for (const auto &dataPtr: dataPtrs) {
             nDataPoints += dataPtr->size();
         }
 
@@ -177,9 +168,7 @@ namespace ocs2::mpcnet {
         return dataArray_;
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
+
     void MpcnetRolloutManager::startPolicyEvaluation(scalar_t alpha, const std::string &policyFilePath,
                                                      scalar_t timeStep,
                                                      const std::vector<SystemObservation> &initialObservations,
@@ -209,9 +198,7 @@ namespace ocs2::mpcnet {
         }
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
+
     bool MpcnetRolloutManager::isPolicyEvaluationDone() {
         if (nPolicyEvaluationThreads_ <= 0) {
             throw std::runtime_error(
@@ -233,9 +220,7 @@ namespace ocs2::mpcnet {
         }
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
+
     metrics_array_t MpcnetRolloutManager::getComputedMetrics() {
         if (nPolicyEvaluationThreads_ <= 0) {
             throw std::runtime_error(

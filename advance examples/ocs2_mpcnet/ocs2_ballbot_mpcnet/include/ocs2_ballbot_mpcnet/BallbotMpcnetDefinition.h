@@ -31,41 +31,39 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_mpcnet_core/MpcnetDefinitionBase.h>
 
-namespace ocs2 {
-namespace ballbot {
+namespace ocs2::ballbot {
+    /**
+    * MPC-Net definitions for ballbot.
+    */
+    class BallbotMpcnetDefinition final : public ocs2::mpcnet::MpcnetDefinitionBase {
+    public:
+        /**
+         * Default constructor.
+         */
+        BallbotMpcnetDefinition() = default;
 
-/**
- * MPC-Net definitions for ballbot.
- */
-class BallbotMpcnetDefinition final : public ocs2::mpcnet::MpcnetDefinitionBase {
- public:
-  /**
-   * Default constructor.
-   */
-  BallbotMpcnetDefinition() = default;
+        /**
+         * Default destructor.
+         */
+        ~BallbotMpcnetDefinition() override = default;
 
-  /**
-   * Default destructor.
-   */
-  ~BallbotMpcnetDefinition() override = default;
+        /**
+         * @see MpcnetDefinitionBase::getObservation
+         */
+        vector_t getObservation(scalar_t t, const vector_t &x, const ModeSchedule &modeSchedule,
+                                const TargetTrajectories &targetTrajectories) override;
 
-  /**
-   * @see MpcnetDefinitionBase::getObservation
-   */
-  vector_t getObservation(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
-                          const TargetTrajectories& targetTrajectories) override;
+        /**
+         * @see MpcnetDefinitionBase::getActionTransformation
+         */
+        std::pair<matrix_t, vector_t> getActionTransformation(scalar_t t, const vector_t &x,
+                                                              const ModeSchedule &modeSchedule,
+                                                              const TargetTrajectories &targetTrajectories) override;
 
-  /**
-   * @see MpcnetDefinitionBase::getActionTransformation
-   */
-  std::pair<matrix_t, vector_t> getActionTransformation(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
-                                                        const TargetTrajectories& targetTrajectories) override;
-
-  /**
-   * @see MpcnetDefinitionBase::isValid
-   */
-  bool isValid(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule, const TargetTrajectories& targetTrajectories) override;
-};
-
-}  // namespace ballbot
-}  // namespace ocs2
+        /**
+         * @see MpcnetDefinitionBase::isValid
+         */
+        bool isValid(scalar_t t, const vector_t &x, const ModeSchedule &modeSchedule,
+                     const TargetTrajectories &targetTrajectories) override;
+    };
+}

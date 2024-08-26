@@ -190,7 +190,6 @@ def get_system_observation_array(length: int) -> SystemObservationArray:
     system_observation_array.resize(length)
     return system_observation_array
 
-
 def get_target_trajectories(
     time_trajectory: np.ndarray, state_trajectory: np.ndarray, input_trajectory: np.ndarray
 ) -> TargetTrajectories:

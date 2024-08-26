@@ -32,35 +32,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_ballbot/BallbotInterface.h>
 #include <ocs2_mpcnet_core/MpcnetInterfaceBase.h>
 
-namespace ocs2 {
-namespace ballbot {
+namespace ocs2::ballbot {
+    /**
+    *  Ballbot MPC-Net interface between C++ and Python.
+    */
+    class BallbotMpcnetInterface final : public mpcnet::MpcnetInterfaceBase {
+    public:
+        /**
+         * Constructor.
+         * @param [in] nDataGenerationThreads : Number of data generation threads.
+         * @param [in] nPolicyEvaluationThreads : Number of policy evaluation threads.
+         * @param [in] raisim : Whether to use RaiSim for the rollouts.
+         */
+        BallbotMpcnetInterface(size_t nDataGenerationThreads, size_t nPolicyEvaluationThreads, bool raisim);
 
-/**
- *  Ballbot MPC-Net interface between C++ and Python.
- */
-class BallbotMpcnetInterface final : public ocs2::mpcnet::MpcnetInterfaceBase {
- public:
-  /**
-   * Constructor.
-   * @param [in] nDataGenerationThreads : Number of data generation threads.
-   * @param [in] nPolicyEvaluationThreads : Number of policy evaluation threads.
-   * @param [in] raisim : Whether to use RaiSim for the rollouts.
-   */
-  BallbotMpcnetInterface(size_t nDataGenerationThreads, size_t nPolicyEvaluationThreads, bool raisim);
+        /**
+         * Default destructor.
+         */
+        ~BallbotMpcnetInterface() override = default;
 
-  /**
-   * Default destructor.
-   */
-  ~BallbotMpcnetInterface() override = default;
-
- private:
-  /**
-   * Helper to get the MPC.
-   * @param [in] ballbotInterface : The ballbot interface.
-   * @return Pointer to the MPC.
-   */
-  std::unique_ptr<MPC_BASE> getMpc(BallbotInterface& ballbotInterface);
-};
-
-}  // namespace ballbot
-}  // namespace ocs2
+    private:
+        /**
+         * Helper to get the MPC.
+         * @param [in] ballbotInterface : The ballbot interface.
+         * @return Pointer to the MPC.
+         */
+        std::unique_ptr<MPC_BASE> getMpc(BallbotInterface &ballbotInterface);
+    };
+}

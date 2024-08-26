@@ -33,26 +33,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 namespace ocs2::mpcnet {
-
     void MpcnetRolloutBase::set(scalar_t alpha, const std::string &policyFilePath,
                                 const SystemObservation &initialObservation,
                                 const ModeSchedule &modeSchedule, const TargetTrajectories &targetTrajectories) {
         // init system observation
         systemObservation_ = initialObservation;
-
         // reset mpc
         mpcPtr_->reset();
-
         // prepare learned controller
         mpcnetPtr_->loadPolicyModel(policyFilePath);
-
         // reset rollout, i.e. reset the internal simulator state (e.g. relevant for RaiSim)
         rolloutPtr_->resetRollout();
-
         // update the reference manager
         referenceManagerPtr_->setModeSchedule(modeSchedule);
         referenceManagerPtr_->setTargetTrajectories(targetTrajectories);
-
         // set up behavioral controller with mixture parameter alpha and learned controller
         behavioralControllerPtr_->setAlpha(alpha);
         behavioralControllerPtr_->setLearnedController(*mpcnetPtr_);

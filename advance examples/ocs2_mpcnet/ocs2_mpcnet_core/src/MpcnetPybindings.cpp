@@ -50,19 +50,50 @@ PYBIND11_MAKE_OPAQUE(ocs2::mpcnet::data_array_t)
 
 PYBIND11_MAKE_OPAQUE(ocs2::mpcnet::metrics_array_t)
 
-PYBIND11_MODULE(MpcnetPybindings, m_mpc_net) {
-    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::size_array_t, "size_array")
-    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::scalar_array_t, "scalar_array")
-    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::vector_array_t, "vector_array")
-    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::matrix_array_t, "matrix_array")
-    VECTOR_TYPE_BINDING(m_mpc_net, std::vector<ocs2::SystemObservation>, "SystemObservationArray")
-    VECTOR_TYPE_BINDING(m_mpc_net, std::vector<ocs2::ModeSchedule>, "ModeScheduleArray")
-    VECTOR_TYPE_BINDING(m_mpc_net, std::vector<ocs2::TargetTrajectories>, "TargetTrajectoriesArray")
-    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::mpcnet::data_array_t, "DataArray")
-    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::mpcnet::metrics_array_t, "MetricsArray")
+PYBIND11_MODULE(MpcnetPybindings, m) {
+    VECTOR_TYPE_BINDING(ocs2::size_array_t, "size_array")
+    VECTOR_TYPE_BINDING(ocs2::scalar_array_t, "scalar_array")
+    VECTOR_TYPE_BINDING(ocs2::matrix_array_t, "matrix_array")
+    VECTOR_TYPE_BINDING(std::vector<ocs2::SystemObservation>, "SystemObservationArray")
+    VECTOR_TYPE_BINDING(std::vector<ocs2::ModeSchedule>, "ModeScheduleArray")
+    VECTOR_TYPE_BINDING(std::vector<ocs2::TargetTrajectories>, "TargetTrajectoriesArray")
+    VECTOR_TYPE_BINDING(ocs2::mpcnet::data_array_t, "DataArray")
+    VECTOR_TYPE_BINDING(ocs2::mpcnet::metrics_array_t, "MetricsArray")
+
+    py::class_<ocs2::vector_array_t>(m, "vector_array")
+            .def(pybind11::init<>())
+            .def("clear", &ocs2::vector_array_t::clear)
+            .def("pop_back", &ocs2::vector_array_t::pop_back)
+            .def("push_back", [](ocs2::vector_array_t &v, const py::array_t<double> &array) {
+                auto info = array.request();
+                if (info.ndim != 1) {
+                    throw std::runtime_error("Incompatible buffer dimension!");
+                }
+                v.emplace_back(Eigen::Map<Eigen::VectorXd>(static_cast<double *>(info.ptr), info.shape[0]));
+            })
+            .def("resize", [](ocs2::vector_array_t &v, size_t i) { v.resize(i); })
+            .def("__getitem__",
+                 [](const ocs2::vector_array_t &v, size_t i) {
+                     if (i >= v.size()) throw pybind11::index_error();
+                     return v[i];
+                 })
+            .def("__setitem__",
+                 [](ocs2::vector_array_t &v, size_t i, const py::array_t<double> &array) {
+                     if (i >= v.size()) {
+                         throw pybind11::index_error();
+                     }
+                     auto info = array.request();
+                     if (info.ndim != 1) {
+                         throw std::runtime_error("Incompatible buffer dimension!");
+                     }
+                     v[i] = Eigen::Map<Eigen::VectorXd>(static_cast<double *>(info.ptr), info.shape[0]);
+                 })
+            .def("__len__", [](const ocs2::vector_array_t &v) { return v.size(); })
+            .def("__iter__", [](ocs2::vector_array_t &v) { return pybind11::make_iterator(v.begin(), v.end()); },
+                 pybind11::keep_alive<0, 1>());
 
     /* bind approximation classes */
-    py::class_<ocs2::ScalarFunctionQuadraticApproximation>(m_mpc_net, "ScalarFunctionQuadraticApproximation")
+    py::class_<ocs2::ScalarFunctionQuadraticApproximation>(m, "ScalarFunctionQuadraticApproximation")
             .def_readwrite("f", &ocs2::ScalarFunctionQuadraticApproximation::f)
             .def_readwrite("dfdx", &ocs2::ScalarFunctionQuadraticApproximation::dfdx)
             .def_readwrite("dfdu", &ocs2::ScalarFunctionQuadraticApproximation::dfdu)
@@ -71,7 +102,7 @@ PYBIND11_MODULE(MpcnetPybindings, m_mpc_net) {
             .def_readwrite("dfduu", &ocs2::ScalarFunctionQuadraticApproximation::dfduu);
 
     /* bind system observation struct */
-    py::class_<ocs2::SystemObservation>(m_mpc_net, "SystemObservation")
+    py::class_<ocs2::SystemObservation>(m, "SystemObservation")
             .def(pybind11::init<>())
             .def_readwrite("mode", &ocs2::SystemObservation::mode)
             .def_readwrite("time", &ocs2::SystemObservation::time)
@@ -101,20 +132,20 @@ PYBIND11_MODULE(MpcnetPybindings, m_mpc_net) {
                           });
 
     /* bind mode schedule struct */
-    py::class_<ocs2::ModeSchedule>(m_mpc_net, "ModeSchedule")
+    py::class_<ocs2::ModeSchedule>(m, "ModeSchedule")
             .def(pybind11::init<ocs2::scalar_array_t, ocs2::size_array_t>())
             .def_readwrite("eventTimes", &ocs2::ModeSchedule::eventTimes)
             .def_readwrite("modeSequence", &ocs2::ModeSchedule::modeSequence);
 
     /* bind target trajectories class */
-    py::class_<ocs2::TargetTrajectories>(m_mpc_net, "TargetTrajectories")
+    py::class_<ocs2::TargetTrajectories>(m, "TargetTrajectories")
             .def(pybind11::init<ocs2::scalar_array_t, ocs2::vector_array_t, ocs2::vector_array_t>())
             .def_readwrite("timeTrajectory", &ocs2::TargetTrajectories::timeTrajectory)
             .def_readwrite("stateTrajectory", &ocs2::TargetTrajectories::stateTrajectory)
             .def_readwrite("inputTrajectory", &ocs2::TargetTrajectories::inputTrajectory);
 
     /* bind data point struct */
-    py::class_<ocs2::mpcnet::data_point_t>(m_mpc_net, "DataPoint")
+    py::class_<ocs2::mpcnet::data_point_t>(m, "DataPoint")
             .def(pybind11::init<>())
             .def_readwrite("mode", &ocs2::mpcnet::data_point_t::mode)
             .def_readwrite("t", &ocs2::mpcnet::data_point_t::t)
@@ -125,7 +156,7 @@ PYBIND11_MODULE(MpcnetPybindings, m_mpc_net) {
             .def_readwrite("hamiltonian", &ocs2::mpcnet::data_point_t::hamiltonian);
 
     /* bind metrics struct */
-    py::class_<ocs2::mpcnet::metrics_t>(m_mpc_net, "Metrics")
+    py::class_<ocs2::mpcnet::metrics_t>(m, "Metrics")
             .def(pybind11::init<>())
             .def_readwrite("survivalTime", &ocs2::mpcnet::metrics_t::survivalTime)
             .def_readwrite("incurredHamiltonian", &ocs2::mpcnet::metrics_t::incurredHamiltonian);

@@ -61,11 +61,11 @@ namespace ocs2::mpcnet {
     /**
     * Get a data point.
     * @param [in] mpc : The MPC with a pointer to the underlying solver.
-    * @param [in] mpcnetDefinition : The MPC-Net definitions.
+    * @param [in] definition : The MPC-Net definitions.
     * @param [in] deviation : The state deviation from the nominal state where to get the data point from.
     * @return A data point.
     */
-    inline data_point_t getDataPoint(MPC_BASE &mpc, MpcnetDefinitionBase &mpcnetDefinition, const vector_t &deviation) {
+    inline data_point_t getDataPoint(MPC_BASE &mpc, MpcnetDefinitionBase &definition, const vector_t &deviation) {
         data_point_t dataPoint;
         const auto &referenceManager = mpc.getSolverPtr()->getReferenceManager();
         const auto primalSolution = mpc.getSolverPtr()->primalSolution(mpc.getSolverPtr()->getFinalTime());
@@ -73,10 +73,10 @@ namespace ocs2::mpcnet {
         dataPoint.x = primalSolution.stateTrajectory_.front() + deviation;
         dataPoint.u = primalSolution.controllerPtr_->computeInput(dataPoint.t, dataPoint.x);
         dataPoint.mode = primalSolution.modeSchedule_.modeAtTime(dataPoint.t);
-        dataPoint.observation = mpcnetDefinition.getObservation(dataPoint.t, dataPoint.x,
-                                                                referenceManager.getModeSchedule(),
-                                                                referenceManager.getTargetTrajectories());
-        dataPoint.actionTransformation = mpcnetDefinition.getActionTransformation(
+        dataPoint.observation = definition.getObservation(dataPoint.t, dataPoint.x,
+                                                          referenceManager.getModeSchedule(),
+                                                          referenceManager.getTargetTrajectories());
+        dataPoint.actionTransformation = definition.getActionTransformation(
             dataPoint.t, dataPoint.x, referenceManager.getModeSchedule(),
             referenceManager.getTargetTrajectories());
         dataPoint.hamiltonian = mpc.getSolverPtr()->getHamiltonian(dataPoint.t, dataPoint.x, dataPoint.u);

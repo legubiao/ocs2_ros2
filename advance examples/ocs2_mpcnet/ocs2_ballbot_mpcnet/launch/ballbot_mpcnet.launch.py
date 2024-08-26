@@ -12,7 +12,7 @@ def generate_launch_description():
     multiplot_arg = DeclareLaunchArgument('multiplot', default_value='false')
     task_name_arg = DeclareLaunchArgument('task_name', default_value='mpc')
     policy_file_path_arg = DeclareLaunchArgument('policy_file_path', default_value=os.path.join(
-        os.getenv('AMENT_PREFIX_PATH').split(':')[0], 'share', 'ocs2_ballbot_mpcnet', 'policy', 'ballbot.onnx'))
+        get_package_share_directory('ocs2_ballbot_mpcnet'), 'policy', 'ballbot.onnx'))
 
     rviz_group = GroupAction(
         condition=IfCondition(LaunchConfiguration('rviz')),

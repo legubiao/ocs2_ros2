@@ -16,7 +16,6 @@
 
   <depend>ament_index_cpp</depend>
   <depend>rclcpp</depend>
-  <depend>pybind11_vendor</depend>
 
   <depend>ocs2_core</depend>
   <depend>ocs2_ddp</depend>

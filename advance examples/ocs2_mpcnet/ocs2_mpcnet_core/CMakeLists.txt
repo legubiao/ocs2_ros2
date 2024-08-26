@@ -15,8 +15,7 @@ set(dependencies
 find_package(ament_cmake REQUIRED)
 
 find_package(Python COMPONENTS Interpreter Development)
-find_package(pybind11_vendor REQUIRED)
-find_package(pybind11 REQUIRED)
+find_package(pybind11 CONFIG)
 
 find_package(ocs2_python_interface REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)

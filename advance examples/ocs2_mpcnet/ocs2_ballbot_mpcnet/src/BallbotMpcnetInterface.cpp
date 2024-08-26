@@ -31,12 +31,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_ddp/GaussNewtonDDP_MPC.h>
 #include <ocs2_mpcnet_core/control/MpcnetOnnxController.h>
-#include <ocs2_oc/rollout/TimeTriggeredRollout.h>
-#include <ocs2_oc/synchronized_module/ReferenceManager.h>
 
 #include "ocs2_ballbot_mpcnet/BallbotMpcnetDefinition.h"
 
 #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <memory>
 
 namespace ocs2::ballbot {
     BallbotMpcnetInterface::BallbotMpcnetInterface(size_t nDataGenerationThreads, size_t nPolicyEvaluationThreads,
@@ -52,9 +51,9 @@ namespace ocs2::ballbot {
                 "/auto_generated";
         // set up MPC-Net rollout manager for data generation and policy evaluation
         std::vector<std::unique_ptr<MPC_BASE> > mpcPtrs;
-        std::vector<std::unique_ptr<ocs2::mpcnet::MpcnetControllerBase> > mpcnetPtrs;
+        std::vector<std::unique_ptr<mpcnet::MpcnetControllerBase> > mpcnetPtrs;
         std::vector<std::unique_ptr<RolloutBase> > rolloutPtrs;
-        std::vector<std::shared_ptr<ocs2::mpcnet::MpcnetDefinitionBase> > mpcnetDefinitionPtrs;
+        std::vector<std::shared_ptr<mpcnet::MpcnetDefinitionBase> > mpcnetDefinitionPtrs;
         std::vector<std::shared_ptr<ReferenceManagerInterface> > referenceManagerPtrs;
         mpcPtrs.reserve(nDataGenerationThreads + nPolicyEvaluationThreads);
         mpcnetPtrs.reserve(nDataGenerationThreads + nPolicyEvaluationThreads);
@@ -76,15 +75,13 @@ namespace ocs2::ballbot {
             mpcnetDefinitionPtrs.push_back(mpcnetDefinitionPtr);
             referenceManagerPtrs.push_back(ballbotInterface.getReferenceManagerPtr());
         }
-        mpcnetRolloutManagerPtr_.reset(new ocs2::mpcnet::MpcnetRolloutManager(
+        mpcnetRolloutManagerPtr_ = std::make_unique<mpcnet::MpcnetRolloutManager>(
             nDataGenerationThreads, nPolicyEvaluationThreads,
             std::move(mpcPtrs), std::move(mpcnetPtrs), std::move(rolloutPtrs),
-            mpcnetDefinitionPtrs, referenceManagerPtrs));
+            mpcnetDefinitionPtrs, referenceManagerPtrs);
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
+
     std::unique_ptr<MPC_BASE> BallbotMpcnetInterface::getMpc(BallbotInterface &ballbotInterface) {
         // ensure MPC and DDP settings are as needed for MPC-Net
         const auto mpcSettings = [&]() {

@@ -27,20 +27,21 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include <memory>
+
 #include "ocs2_mpcnet_core/control/MpcnetOnnxController.h"
+
+#include <iostream>
 
 
 namespace ocs2::mpcnet {
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     void MpcnetOnnxController::loadPolicyModel(const std::string &policyFilePath) {
         policyFilePath_ = policyFilePath;
         // create session
         Ort::SessionOptions sessionOptions;
         sessionOptions.SetIntraOpNumThreads(1);
         sessionOptions.SetInterOpNumThreads(1);
-        sessionPtr_.reset(new Ort::Session(*onnxEnvironmentPtr_, policyFilePath_.c_str(), sessionOptions));
+        sessionPtr_ = std::make_unique<Ort::Session>(*onnxEnvironmentPtr_, policyFilePath_.c_str(), sessionOptions);
         // get input and output info
         inputNames_.clear();
         outputNames_.clear();
@@ -48,18 +49,16 @@ namespace ocs2::mpcnet {
         outputShapes_.clear();
         Ort::AllocatorWithDefaultOptions allocator;
         for (int i = 0; i < sessionPtr_->GetInputCount(); i++) {
-            inputNames_.push_back(sessionPtr_->GetInputName(i, allocator));
+            inputNames_.push_back(sessionPtr_->GetInputNameAllocated(i, allocator).get());
             inputShapes_.push_back(sessionPtr_->GetInputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape());
         }
         for (int i = 0; i < sessionPtr_->GetOutputCount(); i++) {
-            outputNames_.push_back(sessionPtr_->GetOutputName(i, allocator));
+            outputNames_.push_back(sessionPtr_->GetOutputNameAllocated(i, allocator).get());
             outputShapes_.push_back(sessionPtr_->GetOutputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape());
         }
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
+
     vector_t MpcnetOnnxController::computeInput(const scalar_t t, const vector_t &x) {
         if (sessionPtr_ == nullptr) {
             throw std::runtime_error(

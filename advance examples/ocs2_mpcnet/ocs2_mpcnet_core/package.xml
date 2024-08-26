@@ -14,7 +14,6 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>cmake_clang_tools</build_depend>
 
-  <depend>pybind11_vendor</depend>
   <depend>ocs2_python_interface</depend>
   <depend>ocs2_ros_interfaces</depend>
 

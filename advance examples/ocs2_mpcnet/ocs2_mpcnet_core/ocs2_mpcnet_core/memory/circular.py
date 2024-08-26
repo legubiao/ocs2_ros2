@@ -133,22 +133,22 @@ class CircularMemory(BaseMemory):
         # note: - torch.as_tensor: no copy as data is a ndarray of the corresponding dtype and the device is the cpu
         #       - torch.Tensor.copy_: copy performed together with potential dtype and device change
         self.t[self.position].copy_(torch.as_tensor(t, dtype=None, device=torch.device("cpu")))
-        self.x[self.position].copy_(torch.as_tensor(x, dtype=None, device=torch.device("cpu")))
-        self.u[self.position].copy_(torch.as_tensor(u, dtype=None, device=torch.device("cpu")))
-        self.p[self.position].copy_(torch.as_tensor(p, dtype=None, device=torch.device("cpu")))
-        self.observation[self.position].copy_(torch.as_tensor(observation, dtype=None, device=torch.device("cpu")))
+        self.x[self.position].copy_(torch.as_tensor(np.copy(x), dtype=None, device=torch.device("cpu")))
+        self.u[self.position].copy_(torch.as_tensor(np.copy(u), dtype=None, device=torch.device("cpu")))
+        self.p[self.position].copy_(torch.as_tensor(np.copy(p), dtype=None, device=torch.device("cpu")))
+        self.observation[self.position].copy_(torch.as_tensor(np.copy(observation), dtype=None, device=torch.device("cpu")))
         self.action_transformation_matrix[self.position].copy_(
-            torch.as_tensor(action_transformation[0], dtype=None, device=torch.device("cpu"))
+            torch.as_tensor(np.copy(action_transformation[0]), dtype=None, device=torch.device("cpu"))
         )
         self.action_transformation_vector[self.position].copy_(
-            torch.as_tensor(action_transformation[1], dtype=None, device=torch.device("cpu"))
+            torch.as_tensor(np.copy(action_transformation[1]), dtype=None, device=torch.device("cpu"))
         )
-        self.dHdxx[self.position].copy_(torch.as_tensor(hamiltonian.dfdxx, dtype=None, device=torch.device("cpu")))
-        self.dHdux[self.position].copy_(torch.as_tensor(hamiltonian.dfdux, dtype=None, device=torch.device("cpu")))
-        self.dHduu[self.position].copy_(torch.as_tensor(hamiltonian.dfduu, dtype=None, device=torch.device("cpu")))
-        self.dHdx[self.position].copy_(torch.as_tensor(hamiltonian.dfdx, dtype=None, device=torch.device("cpu")))
-        self.dHdu[self.position].copy_(torch.as_tensor(hamiltonian.dfdu, dtype=None, device=torch.device("cpu")))
-        self.H[self.position].copy_(torch.as_tensor(hamiltonian.f, dtype=None, device=torch.device("cpu")))
+        self.dHdxx[self.position].copy_(torch.as_tensor(np.copy(hamiltonian.dfdxx), dtype=None, device=torch.device("cpu")))
+        self.dHdux[self.position].copy_(torch.as_tensor(np.copy(hamiltonian.dfdux), dtype=None, device=torch.device("cpu")))
+        self.dHduu[self.position].copy_(torch.as_tensor(np.copy(hamiltonian.dfduu), dtype=None, device=torch.device("cpu")))
+        self.dHdx[self.position].copy_(torch.as_tensor(np.copy(hamiltonian.dfdx), dtype=None, device=torch.device("cpu")))
+        self.dHdu[self.position].copy_(torch.as_tensor(np.copy(hamiltonian.dfdu), dtype=None, device=torch.device("cpu")))
+        self.H[self.position].copy_(torch.as_tensor(np.copy(hamiltonian.f), dtype=None, device=torch.device("cpu")))
         # update size and position
         self.size = min(self.size + 1, self.capacity)
         self.position = (self.position + 1) % self.capacity
