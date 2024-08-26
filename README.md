@@ -89,12 +89,12 @@ ros2 launch ocs2_cartpole_ros cartpole.launch.py
 
 * build
 ```bash
-cd ../..
+cd ~/ocs2_ws
 colcon build --packages-up-to ocs2_ballbot_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
 * run
 ```bash
-source ../../install/setup.bash
+source ~/ocs2_ws/install/setup.bash
 ros2 launch ocs2_ballbot_ros ballbot_ddp.launch.py
 ```
 

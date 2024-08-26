@@ -76,19 +76,19 @@ namespace py = pybind11;
         .def_readwrite("dfdux", &ocs2::ScalarFunctionQuadraticApproximation::dfdux)                         \
         .def_readwrite("dfduu", &ocs2::ScalarFunctionQuadraticApproximation::dfduu);                        \
     /* bind system observation struct */                                                                    \
-    py::class_<ocs2::SystemObservation>(m, "SystemObservation")                                       \
+    py::class_<ocs2::SystemObservation>(m, "SystemObservation")                                             \
         .def(pybind11::init<>())                                                                            \
         .def_readwrite("mode", &ocs2::SystemObservation::mode)                                              \
         .def_readwrite("time", &ocs2::SystemObservation::time)                                              \
-        .def_property("state", &ocs2::SystemObservation::getState, &ocs2::SystemObservation::setState)      \
-        .def_property("input", &ocs2::SystemObservation::getInput, &ocs2::SystemObservation::setInput);      \
+        .def_readwrite("state", &ocs2::SystemObservation::state)                                            \
+        .def_readwrite("input", &ocs2::SystemObservation::input);                                           \
     /* bind mode schedule struct */                                                                         \
-    py::class_<ocs2::ModeSchedule>(m, "ModeSchedule")                                                 \
+    py::class_<ocs2::ModeSchedule>(m, "ModeSchedule")                                                       \
         .def(pybind11::init<ocs2::scalar_array_t, ocs2::size_array_t>())                                    \
         .def_readwrite("eventTimes", &ocs2::ModeSchedule::eventTimes)                                       \
         .def_readwrite("modeSequence", &ocs2::ModeSchedule::modeSequence);                                  \
     /* bind target trajectories class */                                                                    \
-    py::class_<ocs2::TargetTrajectories>(m, "TargetTrajectories")                                     \
+    py::class_<ocs2::TargetTrajectories>(m, "TargetTrajectories")                                           \
         .def(pybind11::init<ocs2::scalar_array_t, ocs2::vector_array_t, ocs2::vector_array_t>())            \
         .def_readwrite("timeTrajectory", &ocs2::TargetTrajectories::timeTrajectory)                         \
         .def_readwrite("stateTrajectory", &ocs2::TargetTrajectories::stateTrajectory)                       \

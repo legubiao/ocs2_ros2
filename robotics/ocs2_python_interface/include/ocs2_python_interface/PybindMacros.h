@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace pybind11::literals;
 
 //! convenience macro to bind all kinds of std::vector-like types
-#define VECTOR_TYPE_BINDING(VTYPE, NAME)                                                    \
+#define VECTOR_TYPE_BINDING(m, VTYPE, NAME)                                                 \
   pybind11::class_<VTYPE>(m, NAME)                                                          \
       .def(pybind11::init<>())                                                              \
       .def("clear", &VTYPE::clear)                                                          \
@@ -72,9 +72,9 @@ using namespace pybind11::literals;
   /* create a python module */                                                                                                             \
   PYBIND11_MODULE(LIB_NAME, m) {                                                                                                           \
     /* bind vector types so they can be used natively in python */                                                                         \
-    VECTOR_TYPE_BINDING(ocs2::scalar_array_t, "scalar_array")                                                                              \
-    VECTOR_TYPE_BINDING(ocs2::vector_array_t, "vector_array")                                                                              \
-    VECTOR_TYPE_BINDING(ocs2::matrix_array_t, "matrix_array")                                                                              \
+    VECTOR_TYPE_BINDING(m, ocs2::scalar_array_t, "scalar_array")                                                                              \
+    VECTOR_TYPE_BINDING(m, ocs2::vector_array_t, "vector_array")                                                                              \
+    VECTOR_TYPE_BINDING(m, ocs2::matrix_array_t, "matrix_array")                                                                              \
     /* bind approximation classes */                                                                                                       \
     pybind11::class_<ocs2::VectorFunctionLinearApproximation>(m, "VectorFunctionLinearApproximation")                                      \
         .def_readwrite("f", &ocs2::VectorFunctionLinearApproximation::f)                                                                   \

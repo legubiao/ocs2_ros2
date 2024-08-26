@@ -27,8 +27,106 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_mpcnet_core/MpcnetPybindMacros.h"
-
+#include <ocs2_python_interface/PybindMacros.h>
 #include "ocs2_mpcnet_core/MpcnetInterfaceBase.h"
 
-CREATE_MPCNET_PYTHON_BINDINGS(MpcnetPybindings)
+namespace py = pybind11;
+
+PYBIND11_MAKE_OPAQUE(ocs2::size_array_t)
+
+PYBIND11_MAKE_OPAQUE(ocs2::scalar_array_t)
+
+PYBIND11_MAKE_OPAQUE(ocs2::vector_array_t)
+
+PYBIND11_MAKE_OPAQUE(ocs2::matrix_array_t)
+
+PYBIND11_MAKE_OPAQUE(std::vector<ocs2::SystemObservation>)
+
+PYBIND11_MAKE_OPAQUE(std::vector<ocs2::ModeSchedule>)
+
+PYBIND11_MAKE_OPAQUE(std::vector<ocs2::TargetTrajectories>)
+
+PYBIND11_MAKE_OPAQUE(ocs2::mpcnet::data_array_t)
+
+PYBIND11_MAKE_OPAQUE(ocs2::mpcnet::metrics_array_t)
+
+PYBIND11_MODULE(MpcnetPybindings, m_mpc_net) {
+    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::size_array_t, "size_array")
+    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::scalar_array_t, "scalar_array")
+    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::vector_array_t, "vector_array")
+    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::matrix_array_t, "matrix_array")
+    VECTOR_TYPE_BINDING(m_mpc_net, std::vector<ocs2::SystemObservation>, "SystemObservationArray")
+    VECTOR_TYPE_BINDING(m_mpc_net, std::vector<ocs2::ModeSchedule>, "ModeScheduleArray")
+    VECTOR_TYPE_BINDING(m_mpc_net, std::vector<ocs2::TargetTrajectories>, "TargetTrajectoriesArray")
+    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::mpcnet::data_array_t, "DataArray")
+    VECTOR_TYPE_BINDING(m_mpc_net, ocs2::mpcnet::metrics_array_t, "MetricsArray")
+
+    /* bind approximation classes */
+    py::class_<ocs2::ScalarFunctionQuadraticApproximation>(m_mpc_net, "ScalarFunctionQuadraticApproximation")
+            .def_readwrite("f", &ocs2::ScalarFunctionQuadraticApproximation::f)
+            .def_readwrite("dfdx", &ocs2::ScalarFunctionQuadraticApproximation::dfdx)
+            .def_readwrite("dfdu", &ocs2::ScalarFunctionQuadraticApproximation::dfdu)
+            .def_readwrite("dfdxx", &ocs2::ScalarFunctionQuadraticApproximation::dfdxx)
+            .def_readwrite("dfdux", &ocs2::ScalarFunctionQuadraticApproximation::dfdux)
+            .def_readwrite("dfduu", &ocs2::ScalarFunctionQuadraticApproximation::dfduu);
+
+    /* bind system observation struct */
+    py::class_<ocs2::SystemObservation>(m_mpc_net, "SystemObservation")
+            .def(pybind11::init<>())
+            .def_readwrite("mode", &ocs2::SystemObservation::mode)
+            .def_readwrite("time", &ocs2::SystemObservation::time)
+            .def_property("state",
+                          [](const ocs2::SystemObservation &s) {
+                              return s.state;
+                          },
+                          [](ocs2::SystemObservation &s, const py::array_t<double> &array) {
+                              const py::buffer_info info = array.request();
+                              if (info.ndim != 1) {
+                                  throw std::runtime_error("Incompatible buffer dimension!");
+                              }
+                              auto ptr = static_cast<double *>(info.ptr);
+                              s.state = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1> >(ptr, info.shape[0]);
+                          })
+            .def_property("input",
+                          [](const ocs2::SystemObservation &s) {
+                              return s.input;
+                          },
+                          [](ocs2::SystemObservation &s, const py::array_t<double> &array) {
+                              const py::buffer_info info = array.request();
+                              if (info.ndim != 1) {
+                                  throw std::runtime_error("Incompatible buffer dimension!");
+                              }
+                              auto ptr = static_cast<double *>(info.ptr);
+                              s.input = Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 1> >(ptr, info.shape[0]);
+                          });
+
+    /* bind mode schedule struct */
+    py::class_<ocs2::ModeSchedule>(m_mpc_net, "ModeSchedule")
+            .def(pybind11::init<ocs2::scalar_array_t, ocs2::size_array_t>())
+            .def_readwrite("eventTimes", &ocs2::ModeSchedule::eventTimes)
+            .def_readwrite("modeSequence", &ocs2::ModeSchedule::modeSequence);
+
+    /* bind target trajectories class */
+    py::class_<ocs2::TargetTrajectories>(m_mpc_net, "TargetTrajectories")
+            .def(pybind11::init<ocs2::scalar_array_t, ocs2::vector_array_t, ocs2::vector_array_t>())
+            .def_readwrite("timeTrajectory", &ocs2::TargetTrajectories::timeTrajectory)
+            .def_readwrite("stateTrajectory", &ocs2::TargetTrajectories::stateTrajectory)
+            .def_readwrite("inputTrajectory", &ocs2::TargetTrajectories::inputTrajectory);
+
+    /* bind data point struct */
+    py::class_<ocs2::mpcnet::data_point_t>(m_mpc_net, "DataPoint")
+            .def(pybind11::init<>())
+            .def_readwrite("mode", &ocs2::mpcnet::data_point_t::mode)
+            .def_readwrite("t", &ocs2::mpcnet::data_point_t::t)
+            .def_readwrite("x", &ocs2::mpcnet::data_point_t::x)
+            .def_readwrite("u", &ocs2::mpcnet::data_point_t::u)
+            .def_readwrite("observation", &ocs2::mpcnet::data_point_t::observation)
+            .def_readwrite("actionTransformation", &ocs2::mpcnet::data_point_t::actionTransformation)
+            .def_readwrite("hamiltonian", &ocs2::mpcnet::data_point_t::hamiltonian);
+
+    /* bind metrics struct */
+    py::class_<ocs2::mpcnet::metrics_t>(m_mpc_net, "Metrics")
+            .def(pybind11::init<>())
+            .def_readwrite("survivalTime", &ocs2::mpcnet::metrics_t::survivalTime)
+            .def_readwrite("incurredHamiltonian", &ocs2::mpcnet::metrics_t::incurredHamiltonian);
+}
