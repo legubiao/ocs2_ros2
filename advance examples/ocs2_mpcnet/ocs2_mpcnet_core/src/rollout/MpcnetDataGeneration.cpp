@@ -57,39 +57,37 @@ namespace ocs2::mpcnet {
         };
         const matrix_t L = samplingCovariance.llt().matrixL();
 
-        // // run data generation
-        // try {
-        //
-        // } catch (const std::exception &e) {
-        //     // print error for exceptions
-        //     std::cerr << "[MpcnetDataGeneration::run] a standard exception was caught, with message: " << e.what() <<
-        //             "\n";
-        //     // this data generation run failed, clear data
-        //     dataArray_.clear();
-        // }
+        // run data generation
+        try {
+            int iteration = 0;
+            while (systemObservation_.time <= targetTrajectories.timeTrajectory.back()) {
+                // step system
+                step(timeStep);
 
-        int iteration = 0;
-        while (systemObservation_.time <= targetTrajectories.timeTrajectory.back()) {
-            // step system
-            step(timeStep);
-
-            // downsample the data signal by an integer factor
-            if (iteration % dataDecimation == 0) {
-                // get nominal data point
-                const vector_t deviation = vector_t::Zero(primalSolution_.stateTrajectory_.front().size());
-                dataArray_.push_back(getDataPoint(*mpcPtr_, *mpcnetDefinitionPtr_, deviation));
-
-                // get samples around nominal data point
-                for (int i = 0; i < nSamples; i++) {
-                    const vector_t deviation = L * vector_t::NullaryExpr(
-                                                   primalSolution_.stateTrajectory_.front().size(),
-                                                   standardNormalNullaryOp);
+                // downsample the data signal by an integer factor
+                if (iteration % dataDecimation == 0) {
+                    // get nominal data point
+                    const vector_t deviation = vector_t::Zero(primalSolution_.stateTrajectory_.front().size());
                     dataArray_.push_back(getDataPoint(*mpcPtr_, *mpcnetDefinitionPtr_, deviation));
-                }
-            }
 
-            // update iteration
-            ++iteration;
+                    // get samples around nominal data point
+                    for (int i = 0; i < nSamples; i++) {
+                        const vector_t deviation = L * vector_t::NullaryExpr(
+                                                       primalSolution_.stateTrajectory_.front().size(),
+                                                       standardNormalNullaryOp);
+                        dataArray_.push_back(getDataPoint(*mpcPtr_, *mpcnetDefinitionPtr_, deviation));
+                    }
+                }
+
+                // update iteration
+                ++iteration;
+            }
+        } catch (const std::exception &e) {
+            // print error for exceptions
+            std::cerr << "[MpcnetDataGeneration::run] a standard exception was caught, with message: " << e.what() <<
+                    "\n";
+            // this data generation run failed, clear data
+            dataArray_.clear();
         }
 
         // return pointer to the data array

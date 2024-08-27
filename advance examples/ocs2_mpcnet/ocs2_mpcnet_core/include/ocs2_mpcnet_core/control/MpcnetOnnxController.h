@@ -105,6 +105,8 @@ namespace ocs2::mpcnet {
         std::unique_ptr<Ort::Session> sessionPtr_;
         std::vector<const char *> inputNames_;
         std::vector<const char *> outputNames_;
+        std::vector<Ort::AllocatedStringPtr> inputNameAllocatedStrings;
+        std::vector<Ort::AllocatedStringPtr> outputNameAllocatedStrings;
         std::vector<std::vector<int64_t> > inputShapes_;
         std::vector<std::vector<int64_t> > outputShapes_;
     };

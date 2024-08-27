@@ -72,18 +72,18 @@ int main(int argc, char **argv) {
     rosReferenceManagerPtr->subscribe(node);
 
     // policy (MPC-Net controller)
-    auto onnxEnvironmentPtr = ocs2::mpcnet::createOnnxEnvironment();
+    auto onnxEnvironmentPtr = mpcnet::createOnnxEnvironment();
     auto mpcnetDefinitionPtr = std::make_shared<BallbotMpcnetDefinition>();
     auto mpcnetControllerPtr =
-            std::make_unique<ocs2::mpcnet::MpcnetOnnxController>(mpcnetDefinitionPtr, rosReferenceManagerPtr,
-                                                                 onnxEnvironmentPtr);
+            std::make_unique<mpcnet::MpcnetOnnxController>(mpcnetDefinitionPtr, rosReferenceManagerPtr,
+                                                           onnxEnvironmentPtr);
     mpcnetControllerPtr->loadPolicyModel(policyFilePath);
 
     // rollout
     std::unique_ptr<RolloutBase> rolloutPtr(ballbotInterface.getRollout().clone());
 
     // observer
-    auto mpcnetDummyObserverRosPtr = std::make_shared<ocs2::mpcnet::MpcnetDummyObserverRos>(node, robotName);
+    auto mpcnetDummyObserverRosPtr = std::make_shared<mpcnet::MpcnetDummyObserverRos>(node, robotName);
 
     // visualization
     auto ballbotDummyVisualization = std::make_shared<BallbotDummyVisualization>(node);
@@ -91,9 +91,9 @@ int main(int argc, char **argv) {
     // MPC-Net dummy loop ROS
     const scalar_t controlFrequency = ballbotInterface.mpcSettings().mrtDesiredFrequency_;
     const scalar_t rosFrequency = ballbotInterface.mpcSettings().mpcDesiredFrequency_;
-    ocs2::mpcnet::MpcnetDummyLoopRos mpcnetDummyLoopRos(controlFrequency, rosFrequency, std::move(mpcnetControllerPtr),
-                                                        std::move(rolloutPtr), node,
-                                                        rosReferenceManagerPtr);
+    mpcnet::MpcnetDummyLoopRos mpcnetDummyLoopRos(controlFrequency, rosFrequency, std::move(mpcnetControllerPtr),
+                                                  std::move(rolloutPtr), node,
+                                                  rosReferenceManagerPtr);
     mpcnetDummyLoopRos.addObserver(mpcnetDummyObserverRosPtr);
     mpcnetDummyLoopRos.addObserver(ballbotDummyVisualization);
 

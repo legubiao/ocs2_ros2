@@ -41,35 +41,35 @@ namespace ocs2::mpcnet {
         set(alpha, policyFilePath, initialObservation, modeSchedule, targetTrajectories);
 
         // run policy evaluation
-        // try {
-        //     while (systemObservation_.time <= targetTrajectories.timeTrajectory.back()) {
-        //         // step system
-        //         step(timeStep);
-        //
-        //         // incurred quantities
-        //         const scalar_t time = primalSolution_.timeTrajectory_.front();
-        //         const vector_t state = primalSolution_.stateTrajectory_.front();
-        //         const vector_t input = behavioralControllerPtr_->computeInput(time, state);
-        //         metrics.incurredHamiltonian += mpcPtr_->getSolverPtr()->getHamiltonian(time, state, input).f * timeStep;
-        //     }
-        // } catch (const std::exception &e) {
-        //     // print error for exceptions
-        //     std::cerr << "[MpcnetPolicyEvaluation::run] a standard exception was caught, with message: " << e.what() <<
-        //             "\n";
-        //     // this policy evaluation run failed, incurred quantities are not reported
-        //     metrics.incurredHamiltonian = std::numeric_limits<scalar_t>::quiet_NaN();
-        // }
+        try {
+            while (systemObservation_.time <= targetTrajectories.timeTrajectory.back()) {
+                // step system
+                step(timeStep);
 
-        while (systemObservation_.time <= targetTrajectories.timeTrajectory.back()) {
-            // step system
-            step(timeStep);
-
-            // incurred quantities
-            const scalar_t time = primalSolution_.timeTrajectory_.front();
-            const vector_t state = primalSolution_.stateTrajectory_.front();
-            const vector_t input = behavioralControllerPtr_->computeInput(time, state);
-            metrics.incurredHamiltonian += mpcPtr_->getSolverPtr()->getHamiltonian(time, state, input).f * timeStep;
+                // incurred quantities
+                const scalar_t time = primalSolution_.timeTrajectory_.front();
+                const vector_t state = primalSolution_.stateTrajectory_.front();
+                const vector_t input = behavioralControllerPtr_->computeInput(time, state);
+                metrics.incurredHamiltonian += mpcPtr_->getSolverPtr()->getHamiltonian(time, state, input).f * timeStep;
+            }
+        } catch (const std::exception &e) {
+            // print error for exceptions
+            std::cerr << "[MpcnetPolicyEvaluation::run] a standard exception was caught, with message: " << e.what() <<
+                    "\n";
+            // this policy evaluation run failed, incurred quantities are not reported
+            metrics.incurredHamiltonian = std::numeric_limits<scalar_t>::quiet_NaN();
         }
+
+        // while (systemObservation_.time <= targetTrajectories.timeTrajectory.back()) {
+        //     // step system
+        //     step(timeStep);
+        //
+        //     // incurred quantities
+        //     const scalar_t time = primalSolution_.timeTrajectory_.front();
+        //     const vector_t state = primalSolution_.stateTrajectory_.front();
+        //     const vector_t input = behavioralControllerPtr_->computeInput(time, state);
+        //     metrics.incurredHamiltonian += mpcPtr_->getSolverPtr()->getHamiltonian(time, state, input).f * timeStep;
+        // }
 
         // report survival time
         metrics.survivalTime = systemObservation_.time;
