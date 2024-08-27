@@ -1,5 +1,5 @@
 /******************************************************************************
-Copyright (c) 2021, Farbod Farshidian. All rights reserved.
+Copyright (c) 2022, Farbod Farshidian. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -27,33 +27,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_legged_robot_ros/gait/GaitKeyboardPublisher.h"
-#include "rclcpp/rclcpp.hpp"
+#include <ocs2_mpcnet_core/MpcnetPybindMacros.h>
 
-using namespace ocs2;
-using namespace legged_robot;
+#include "ocs2_legged_robot_mpcnet/LeggedRobotMpcnetInterface.h"
 
-int main(int argc, char *argv[]) {
-    const std::string robotName = "legged_robot";
-
-    // Initialize ros node
-    rclcpp::init(argc, argv);
-    rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(
-        robotName + "_mpc_mode_schedule",
-        rclcpp::NodeOptions()
-        .allow_undeclared_parameters(true)
-        .automatically_declare_parameters_from_overrides(true));
-    // Get node parameters
-    const std::string gaitCommandFile =
-            node->get_parameter("gaitCommandFile").as_string();
-    std::cerr << "Loading gait file: " << gaitCommandFile << std::endl;
-
-    GaitKeyboardPublisher gaitCommand(node, gaitCommandFile, robotName, true);
-
-    while (rclcpp::ok()) {
-        gaitCommand.getKeyboardCommand();
-    }
-
-    // Successful exit
-    return 0;
-}
+CREATE_ROBOT_MPCNET_PYTHON_BINDINGS(ocs2::legged_robot::LeggedRobotMpcnetInterface, LeggedRobotMpcnetPybindings)

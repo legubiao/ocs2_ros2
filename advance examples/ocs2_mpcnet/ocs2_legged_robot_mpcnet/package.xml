@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>ocs2_legged_robot_mpcnet</name>
+    <version>0.0.0</version>
+    <description>The ocs2_legged_robot_mpcnet package</description>
+
+    <author email="areske@ethz.ch">Alexander Reske</author>
+
+    <maintainer email="farbod.farshidian@gmail.com">Farbod Farshidian</maintainer>
+    <maintainer email="areske@ethz.ch">Alexander Reske</maintainer>
+
+    <license>BSD-3</license>
+
+    <buildtool_depend>ament_cmake</buildtool_depend>
+
+    <depend>ocs2_legged_robot_raisim</depend>
+    <depend>ocs2_mpcnet_core</depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+
+</package>

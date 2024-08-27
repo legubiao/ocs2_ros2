@@ -40,34 +40,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rclcpp/rclcpp.hpp"
 
-namespace ocs2 {
-namespace legged_robot {
+namespace ocs2::legged_robot {
+    class GaitReceiver : public SolverSynchronizedModule {
+    public:
+        GaitReceiver(const rclcpp::Node::SharedPtr &node,
+                     std::shared_ptr<GaitSchedule> gaitSchedulePtr,
+                     const std::string &robotName);
 
-class GaitReceiver : public SolverSynchronizedModule {
- public:
-  GaitReceiver(const rclcpp::Node::SharedPtr& node,
-               std::shared_ptr<GaitSchedule> gaitSchedulePtr,
-               const std::string& robotName);
+        void preSolverRun(scalar_t initTime, scalar_t finalTime,
+                          const vector_t &currentState,
+                          const ReferenceManagerInterface &referenceManager) override;
 
-  void preSolverRun(scalar_t initTime, scalar_t finalTime,
-                    const vector_t& currentState,
-                    const ReferenceManagerInterface& referenceManager) override;
+        void postSolverRun(const PrimalSolution &primalSolution) override {
+        };
 
-  void postSolverRun(const PrimalSolution& primalSolution) override{};
+    private:
+        void mpcModeSequenceCallback(
+            const ocs2_msgs::msg::ModeSchedule::ConstSharedPtr &msg);
 
- private:
-  void mpcModeSequenceCallback(
-      const ocs2_msgs::msg::ModeSchedule::ConstSharedPtr& msg);
+        std::shared_ptr<GaitSchedule> gaitSchedulePtr_;
 
-  std::shared_ptr<GaitSchedule> gaitSchedulePtr_;
+        rclcpp::Subscription<ocs2_msgs::msg::ModeSchedule>::SharedPtr
+        mpcModeSequenceSubscriber_;
 
-  rclcpp::Subscription<ocs2_msgs::msg::ModeSchedule>::SharedPtr
-      mpcModeSequenceSubscriber_;
-
-  std::mutex receivedGaitMutex_;
-  std::atomic_bool gaitUpdated_;
-  ModeSequenceTemplate receivedGait_;
-};
-
-}  // namespace legged_robot
-}  // namespace ocs2
+        std::mutex receivedGaitMutex_;
+        std::atomic_bool gaitUpdated_;
+        ModeSequenceTemplate receivedGait_;
+    };
+}

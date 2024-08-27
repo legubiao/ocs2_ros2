@@ -100,25 +100,26 @@ namespace ocs2::legged_robot {
                                                                       interface_->getInitialState());
         conversions_->loadSettings(raisimFile_, "rollout", true);
         RaisimRolloutSettings rollout_settings(raisimFile_, "rollout", true);
-        rollout_ = std::make_shared<RaisimRollout>(urdfFile_, resourcePath_,
-                                                   [&](const vector_t &state, const vector_t &input) {
-                                                       return conversions_->stateToRaisimGenCoordGenVel(state, input);
-                                                   },
-                                                   [&](const Eigen::VectorXd &q, const Eigen::VectorXd &dq) {
-                                                       return conversions_->raisimGenCoordGenVelToState(q, dq);
-                                                   },
-                                                   [&](double time, const vector_t &input, const vector_t &state,
-                                                       const Eigen::VectorXd &q, const Eigen::VectorXd &dq) {
-                                                       return conversions_->inputToRaisimGeneralizedForce(
-                                                           time, input, state, q,
-                                                           dq);
-                                                   },
-                                                   nullptr, rollout_settings,
-                                                   [&](double time, const vector_t &input, const vector_t &state,
-                                                       const Eigen::VectorXd &q, const Eigen::VectorXd &dq) {
-                                                       return conversions_->inputToRaisimPdTargets(
-                                                           time, input, state, q, dq);
-                                                   });
+        rollout_ = std::make_shared<RaisimRollout>(
+            urdfFile_, resourcePath_,
+            [&](const vector_t &state, const vector_t &input) {
+                return conversions_->stateToRaisimGenCoordGenVel(state, input);
+            },
+            [&](const Eigen::VectorXd &q, const Eigen::VectorXd &dq) {
+                return conversions_->raisimGenCoordGenVelToState(q, dq);
+            },
+            [&](double time, const vector_t &input, const vector_t &state,
+                const Eigen::VectorXd &q, const Eigen::VectorXd &dq) {
+                return conversions_->inputToRaisimGeneralizedForce(
+                    time, input, state, q,
+                    dq);
+            },
+            nullptr, rollout_settings,
+            [&](double time, const vector_t &input, const vector_t &state,
+                const Eigen::VectorXd &q, const Eigen::VectorXd &dq) {
+                return conversions_->inputToRaisimPdTargets(
+                    time, input, state, q, dq);
+            });
 
         // terrain
         if (rollout_settings.generateTerrain_) {

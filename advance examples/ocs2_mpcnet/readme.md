@@ -13,6 +13,8 @@ I just install the latest libraries until 2024.8:
 * black 24.8.0
 * pyyaml 6.0.2
 
+Nvidia A500 can train ballbot but cannot train legged robot.
+
 ## Install ONNX Runtime
 ONNX Runtime is an inferencing and training accelerator. Here, it is used for deploying learned MPC-Net policies in C++ code. To locally install it, do the following:
 

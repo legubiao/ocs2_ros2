@@ -39,60 +39,60 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace ocs2;
 using namespace legged_robot;
 
-int main(int argc, char** argv) {
-  const std::string robotName = "legged_robot";
+int main(int argc, char **argv) {
+    const std::string robotName = "legged_robot";
 
-  // Initialize ros node
-  rclcpp::init(argc, argv);
-  rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(
-      robotName + "_mrt",
-      rclcpp::NodeOptions()
-          .allow_undeclared_parameters(true)
-          .automatically_declare_parameters_from_overrides(true));
-  // Get node parameters
-  const std::string taskFile = node->get_parameter("taskFile").as_string();
-  const std::string urdfFile = node->get_parameter("urdfFile").as_string();
-  const std::string referenceFile =
-      node->get_parameter("referenceFile").as_string();
+    // Initialize ros node
+    rclcpp::init(argc, argv);
+    rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(
+        robotName + "_mrt",
+        rclcpp::NodeOptions()
+        .allow_undeclared_parameters(true)
+        .automatically_declare_parameters_from_overrides(true));
+    // Get node parameters
+    const std::string taskFile = node->get_parameter("taskFile").as_string();
+    const std::string urdfFile = node->get_parameter("urdfFile").as_string();
+    const std::string referenceFile =
+            node->get_parameter("referenceFile").as_string();
 
-  // Robot interface
-  LeggedRobotInterface interface(taskFile, urdfFile, referenceFile);
+    // Robot interface
+    LeggedRobotInterface interface(taskFile, urdfFile, referenceFile);
 
-  // MRT
-  MRT_ROS_Interface mrt(robotName);
-  mrt.initRollout(&interface.getRollout());
-  mrt.launchNodes(node);
+    // MRT
+    MRT_ROS_Interface mrt(robotName);
+    mrt.initRollout(&interface.getRollout());
+    mrt.launchNodes(node);
 
-  // Visualization
-  CentroidalModelPinocchioMapping pinocchioMapping(
-      interface.getCentroidalModelInfo());
-  PinocchioEndEffectorKinematics endEffectorKinematics(
-      interface.getPinocchioInterface(), pinocchioMapping,
-      interface.modelSettings().contactNames3DoF);
-  auto leggedRobotVisualizer = std::make_shared<LeggedRobotVisualizer>(
-      interface.getPinocchioInterface(), interface.getCentroidalModelInfo(),
-      endEffectorKinematics, node);
+    // Visualization
+    CentroidalModelPinocchioMapping pinocchioMapping(
+        interface.getCentroidalModelInfo());
+    PinocchioEndEffectorKinematics endEffectorKinematics(
+        interface.getPinocchioInterface(), pinocchioMapping,
+        interface.modelSettings().contactNames3DoF);
+    auto leggedRobotVisualizer = std::make_shared<LeggedRobotVisualizer>(
+        interface.getPinocchioInterface(), interface.getCentroidalModelInfo(),
+        endEffectorKinematics, node);
 
-  // Dummy legged robot
-  MRT_ROS_Dummy_Loop leggedRobotDummySimulator(
-      mrt, interface.mpcSettings().mrtDesiredFrequency_,
-      interface.mpcSettings().mpcDesiredFrequency_);
-  leggedRobotDummySimulator.subscribeObservers({leggedRobotVisualizer});
+    // Dummy legged robot
+    MRT_ROS_Dummy_Loop leggedRobotDummySimulator(
+        mrt, interface.mpcSettings().mrtDesiredFrequency_,
+        interface.mpcSettings().mpcDesiredFrequency_);
+    leggedRobotDummySimulator.subscribeObservers({leggedRobotVisualizer});
 
-  // Initial state
-  SystemObservation initObservation;
-  initObservation.state = interface.getInitialState();
-  initObservation.input =
-      vector_t::Zero(interface.getCentroidalModelInfo().inputDim);
-  initObservation.mode = ModeNumber::STANCE;
+    // Initial state
+    SystemObservation initObservation;
+    initObservation.state = interface.getInitialState();
+    initObservation.input =
+            vector_t::Zero(interface.getCentroidalModelInfo().inputDim);
+    initObservation.mode = ModeNumber::STANCE;
 
-  // Initial command
-  TargetTrajectories initTargetTrajectories({0.0}, {initObservation.state},
-                                            {initObservation.input});
+    // Initial command
+    TargetTrajectories initTargetTrajectories({0.0}, {initObservation.state},
+                                              {initObservation.input});
 
-  // run dummy
-  leggedRobotDummySimulator.run(initObservation, initTargetTrajectories);
+    // run dummy
+    leggedRobotDummySimulator.run(initObservation, initTargetTrajectories);
 
-  // Successful exit
-  return 0;
+    // Successful exit
+    return 0;
 }

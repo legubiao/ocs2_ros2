@@ -1,5 +1,5 @@
 /******************************************************************************
-Copyright (c) 2021, Farbod Farshidian. All rights reserved.
+Copyright (c) 2022, Farbod Farshidian. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -27,33 +27,42 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_legged_robot_ros/gait/GaitKeyboardPublisher.h"
-#include "rclcpp/rclcpp.hpp"
+#pragma once
 
-using namespace ocs2;
-using namespace legged_robot;
+#include <ocs2_legged_robot/LeggedRobotInterface.h>
+#include <ocs2_legged_robot_raisim/RaiSimConversions.h>
+#include <ocs2_mpcnet_core/MpcnetInterfaceBase.h>
 
-int main(int argc, char *argv[]) {
-    const std::string robotName = "legged_robot";
+namespace ocs2::legged_robot {
+    /**
+    *  Legged robot MPC-Net interface between C++ and Python.
+    */
+    class LeggedRobotMpcnetInterface final : public ocs2::mpcnet::MpcnetInterfaceBase {
+    public:
+        /**
+         * Constructor.
+         * @param [in] nDataGenerationThreads : Number of data generation threads.
+         * @param [in] nPolicyEvaluationThreads : Number of policy evaluation threads.
+         * @param [in] raisim : Whether to use RaiSim for the rollouts.
+         */
+        LeggedRobotMpcnetInterface(size_t nDataGenerationThreads, size_t nPolicyEvaluationThreads, bool raisim);
 
-    // Initialize ros node
-    rclcpp::init(argc, argv);
-    rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(
-        robotName + "_mpc_mode_schedule",
-        rclcpp::NodeOptions()
-        .allow_undeclared_parameters(true)
-        .automatically_declare_parameters_from_overrides(true));
-    // Get node parameters
-    const std::string gaitCommandFile =
-            node->get_parameter("gaitCommandFile").as_string();
-    std::cerr << "Loading gait file: " << gaitCommandFile << std::endl;
+        /**
+         * Default destructor.
+         */
+        ~LeggedRobotMpcnetInterface() override = default;
 
-    GaitKeyboardPublisher gaitCommand(node, gaitCommandFile, robotName, true);
+    private:
+        /**
+         * Helper to get the MPC.
+         * @param [in] leggedRobotInterface : The legged robot interface.
+         * @return Pointer to the MPC.
+         */
+        std::unique_ptr<MPC_BASE> getMpc(LeggedRobotInterface &leggedRobotInterface);
 
-    while (rclcpp::ok()) {
-        gaitCommand.getKeyboardCommand();
-    }
-
-    // Successful exit
-    return 0;
+        // Legged robot interface pointers (keep alive for Pinocchio interface)
+        std::vector<std::unique_ptr<LeggedRobotInterface> > leggedRobotInterfacePtrs_;
+        // Legged robot RaiSim conversions pointers (keep alive for RaiSim rollout)
+        std::vector<std::unique_ptr<LeggedRobotRaisimConversions> > leggedRobotRaisimConversionsPtrs_;
+    };
 }
