@@ -39,19 +39,16 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 # Mpc node
 add_executable(ballbot_ddp src/BallbotDdpMpcNode.cpp)
-ament_target_dependencies(ballbot_ddp ${dependencies})
 target_link_libraries(ballbot_ddp ${PROJECT_NAME})
 target_compile_options(ballbot_ddp PRIVATE ${OCS2_CXX_FLAGS})
 
 # Dummy node
 add_executable(ballbot_dummy_test src/DummyBallbotNode.cpp)
-ament_target_dependencies(ballbot_dummy_test ${dependencies})
 target_link_libraries(ballbot_dummy_test ${PROJECT_NAME})
 target_compile_options(ballbot_dummy_test PRIVATE ${OCS2_CXX_FLAGS})
 
 # # Target node
 add_executable(ballbot_target src/BallbotTargetPoseCommand.cpp)
-ament_target_dependencies(ballbot_target ${dependencies})
 target_link_libraries(ballbot_target ${PROJECT_NAME})
 target_compile_options(ballbot_target PRIVATE ${OCS2_CXX_FLAGS})
 
@@ -59,19 +56,16 @@ target_compile_options(ballbot_target PRIVATE ${OCS2_CXX_FLAGS})
 add_executable(ballbot_mpc_mrt
         src/BallbotMpcMrtNode.cpp
         src/BallbotDummyVisualization.cpp)
-ament_target_dependencies(ballbot_mpc_mrt ${dependencies})
 target_link_libraries(ballbot_mpc_mrt ${PROJECT_NAME})
 target_compile_options(ballbot_mpc_mrt PRIVATE ${OCS2_CXX_FLAGS})
 
 ## SQP node for ballbot
 add_executable(ballbot_sqp src/BallbotSqpMpcNode.cpp)
-ament_target_dependencies(ballbot_sqp ${dependencies})
 target_link_libraries(ballbot_sqp ${PROJECT_NAME})
 target_compile_options(ballbot_sqp PRIVATE ${OCS2_CXX_FLAGS})
 
 ## SLP node for ballbot
 add_executable(ballbot_slp src/BallbotSlpMpcNode.cpp)
-ament_target_dependencies(ballbot_slp ${dependencies})
 target_link_libraries(ballbot_slp ${PROJECT_NAME})
 target_compile_options(ballbot_slp PRIVATE ${OCS2_CXX_FLAGS})
 
@@ -139,8 +133,11 @@ find_package(ament_lint_auto REQUIRED)
 ament_lint_auto_find_test_dependencies()
 
 if (BUILD_TESTING)
-    find_package(ament_cmake_gtest)
 
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+
+    find_package(ament_cmake_gtest)
     ament_add_gtest(ballbot_integration_test test/ballbotIntegrationTest.cpp)
     ament_target_dependencies(ballbot_integration_test ${dependencies})
     target_link_libraries(ballbot_integration_test ${PROJECT_NAME})

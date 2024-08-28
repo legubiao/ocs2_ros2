@@ -51,23 +51,6 @@ add_executable(quadrotor_target src/QuadrotorTargetPoseCommand.cpp)
 target_link_libraries(quadrotor_target ${PROJECT_NAME})
 ament_target_dependencies(quadrotor_target ${dependencies})
 
-#########################
-###   CLANG TOOLING   ###
-#########################
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling for target ocs2_quadrotor")
-    add_clang_tooling(
-            TARGETS
-            quadrotor_mpc
-            quadrotor_dummy_test
-            quadrotor_target
-            SOURCE_DIRS src include
-            CT_HEADER_DIRS include
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
-
 #############
 ## Install ##
 #############
@@ -100,5 +83,10 @@ install(
         DIRECTORY launch rviz
         DESTINATION share/${PROJECT_NAME}/
 )
+
+if (BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+endif ()
 
 ament_package()

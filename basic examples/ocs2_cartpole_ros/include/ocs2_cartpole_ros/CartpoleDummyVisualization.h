@@ -33,26 +33,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <sensor_msgs/msg/joint_state.hpp>
 
-#include "ocs2_cartpole/definitions.h"
 #include "rclcpp/rclcpp.hpp"
 
 namespace ocs2 {
-namespace cartpole {
+    namespace cartpole {
+        class CartpoleDummyVisualization final : public DummyObserver {
+        public:
+            explicit CartpoleDummyVisualization(rclcpp::Node::SharedPtr node);
 
-class CartpoleDummyVisualization : public DummyObserver {
- public:
-  explicit CartpoleDummyVisualization(const rclcpp::Node::SharedPtr& node);
+            ~CartpoleDummyVisualization() override = default;
 
-  ~CartpoleDummyVisualization() override = default;
+            void update(const SystemObservation &observation,
+                        const PrimalSolution &policy,
+                        const CommandData &command) override;
 
-  void update(const SystemObservation& observation,
-              const PrimalSolution& policy,
-              const CommandData& command) override;
-
- private:
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointPublisher_;
-};
-
-}  // namespace cartpole
-}  // namespace ocs2
+        private:
+            rclcpp::Node::SharedPtr node_;
+            rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointPublisher_;
+        };
+    } // namespace cartpole
+} // namespace ocs2

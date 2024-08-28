@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_ballbot)
 
-if(NOT DEFINED PYTHON_INSTALL_DIR)
+if (NOT DEFINED PYTHON_INSTALL_DIR)
     set(PYTHON_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
-endif()
+endif ()
 
 
 set(dependencies
@@ -28,12 +28,6 @@ find_package(ocs2_python_interface REQUIRED)
 ## Build ##
 ###########
 
-# Resolve for the package path at compile time.
-configure_file(
-        "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/package_path.h.in"
-        "${PROJECT_BINARY_DIR}/include/${PROJECT_NAME}/package_path.h" @ONLY
-)
-
 # Ballbot interface library
 add_library(${PROJECT_NAME}
         src/BallbotInterface.cpp
@@ -51,21 +45,6 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 # python bindings
 pybind11_add_module(BallbotPyBindings SHARED src/pyBindModule.cpp)
 target_link_libraries(BallbotPyBindings PRIVATE ${PROJECT_NAME})
-
-#########################
-###   CLANG TOOLING   ###
-#########################
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling for target ocs2_ballbot")
-    add_clang_tooling(
-            TARGETS ${PROJECT_NAME}
-            SOURCE_DIRS src include
-            CT_HEADER_DIRS include
-            CT_HEADER_EXCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/generated
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
 
 #############
 ## Install ##
@@ -98,12 +77,13 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 #############
 ## Testing ##
 #############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
 
 if (BUILD_TESTING)
-    find_package(ament_cmake_gtest)
 
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+
+    find_package(ament_cmake_gtest)
     ament_add_gtest(test_BallbotPyBindings test/testBallbotPyBindings.cpp)
     target_include_directories(test_BallbotPyBindings PRIVATE ${PROJECT_BINARY_DIR}/include)
     ament_target_dependencies(test_BallbotPyBindings ${dependencies})

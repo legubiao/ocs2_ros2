@@ -1,12 +1,8 @@
 # OCS2_ROS2 Toolbox
 
 ## 1. Summary
-OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), and features that are not supported at the moment:
+OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), it was refactored to be compatible with ROS2 and modern cmake. Below is the current todolist of the project:
 
-* ocs2_mpcnet
-* ocs2_doc
-
-Todo List:
 - [x] modern cmake
 - [x] basic 6 examples in official documents
 - [x] WSL2 support
@@ -57,105 +53,7 @@ rosdep install --from-paths src --ignore-src -r -y
 * **If build without "-DCMAKE_BUILD_TYPE=RelWithDebInfo", the mpc will have poor performance.**
 * **Don't forget to deactivate conda before "colcon build", otherwise gtest would generate some file caused later build all failed and you may need to clean the ros2 workspace to recover.**
 
-
-#### 2.4.1 [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
-
-* build
-```bash
-cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_double_integrator_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-```
-* run
-```bash
-source ~/ocs2_ws/install/setup.bash
-ros2 launch ocs2_double_integrator_ros double_integrator.launch.py
-```
-
-#### 2.4.2 [Cartpole](https://leggedrobotics.github.io/ocs2/robotic_examples.html#cartpole)
-
-* build
-```bash
-cd ../..
-colcon build --packages-up-to ocs2_cartpole_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-```
-* run
-```bash
-source ../../install/setup.bash
-ros2 launch ocs2_cartpole_ros cartpole.launch.py
-```
-
-
-#### 2.4.3 [Ballbot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#ballbot)
-
-* build
-```bash
-cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_ballbot_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-```
-* run
-```bash
-source ~/ocs2_ws/install/setup.bash
-ros2 launch ocs2_ballbot_ros ballbot_ddp.launch.py
-```
-
-#### 2.4.4 [Quadrotor](https://leggedrobotics.github.io/ocs2/robotic_examples.html#quadrotor)
-
-* build
-```bash
-cd ../..
-colcon build --packages-up-to ocs2_quadrotor_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-```
-* run
-```bash
-source ../../install/setup.bash
-ros2 launch ocs2_quadrotor_ros quadrotor.launch.py
-```
-
-#### 2.4.5 [Mobile Manipulator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#mobile-manipulator)
-
-* build
-```bash
-cd ../..
-colcon build --packages-up-to ocs2_mobile_manipulator_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-```
-* run Mabi-Mobile
-```bash
-source ../../install/setup.bash
-ros2 launch ocs2_mobile_manipulator_ros manipulator_mabi_mobile.launch.py
-```
-* run Kinova Jaco2
-```bash
-source ../../install/setup.bash
-ros2 launch ocs2_mobile_manipulator_ros manipulator_kinova_j2n6.launch.py
-```
-* run Franka Panda
-```bash
-source ../../install/setup.bash
-ros2 launch ocs2_mobile_manipulator_ros manipulator_franka.launch.py
-```
-* run Willow Garage PR2
-```bash
-source ../../install/setup.bash
-ros2 launch ocs2_mobile_manipulator_ros manipulator_pr2.launch.py
-```
-* run Clearpath Ridgeback with UR-5
-```bash
-source ../../install/setup.bash
-ros2 launch ocs2_mobile_manipulator_ros manipulator_ridgeback_ur5.launch.py 
-```
-
-
-#### 2.4.6 [Legged Robot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#legged-robot)
-* build
-```bash
-cd ../..
-colcon build --packages-up-to ocs2_legged_robot_ros ocs2_self_collision_visualization --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-```
-* run
-```bash
-source ../../install/setup.bash
-ros2 launch ocs2_legged_robot_ros legged_robot_ddp.launch.py
-```
+Check [here](basic%20examples/) for more detailed instructions.
 
 ## 3. Advanced Examples
 

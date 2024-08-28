@@ -37,40 +37,38 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_ballbot/definitions.h"
 
 namespace ocs2 {
-namespace ballbot {
+    namespace ballbot {
+        /**
+         * BallbotSystemDynamics class
+         * This class implements the dynamics for the ballbot.
+         * The equations of motion are generated through robcogen, using the following set of generalized coordinates:
+         * (ballPosition_x, ballPosition_y, eulerAnglesZyx theta_z, eulerAnglesZyx theta_y, eulerAnglesZyx theta_x)
+         * The control input are u = (torque_wheel1, torque_wheel2, torque_wheel3)
+         */
+        class BallbotSystemDynamics : public SystemDynamicsBaseAD {
+        public:
+            /** Constructor */
+            BallbotSystemDynamics(const std::string &libraryFolder, bool recompileLibraries) : SystemDynamicsBaseAD() {
+                wheelRadius_ = param_.wheelRadius_;
+                ballRadius_ = param_.ballRadius_;
 
-/**
- * BallbotSystemDynamics class
- * This class implements the dynamics for the ballbot.
- * The equations of motion are generated through robcogen, using the following set of generalized coordinates:
- * (ballPosition_x, ballPosition_y, eulerAnglesZyx theta_z, eulerAnglesZyx theta_y, eulerAnglesZyx theta_x)
- * The control input are u = (torque_wheel1, torque_wheel2, torque_wheel3)
- */
-class BallbotSystemDynamics : public SystemDynamicsBaseAD {
- public:
-  /** Constructor */
-  BallbotSystemDynamics(const std::string& libraryFolder, bool recompileLibraries) : SystemDynamicsBaseAD() {
-    wheelRadius_ = param_.wheelRadius_;
-    ballRadius_ = param_.ballRadius_;
+                initialize(STATE_DIM, INPUT_DIM, "ballbot_dynamics", libraryFolder, recompileLibraries, true);
+            }
 
-    initialize(STATE_DIM, INPUT_DIM, "ballbot_dynamics", libraryFolder, recompileLibraries, true);
-  }
+            /** Destructor */
+            ~BallbotSystemDynamics() override = default;
 
-  /** Destructor */
-  ~BallbotSystemDynamics() override = default;
+            BallbotSystemDynamics(const BallbotSystemDynamics &rhs) = default;
 
-  BallbotSystemDynamics(const BallbotSystemDynamics& rhs) = default;
+            BallbotSystemDynamics *clone() const override { return new BallbotSystemDynamics(*this); }
 
-  BallbotSystemDynamics* clone() const override { return new BallbotSystemDynamics(*this); }
+            ad_vector_t systemFlowMap(ad_scalar_t time, const ad_vector_t &state, const ad_vector_t &input,
+                                      const ad_vector_t &parameters) const override;
 
-  ad_vector_t systemFlowMap(ad_scalar_t time, const ad_vector_t& state, const ad_vector_t& input,
-                            const ad_vector_t& parameters) const override;
-
- private:
-  BallbotParameters param_;
-  scalar_t wheelRadius_;
-  scalar_t ballRadius_;
-};
-
-}  // namespace ballbot
-}  // namespace ocs2
+        private:
+            BallbotParameters param_;
+            scalar_t wheelRadius_;
+            scalar_t ballRadius_;
+        };
+    } // namespace ballbot
+} // namespace ocs2

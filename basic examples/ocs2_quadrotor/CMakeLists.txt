@@ -50,22 +50,6 @@ set_target_properties(QuadrotorPyBindings
         PROPERTIES LIBRARY_OUTPUT_DIRECTORY "bin"
 )
 
-
-#########################
-###   CLANG TOOLING   ###
-#########################
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling for target ocs2_quadrotor")
-    add_clang_tooling(
-            TARGETS
-            ${PROJECT_NAME}
-            SOURCE_DIRS src include
-            CT_HEADER_DIRS include
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
-
 #############
 ## Install ##
 #############
@@ -97,12 +81,12 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 #############
 ## Testing ##
 #############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
 
 if (BUILD_TESTING)
-    find_package(ament_cmake_gtest)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
 
+    find_package(ament_cmake_gtest)
     ament_add_gtest(${PROJECT_NAME}_PyBindingsTest test/PyBindingsTest.cpp)
     target_include_directories(${PROJECT_NAME}_PyBindingsTest PRIVATE ${PROJECT_BINARY_DIR}/include)
     ament_target_dependencies(${PROJECT_NAME}_PyBindingsTest ${dependencies})

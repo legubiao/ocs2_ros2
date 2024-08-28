@@ -16,12 +16,6 @@ find_package(ocs2_robotic_tools REQUIRED)
 ## Build ##
 ###########
 
-# Resolve for the package path at compile time.
-configure_file(
-        "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/package_path.h.in"
-        "${PROJECT_BINARY_DIR}/include/${PROJECT_NAME}/package_path.h" @ONLY
-)
-
 # cartpole interface library
 add_library(${PROJECT_NAME}
         src/CartPoleInterface.cpp
@@ -34,22 +28,6 @@ target_include_directories(${PROJECT_NAME}
 
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
-
-
-#########################
-###   CLANG TOOLING   ###
-#########################
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Running clang tooling.")
-    add_clang_tooling(
-            TARGETS ${PROJECT_NAME}
-            SOURCE_DIRS src include test
-            CT_HEADER_DIRS include
-            CT_HEADER_EXCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/generated
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
 
 #############
 ## Install ##
@@ -79,10 +57,11 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 #############
 ## Testing ##
 #############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
 
 if (BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+
     find_package(ament_cmake_gtest)
 
     ament_add_gtest(test_cartpole test/testCartpole.cpp)

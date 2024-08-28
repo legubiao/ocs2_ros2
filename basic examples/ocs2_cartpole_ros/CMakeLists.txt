@@ -26,18 +26,15 @@ add_library(${PROJECT_NAME}
         src/DummyCartpoleNode.cpp
         src/CartpoleDummyVisualization.cpp
 )
-
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 # Mpc node
 add_executable(cartpole_mpc src/CartpoleMpcNode.cpp)
-ament_target_dependencies(cartpole_mpc ${dependencies})
 target_link_libraries(cartpole_mpc ${PROJECT_NAME})
 
 # Dummy node
@@ -45,25 +42,7 @@ add_executable(cartpole_dummy_test
         src/DummyCartpoleNode.cpp
         src/CartpoleDummyVisualization.cpp
 )
-ament_target_dependencies(cartpole_dummy_test ${dependencies})
 target_link_libraries(cartpole_dummy_test ${PROJECT_NAME})
-
-#########################
-###   CLANG TOOLING   ###
-#########################
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Running clang tooling.")
-    add_clang_tooling(
-            TARGETS
-            cartpole_mpc
-            cartpole_dummy_test
-            SOURCE_DIRS src include
-            CT_HEADER_DIRS include
-            CT_HEADER_EXCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/generated
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
 
 #############
 ## Install ##
@@ -79,5 +58,10 @@ install(
 install(DIRECTORY launch rviz
         DESTINATION share/${PROJECT_NAME}/
 )
+
+if (BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+endif ()
 
 ament_package()

@@ -1,28 +1,30 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ocs2_cartpole_ros</name>
-  <version>0.0.0</version>
-  <description>The ocs2_cartpole_ros package</description>
+    <name>ocs2_cartpole_ros</name>
+    <version>0.0.0</version>
+    <description>The ocs2_cartpole_ros package</description>
 
-  <maintainer email="farbod.farshidian@gmail.com">Farbod Farshidian</maintainer>
-  <maintainer email="jcarius@ethz.ch">Jan Carius</maintainer>
-  <maintainer email="rgrandia@ethz.ch">Ruben Grandia</maintainer>
+    <maintainer email="farbod.farshidian@gmail.com">Farbod Farshidian</maintainer>
+    <maintainer email="jcarius@ethz.ch">Jan Carius</maintainer>
+    <maintainer email="rgrandia@ethz.ch">Ruben Grandia</maintainer>
 
-  <license>TODO</license>
+    <license>TODO</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+    <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>rclcpp </build_depend>
-  <build_depend>cmake_clang_tools</build_depend>
+    <build_depend>rclcpp</build_depend>
 
 
-  <depend>ocs2_ros_interfaces</depend>
-  <depend>ocs2_cartpole</depend>
-  <depend>robot_state_publisher</depend>
-  <depend>ocs2_robotic_assets</depend>
-  <depend>ament_index_cpp</depend>
-  
-  <export>                               
-   <build_type>ament_cmake</build_type>
-  </export>
+    <depend>ocs2_ros_interfaces</depend>
+    <depend>ocs2_cartpole</depend>
+    <depend>robot_state_publisher</depend>
+    <depend>ocs2_robotic_assets</depend>
+    <depend>ament_index_cpp</depend>
+
+    <test_depend>ament_lint_auto</test_depend>
+    <test_depend>ament_lint_common</test_depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
 </package>

@@ -37,68 +37,68 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rclcpp/rclcpp.hpp"
 
-int main(int argc, char** argv) {
-  const std::string robotName = "cartpole";
+int main(int argc, char **argv) {
+    const std::string robotName = "cartpole";
 
-  // task file
-  std::vector<std::string> programArgs =
-      rclcpp::remove_ros_arguments(argc, argv);
+    // task file
+    std::vector<std::string> programArgs =
+            rclcpp::remove_ros_arguments(argc, argv);
 
-  if (programArgs.size() <= 1) {
-    throw std::runtime_error("No task file specified. Aborting.");
-  }
-  std::string taskFileFolderName(programArgs[1]);
-
-  // Initialize ros node
-  rclcpp::init(argc, argv);
-  rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(robotName + "_mpc");
-
-  // Robot interface
-  const std::string taskFile =
-      ament_index_cpp::get_package_share_directory("ocs2_cartpole") +
-      "/config/" + taskFileFolderName + "/task.info";
-  const std::string libFolder =
-      ament_index_cpp::get_package_share_directory("ocs2_cartpole") +
-      "/auto_generated";
-  ocs2::cartpole::CartPoleInterface cartPoleInterface(taskFile, libFolder,
-                                                      true /*verbose*/);
-
-  // MPC
-  ocs2::GaussNewtonDDP_MPC mpc(cartPoleInterface.mpcSettings(),
-                               cartPoleInterface.ddpSettings(),
-                               cartPoleInterface.getRollout(),
-                               cartPoleInterface.getOptimalControlProblem(),
-                               cartPoleInterface.getInitializer());
-
-  // observer for the input limits constraints
-  auto createStateInputBoundsObserver = [&]() {
-    const std::string observingLagrangianTerm = "InputLimits";
-    const ocs2::scalar_array_t observingTimePoints{0.0, 0.5};
-    std::vector<std::string> metricsTopicNames;
-    std::vector<std::string> multiplierTopicNames;
-    for (const auto& t : observingTimePoints) {
-      const int timeMs = static_cast<int>(t * 1000.0);
-      metricsTopicNames.push_back("metrics/" + observingLagrangianTerm + "/" +
-                                  "MsLookAhead" + std::to_string(timeMs));
-      multiplierTopicNames.push_back("multipliers/" + observingLagrangianTerm +
-                                     "/" + "MsLookAhead" +
-                                     std::to_string(timeMs));
+    if (programArgs.size() <= 1) {
+        throw std::runtime_error("No task file specified. Aborting.");
     }
-    auto lagrangianCallback = ocs2::ros::createLagrangianCallback(
-        node, observingTimePoints, metricsTopicNames,
-        ocs2::ros::CallbackInterpolationStrategy::linear_interpolation);
-    auto multiplierCallback = ocs2::ros::createMultiplierCallback(
-        node, observingTimePoints, multiplierTopicNames,
-        ocs2::ros::CallbackInterpolationStrategy::linear_interpolation);
-    return ocs2::SolverObserver::LagrangianTermObserver(
-        ocs2::SolverObserver::Type::Intermediate, observingLagrangianTerm,
-        std::move(lagrangianCallback), std::move(multiplierCallback));
-  };
-  mpc.getSolverPtr()->addSolverObserver(createStateInputBoundsObserver());
+    std::string taskFileFolderName(programArgs[1]);
 
-  // Launch MPC ROS node
-  ocs2::MPC_ROS_Interface mpcNode(mpc, robotName);
-  mpcNode.launchNodes(node);
+    // Initialize ros node
+    rclcpp::init(argc, argv);
+    rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(robotName + "_mpc");
 
-  return 0;
+    // Robot interface
+    const std::string taskFile =
+            ament_index_cpp::get_package_share_directory("ocs2_cartpole") +
+            "/config/" + taskFileFolderName + "/task.info";
+    const std::string libFolder =
+            ament_index_cpp::get_package_share_directory("ocs2_cartpole") +
+            "/auto_generated";
+    ocs2::cartpole::CartPoleInterface cartPoleInterface(taskFile, libFolder,
+                                                        true /*verbose*/);
+
+    // MPC
+    ocs2::GaussNewtonDDP_MPC mpc(cartPoleInterface.mpcSettings(),
+                                 cartPoleInterface.ddpSettings(),
+                                 cartPoleInterface.getRollout(),
+                                 cartPoleInterface.getOptimalControlProblem(),
+                                 cartPoleInterface.getInitializer());
+
+    // observer for the input limits constraints
+    auto createStateInputBoundsObserver = [&]() {
+        const std::string observingLagrangianTerm = "InputLimits";
+        const ocs2::scalar_array_t observingTimePoints{0.0, 0.5};
+        std::vector<std::string> metricsTopicNames;
+        std::vector<std::string> multiplierTopicNames;
+        for (const auto &t: observingTimePoints) {
+            const int timeMs = static_cast<int>(t * 1000.0);
+            metricsTopicNames.push_back("metrics/" + observingLagrangianTerm + "/" +
+                                        "MsLookAhead" + std::to_string(timeMs));
+            multiplierTopicNames.push_back("multipliers/" + observingLagrangianTerm +
+                                           "/" + "MsLookAhead" +
+                                           std::to_string(timeMs));
+        }
+        auto lagrangianCallback = ocs2::ros::createLagrangianCallback(
+            node, observingTimePoints, metricsTopicNames,
+            ocs2::ros::CallbackInterpolationStrategy::linear_interpolation);
+        auto multiplierCallback = ocs2::ros::createMultiplierCallback(
+            node, observingTimePoints, multiplierTopicNames,
+            ocs2::ros::CallbackInterpolationStrategy::linear_interpolation);
+        return ocs2::SolverObserver::LagrangianTermObserver(
+            ocs2::SolverObserver::Type::Intermediate, observingLagrangianTerm,
+            std::move(lagrangianCallback), std::move(multiplierCallback));
+    };
+    mpc.getSolverPtr()->addSolverObserver(createStateInputBoundsObserver());
+
+    // Launch MPC ROS node
+    ocs2::MPC_ROS_Interface mpcNode(mpc, robotName);
+    mpcNode.launchNodes(node);
+
+    return 0;
 }

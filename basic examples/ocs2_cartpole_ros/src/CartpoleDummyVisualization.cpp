@@ -27,30 +27,30 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
+#include <utility>
+
 #include "ocs2_cartpole_ros/CartpoleDummyVisualization.h"
 
-namespace ocs2 {
-namespace cartpole {
 
-CartpoleDummyVisualization::CartpoleDummyVisualization(
-    const rclcpp::Node::SharedPtr& node)
-    : node_(node),
-      jointPublisher_(node_->create_publisher<sensor_msgs::msg::JointState>(
-          "joint_states", 1)) {}
+namespace ocs2::cartpole {
+    CartpoleDummyVisualization::CartpoleDummyVisualization(
+        rclcpp::Node::SharedPtr node)
+        : node_(std::move(node)),
+          jointPublisher_(node_->create_publisher<sensor_msgs::msg::JointState>(
+              "joint_states", 1)) {
+    }
 
-void CartpoleDummyVisualization::update(const SystemObservation& observation,
-                                        const PrimalSolution& policy,
-                                        const CommandData& command) {
-  sensor_msgs::msg::JointState joint_state;
-  joint_state.header.stamp = node_->get_clock()->now();
-  joint_state.name.resize(2);
-  joint_state.position.resize(2);
-  joint_state.name[0] = "slider_to_cart";
-  joint_state.name[1] = "cart_to_pole";
-  joint_state.position[0] = observation.state(1);
-  joint_state.position[1] = observation.state(0);
-  jointPublisher_->publish(joint_state);
-}
-
-}  // namespace cartpole
-}  // namespace ocs2
+    void CartpoleDummyVisualization::update(const SystemObservation &observation,
+                                            const PrimalSolution &policy,
+                                            const CommandData &command) {
+        sensor_msgs::msg::JointState joint_state;
+        joint_state.header.stamp = node_->get_clock()->now();
+        joint_state.name.resize(2);
+        joint_state.position.resize(2);
+        joint_state.name[0] = "slider_to_cart";
+        joint_state.name[1] = "cart_to_pole";
+        joint_state.position[0] = observation.state(1);
+        joint_state.position[1] = observation.state(0);
+        jointPublisher_->publish(joint_state);
+    }
+} // namespace ocs2::cartpole

@@ -42,54 +42,52 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_cartpole/definitions.h"
 
 namespace ocs2 {
-namespace cartpole {
+    namespace cartpole {
+        class CartPoleInterface final : public RobotInterface {
+        public:
+            /**
+             * Constructor
+             *
+             * @note Creates directory for generated library into if it does not exist.
+             * @throw Invalid argument error if input task file does not exist.
+             *
+             * @param [in] taskFile: The absolute path to the configuration file for the MPC.
+             * @param [in] libraryFolder: The absolute path to the directory to generate CppAD library into.
+             * @param [in] verbose: Flag to determine to print out the loaded settings and status of complied libraries.
+             */
+            CartPoleInterface(const std::string &taskFile, const std::string &libraryFolder, bool verbose);
 
-class CartPoleInterface final : public RobotInterface {
- public:
-  /**
-   * Constructor
-   *
-   * @note Creates directory for generated library into if it does not exist.
-   * @throw Invalid argument error if input task file does not exist.
-   *
-   * @param [in] taskFile: The absolute path to the configuration file for the MPC.
-   * @param [in] libraryFolder: The absolute path to the directory to generate CppAD library into.
-   * @param [in] verbose: Flag to determine to print out the loaded settings and status of complied libraries.
-   */
-  CartPoleInterface(const std::string& taskFile, const std::string& libraryFolder, bool verbose);
+            /**
+             * Destructor
+             */
+            ~CartPoleInterface() override = default;
 
-  /**
-   * Destructor
-   */
-  ~CartPoleInterface() override = default;
+            const vector_t &getInitialState() { return initialState_; }
 
-  const vector_t& getInitialState() { return initialState_; }
+            const vector_t &getInitialTarget() { return xFinal_; }
 
-  const vector_t& getInitialTarget() { return xFinal_; }
+            ddp::Settings &ddpSettings() { return ddpSettings_; }
 
-  ddp::Settings& ddpSettings() { return ddpSettings_; }
+            mpc::Settings &mpcSettings() { return mpcSettings_; }
 
-  mpc::Settings& mpcSettings() { return mpcSettings_; }
+            OptimalControlProblem &optimalControlProblem() { return problem_; }
+            const OptimalControlProblem &getOptimalControlProblem() const override { return problem_; }
 
-  OptimalControlProblem& optimalControlProblem() { return problem_; }
-  const OptimalControlProblem& getOptimalControlProblem() const override { return problem_; }
+            const RolloutBase &getRollout() const { return *rolloutPtr_; }
 
-  const RolloutBase& getRollout() const { return *rolloutPtr_; }
+            const Initializer &getInitializer() const override { return *cartPoleInitializerPtr_; }
 
-  const Initializer& getInitializer() const override { return *cartPoleInitializerPtr_; }
+        private:
+            ddp::Settings ddpSettings_;
+            mpc::Settings mpcSettings_;
 
- private:
-  ddp::Settings ddpSettings_;
-  mpc::Settings mpcSettings_;
+            OptimalControlProblem problem_;
 
-  OptimalControlProblem problem_;
+            std::unique_ptr<RolloutBase> rolloutPtr_;
+            std::unique_ptr<Initializer> cartPoleInitializerPtr_;
 
-  std::unique_ptr<RolloutBase> rolloutPtr_;
-  std::unique_ptr<Initializer> cartPoleInitializerPtr_;
-
-  vector_t initialState_{STATE_DIM};
-  vector_t xFinal_{STATE_DIM};
-};
-
-}  // namespace cartpole
-}  // namespace ocs2
+            vector_t initialState_{STATE_DIM};
+            vector_t xFinal_{STATE_DIM};
+        };
+    } // namespace cartpole
+} // namespace ocs2

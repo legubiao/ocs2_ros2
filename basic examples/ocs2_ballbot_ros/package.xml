@@ -12,7 +12,6 @@
 
     <buildtool_depend>ament_cmake</buildtool_depend>
     <build_depend>cmake_modules</build_depend>
-    <build_depend>cmake_clang_tools</build_depend>
     <depend>ament_index_cpp</depend>
 
     <depend>tf2</depend>
@@ -24,6 +23,10 @@
     <depend>ocs2_ros_interfaces</depend>
     <depend>ocs2_ballbot</depend>
     <depend>ocs2_robotic_assets</depend>
+
+    <test_depend>ament_cmake_gtest</test_depend>
+    <test_depend>ament_lint_auto</test_depend>
+    <test_depend>ament_lint_common</test_depend>
 
     <export>
         <build_type>ament_cmake</build_type>
