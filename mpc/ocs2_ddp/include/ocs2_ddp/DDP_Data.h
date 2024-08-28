@@ -30,7 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <ocs2_core/Types.h>
-#include <ocs2_core/model_data/Metrics.h>
 #include <ocs2_core/model_data/ModelData.h>
 #include <ocs2_oc/oc_data/DualSolution.h>
 #include <ocs2_oc/oc_data/PrimalSolution.h>
@@ -39,74 +38,72 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_ddp/riccati_equations/RiccatiModification.h"
 
 namespace ocs2 {
+    /**
+     * Primal data container
+     *
+     * The design philosophy behind is to keep all member variables consistent. All (time, post, .., modelDataEventTime)
+     * trajectories should be the rollout result of the controller
+     *
+     * There is one exception that breaks the consistency. When using an external controller to initialize the controller, it is obvious that
+     * the rest of member variables are not the result of the controller. But they will be cleared and populated when runInit is called.
+     */
+    struct PrimalDataContainer {
+        // Primal solution
+        PrimalSolution primalSolution;
+        // cost, soft constraints and constraints values of the rollout
+        ProblemMetrics problemMetrics;
+        // final time model data
+        ModelData modelDataFinalTime;
+        // event times model data
+        std::vector<ModelData> modelDataEventTimes;
+        // intermediate model data trajectory
+        std::vector<ModelData> modelDataTrajectory;
 
-/**
- * Primal data container
- *
- * The design philosophy behind is to keep all member variables consistent. All (time, post, .., modelDataEventTime)
- * trajectories should be the rollout result of the controller
- *
- * There is one exception that breaks the consistency. When using an external controller to initialize the controller, it is obvious that
- * the rest of member variables are not the result of the controller. But they will be cleared and populated when runInit is called.
- */
-struct PrimalDataContainer {
-  // Primal solution
-  PrimalSolution primalSolution;
-  // cost, soft constraints and constraints values of the rollout
-  ProblemMetrics problemMetrics;
-  // final time model data
-  ModelData modelDataFinalTime;
-  // event times model data
-  std::vector<ModelData> modelDataEventTimes;
-  // intermediate model data trajectory
-  std::vector<ModelData> modelDataTrajectory;
+        void swap(PrimalDataContainer &other) {
+            primalSolution.swap(other.primalSolution);
+            problemMetrics.swap(other.problemMetrics);
+            std::swap(modelDataFinalTime, other.modelDataFinalTime);
+            modelDataEventTimes.swap(other.modelDataEventTimes);
+            modelDataTrajectory.swap(other.modelDataTrajectory);
+        }
 
-  void swap(PrimalDataContainer& other) {
-    primalSolution.swap(other.primalSolution);
-    problemMetrics.swap(other.problemMetrics);
-    std::swap(modelDataFinalTime, other.modelDataFinalTime);
-    modelDataEventTimes.swap(other.modelDataEventTimes);
-    modelDataTrajectory.swap(other.modelDataTrajectory);
-  }
+        void clear() {
+            primalSolution.clear();
+            problemMetrics.clear();
+            modelDataEventTimes.clear();
+            modelDataTrajectory.clear();
+        }
+    };
 
-  void clear() {
-    primalSolution.clear();
-    problemMetrics.clear();
-    modelDataEventTimes.clear();
-    modelDataTrajectory.clear();
-  }
-};
+    /**
+     * Dual data container
+     *
+     * The design philosophy behind is to keep all member variables consistent. valueFunctionTrajectory is the direct result of
+     * (projectedModelData,riccatiModification) trajectories.
+     *
+     */
+    struct DualDataContainer {
+        // Dual solution
+        DualSolution dualSolution;
+        // projected model data trajectory
+        std::vector<ModelData> projectedModelDataTrajectory;
+        // Riccati modification
+        std::vector<riccati_modification::Data> riccatiModificationTrajectory;
+        // Riccati solution coefficients
+        std::vector<ScalarFunctionQuadraticApproximation> valueFunctionTrajectory;
 
-/**
- * Dual data container
- *
- * The design philosophy behind is to keep all member variables consistent. valueFunctionTrajectory is the direct result of
- * (projectedModelData,riccatiModification) trajectories.
- *
- */
-struct DualDataContainer {
-  // Dual solution
-  DualSolution dualSolution;
-  // projected model data trajectory
-  std::vector<ModelData> projectedModelDataTrajectory;
-  // Riccati modification
-  std::vector<riccati_modification::Data> riccatiModificationTrajectory;
-  // Riccati solution coefficients
-  std::vector<ScalarFunctionQuadraticApproximation> valueFunctionTrajectory;
+        void swap(DualDataContainer &other) {
+            dualSolution.swap(other.dualSolution);
+            projectedModelDataTrajectory.swap(other.projectedModelDataTrajectory);
+            riccatiModificationTrajectory.swap(other.riccatiModificationTrajectory);
+            valueFunctionTrajectory.swap(other.valueFunctionTrajectory);
+        }
 
-  void swap(DualDataContainer& other) {
-    dualSolution.swap(other.dualSolution);
-    projectedModelDataTrajectory.swap(other.projectedModelDataTrajectory);
-    riccatiModificationTrajectory.swap(other.riccatiModificationTrajectory);
-    valueFunctionTrajectory.swap(other.valueFunctionTrajectory);
-  }
-
-  void clear() {
-    dualSolution.clear();
-    projectedModelDataTrajectory.clear();
-    riccatiModificationTrajectory.clear();
-    valueFunctionTrajectory.clear();
-  }
-};
-
-}  // namespace ocs2
+        void clear() {
+            dualSolution.clear();
+            projectedModelDataTrajectory.clear();
+            riccatiModificationTrajectory.clear();
+            valueFunctionTrajectory.clear();
+        }
+    };
+} // namespace ocs2

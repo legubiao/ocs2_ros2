@@ -29,8 +29,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_core/misc/LinearInterpolation.h>
-
 #include "RiccatiModification.h"
 
 // Declares an access function of name FIELD (e.g., time, DmDagger, ...)
@@ -39,20 +37,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     return vec[ind].FIELD##_;                                                                                                   \
   }
 
-namespace ocs2 {
-namespace riccati_modification {
+namespace ocs2::riccati_modification {
+    CREATE_INTERPOLATION_ACCESS_FUNCTION(time)
 
-CREATE_INTERPOLATION_ACCESS_FUNCTION(time)
+    CREATE_INTERPOLATION_ACCESS_FUNCTION(deltaQm)
+    CREATE_INTERPOLATION_ACCESS_FUNCTION(deltaGm)
+    CREATE_INTERPOLATION_ACCESS_FUNCTION(deltaGv)
 
-CREATE_INTERPOLATION_ACCESS_FUNCTION(deltaQm)
-CREATE_INTERPOLATION_ACCESS_FUNCTION(deltaGm)
-CREATE_INTERPOLATION_ACCESS_FUNCTION(deltaGv)
-
-CREATE_INTERPOLATION_ACCESS_FUNCTION(hamiltonianHessian)
-CREATE_INTERPOLATION_ACCESS_FUNCTION(constraintRangeProjector)
-CREATE_INTERPOLATION_ACCESS_FUNCTION(constraintNullProjector)
-
-}  // namespace riccati_modification
-}  // namespace ocs2
+    CREATE_INTERPOLATION_ACCESS_FUNCTION(hamiltonianHessian)
+    CREATE_INTERPOLATION_ACCESS_FUNCTION(constraintRangeProjector)
+    CREATE_INTERPOLATION_ACCESS_FUNCTION(constraintNullProjector)
+}
 
 #undef CREATE_INTERPOLATION_ACCESS_FUNCTION

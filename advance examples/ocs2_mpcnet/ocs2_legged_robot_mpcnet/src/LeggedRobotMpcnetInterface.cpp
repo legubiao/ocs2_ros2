@@ -37,12 +37,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_legged_robot_mpcnet/LeggedRobotMpcnetDefinition.h"
 #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <memory>
 
 namespace ocs2::legged_robot {
     LeggedRobotMpcnetInterface::LeggedRobotMpcnetInterface(size_t nDataGenerationThreads,
                                                            size_t nPolicyEvaluationThreads, bool raisim) {
         // create ONNX environment
-        auto onnxEnvironmentPtr = ocs2::mpcnet::createOnnxEnvironment();
+        auto onnxEnvironmentPtr = mpcnet::createOnnxEnvironment();
         // paths to files
         const std::string taskFile = ament_index_cpp::get_package_share_directory("ocs2_legged_robot") +
                                      "/config/mpc/task.info";
@@ -105,7 +106,7 @@ namespace ocs2::legged_robot {
                     raisim::TerrainProperties terrainProperties;
                     terrainProperties.zScale = raisimRolloutSettings.terrainRoughness_;
                     terrainProperties.seed = raisimRolloutSettings.terrainSeed_ + i;
-                    auto terrainPtr = static_cast<RaisimRollout *>(rolloutPtrs[i].get())->generateTerrain(
+                    auto terrainPtr = dynamic_cast<RaisimRollout *>(rolloutPtrs[i].get())->generateTerrain(
                         terrainProperties);
                     leggedRobotRaisimConversionsPtrs_[i]->setTerrain(*terrainPtr);
                 }
@@ -116,14 +117,14 @@ namespace ocs2::legged_robot {
             mpcnetDefinitionPtrs.push_back(mpcnetDefinitionPtr);
             referenceManagerPtrs.push_back(leggedRobotInterfacePtrs_[i]->getReferenceManagerPtr());
         }
-        mpcnetRolloutManagerPtr_.reset(new ocs2::mpcnet::MpcnetRolloutManager(
+        mpcnetRolloutManagerPtr_ = std::make_unique<mpcnet::MpcnetRolloutManager>(
             nDataGenerationThreads, nPolicyEvaluationThreads,
             std::move(mpcPtrs), std::move(mpcnetPtrs), std::move(rolloutPtrs),
-            mpcnetDefinitionPtrs, referenceManagerPtrs));
+            mpcnetDefinitionPtrs, referenceManagerPtrs);
     }
 
 
-    std::unique_ptr<MPC_BASE> LeggedRobotMpcnetInterface::getMpc(LeggedRobotInterface &leggedRobotInterface) {
+    std::unique_ptr<MPC_BASE> LeggedRobotMpcnetInterface::getMpc(const LeggedRobotInterface &leggedRobotInterface) {
         // ensure MPC and DDP settings are as needed for MPC-Net
         const auto mpcSettings = [&]() {
             auto settings = leggedRobotInterface.mpcSettings();
@@ -133,7 +134,7 @@ namespace ocs2::legged_robot {
         }();
         const auto ddpSettings = [&]() {
             auto settings = leggedRobotInterface.ddpSettings();
-            settings.algorithm_ = ocs2::ddp::Algorithm::SLQ;
+            settings.algorithm_ = ddp::Algorithm::SLQ;
             settings.nThreads_ = 1;
             settings.displayInfo_ = false;
             settings.displayShortSummary_ = false;

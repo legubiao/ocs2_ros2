@@ -38,7 +38,7 @@ namespace ocs2 {
 
 
     void MRT_BASE::reset() {
-        std::lock_guard<std::mutex> lock(bufferMutex_);
+        std::lock_guard lock(bufferMutex_);
 
         policyReceivedEver_ = false;
         newPolicyInBuffer_ = false;
@@ -65,18 +65,16 @@ namespace ocs2 {
     const PrimalSolution &MRT_BASE::getPolicy() const {
         if (activePrimalSolutionPtr_ != nullptr) {
             return *activePrimalSolutionPtr_;
-        } else {
-            throw std::runtime_error("[MRT_BASE::getPolicy] updatePolicy() should be called first!");
         }
+        throw std::runtime_error("[MRT_BASE::getPolicy] updatePolicy() should be called first!");
     }
 
 
     const PerformanceIndex &MRT_BASE::getPerformanceIndices() const {
         if (activePerformanceIndicesPtr_ != nullptr) {
             return *activePerformanceIndicesPtr_;
-        } else {
-            throw std::runtime_error("[MRT_BASE::getPerformanceIndices] updatePolicy() should be called first!");
         }
+        throw std::runtime_error("[MRT_BASE::getPerformanceIndices] updatePolicy() should be called first!");
     }
 
 

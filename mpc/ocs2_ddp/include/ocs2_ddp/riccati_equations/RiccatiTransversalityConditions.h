@@ -36,23 +36,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/model_data/ModelData.h>
 
 namespace ocs2 {
+    static std::tuple<matrix_t, vector_t, scalar_t> riccatiTransversalityConditions(
+        const ModelData &jumpModelData, const matrix_t &Sm,
+        const vector_t &Sv, scalar_t s) {
+        // Sm
+        const matrix_t SmTransAm = Sm.transpose() * jumpModelData.dynamics.dfdx;
+        matrix_t SmPreEvent = jumpModelData.cost.dfdxx;
+        SmPreEvent.noalias() += SmTransAm.transpose() * jumpModelData.dynamics.dfdx;
 
-static inline std::tuple<matrix_t, vector_t, scalar_t> riccatiTransversalityConditions(const ModelData& jumpModelData, const matrix_t& Sm,
-                                                                                       const vector_t& Sv, scalar_t s) {
-  // Sm
-  const matrix_t SmTransAm = Sm.transpose() * jumpModelData.dynamics.dfdx;
-  matrix_t SmPreEvent = jumpModelData.cost.dfdxx;
-  SmPreEvent.noalias() += SmTransAm.transpose() * jumpModelData.dynamics.dfdx;
+        // Sv
+        const vector_t SmHv = Sm * jumpModelData.dynamicsBias;
+        vector_t SvPreEvent = jumpModelData.cost.dfdx;
+        SvPreEvent.noalias() += jumpModelData.dynamics.dfdx.transpose() * (Sv + SmHv);
 
-  // Sv
-  const vector_t SmHv = Sm * jumpModelData.dynamicsBias;
-  vector_t SvPreEvent = jumpModelData.cost.dfdx;
-  SvPreEvent.noalias() += jumpModelData.dynamics.dfdx.transpose() * (Sv + SmHv);
+        // s
+        const scalar_t sPreEvent = s + jumpModelData.cost.f + jumpModelData.dynamicsBias.dot(Sv + 0.5 * SmHv);
 
-  // s
-  const scalar_t sPreEvent = s + jumpModelData.cost.f + jumpModelData.dynamicsBias.dot(Sv + 0.5 * SmHv);
-
-  return {SmPreEvent, SvPreEvent, sPreEvent};
-}
-
-}  // namespace ocs2
+        return {SmPreEvent, SvPreEvent, sPreEvent};
+    }
+} // namespace ocs2

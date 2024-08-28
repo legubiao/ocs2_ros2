@@ -59,16 +59,16 @@ namespace ocs2::legged_robot {
                                 const TargetTrajectories &targetTrajectories) override;
 
         /**
-                   * @see MpcnetDefinitionBase::getActionTransformation
-                   */
+         * @see MpcnetDefinitionBase::getActionTransformation
+         */
         std::pair<matrix_t, vector_t> getActionTransformation(scalar_t t, const vector_t &x,
                                                               const ModeSchedule &modeSchedule,
                                                               const TargetTrajectories &
                                                               targetTrajectories) override;
 
         /**
-                   * @see MpcnetDefinitionBase::isValid
-                   */
+        * @see MpcnetDefinitionBase::isValid
+        */
         bool isValid(scalar_t t, const vector_t &x, const ModeSchedule &modeSchedule,
                      const TargetTrajectories &targetTrajectories) override;
 

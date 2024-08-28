@@ -31,10 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <functional>
 #include <utility>
-#include <vector>
 
 #include <ocs2_core/Types.h>
-#include <ocs2_core/dynamics/SystemDynamicsBase.h>
 #include <ocs2_core/thread_support/ThreadPool.h>
 
 #include <ocs2_oc/oc_problem/OptimalControlProblem.h>
@@ -44,71 +42,77 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_ddp/search_strategy/StrategySettings.h"
 
 namespace ocs2 {
+    /**
+     * Levenberg Marquardt strategy: The class computes the nominal controller and the nominal trajectories
+     * as well the corresponding performance indices.
+     * reference: Tassa et al., Synthesis and stabilization of complex behaviors through online trajectory optimization.
+     */
+    class LevenbergMarquardtStrategy final : public SearchStrategyBase {
+    public:
+        /**
+         * Constructor.
+         *
+         * @param [in] baseSettings: The basic settings for the search strategy algorithms.
+         * @param [in] settings: The Levenberg Marquardt settings.
+         * @param [in] rolloutRefStock: A reference to the rollout.
+         * @param [in] optimalControlProblemRef: A reference to the optimal control problem.
+         * @param [in] meritFunc: the merit function which gets the PerformanceIndex and returns the merit function value.
+         */
+        LevenbergMarquardtStrategy(const search_strategy::Settings &baseSettings, const levenberg_marquardt::Settings &settings,
+                                   RolloutBase &rolloutRefStock,
+                                   OptimalControlProblem &optimalControlProblemRef,
+                                   std::function<scalar_t(const PerformanceIndex &)> meritFunc);
 
-/**
- * Levenberg Marquardt strategy: The class computes the nominal controller and the nominal trajectories
- * as well the corresponding performance indices.
- * reference: Tassa et al., Synthesis and stabilization of complex behaviors through online trajectory optimization.
- */
-class LevenbergMarquardtStrategy final : public SearchStrategyBase {
- public:
-  /**
-   * Constructor.
-   *
-   * @param [in] baseSettings: The basic settings for the search strategy algorithms.
-   * @param [in] settings: The Levenberg Marquardt settings.
-   * @param [in] rolloutRef: A reference to the rollout.
-   * @param [in] optimalControlProblemRef: A reference to the optimal control problem.
-   * @param [in] meritFunc: the merit function which gets the PerformanceIndex and returns the merit function value.
-   */
-  LevenbergMarquardtStrategy(search_strategy::Settings baseSettings, levenberg_marquardt::Settings settings, RolloutBase& rolloutRefStock,
-                             OptimalControlProblem& optimalControlProblemRef, std::function<scalar_t(const PerformanceIndex&)> meritFunc);
+        ~LevenbergMarquardtStrategy() override = default;
 
-  ~LevenbergMarquardtStrategy() override = default;
-  LevenbergMarquardtStrategy(const LevenbergMarquardtStrategy&) = delete;
-  LevenbergMarquardtStrategy& operator=(const LevenbergMarquardtStrategy&) = delete;
+        LevenbergMarquardtStrategy(const LevenbergMarquardtStrategy &) = delete;
 
-  void reset() override;
+        LevenbergMarquardtStrategy &operator=(const LevenbergMarquardtStrategy &) = delete;
 
-  bool run(const std::pair<scalar_t, scalar_t>& timePeriod, const vector_t& initState, const scalar_t expectedCost,
-           const LinearController& unoptimizedController, const DualSolution& dualSolution, const ModeSchedule& modeSchedule,
-           search_strategy::SolutionRef solution) override;
+        void reset() override;
 
-  std::pair<bool, std::string> checkConvergence(bool unreliableControllerIncrement, const PerformanceIndex& previousPerformanceIndex,
-                                                const PerformanceIndex& currentPerformanceIndex) const override;
+        bool run(const std::pair<scalar_t, scalar_t> &timePeriod, const vector_t &initState,
+                 const scalar_t expectedCost,
+                 const LinearController &unoptimizedController, const DualSolution &dualSolution,
+                 const ModeSchedule &modeSchedule,
+                 search_strategy::SolutionRef solution) override;
 
-  void computeRiccatiModification(const ModelData& projectedModelData, matrix_t& deltaQm, vector_t& deltaGv,
-                                  matrix_t& deltaGm) const override;
+        std::pair<bool, std::string> checkConvergence(bool unreliableControllerIncrement,
+                                                      const PerformanceIndex &previousPerformanceIndex,
+                                                      const PerformanceIndex &currentPerformanceIndex) const override;
 
-  matrix_t augmentHamiltonianHessian(const ModelData& modelData, const matrix_t& Hm) const override;
+        void computeRiccatiModification(const ModelData &projectedModelData, matrix_t &deltaQm, vector_t &deltaGv,
+                                        matrix_t &deltaGm) const override;
 
- private:
-  /** computes the ratio between actual reduction and predicted reduction */
-  scalar_t reductionToPredictedReduction(const scalar_t actualReduction, const scalar_t expectedReduction) const {
-    if (std::abs(actualReduction) < baseSettings_.minRelCost || expectedReduction <= baseSettings_.minRelCost) {
-      return 1.0;
-    } else if (actualReduction < 0.0) {
-      return 0.0;
-    } else {
-      return actualReduction / expectedReduction;
-    }
-  }
+        matrix_t augmentHamiltonianHessian(const ModelData &modelData, const matrix_t &Hm) const override;
 
-  // Levenberg-Marquardt
-  struct LevenbergMarquardtModule {
-    scalar_t riccatiMultiple = 0.0;               // the Riccati multiple for Tikhonov regularization.
-    scalar_t riccatiMultipleAdaptiveRatio = 1.0;  // the adaptive ratio of geometric progression for Riccati multiple.
-    size_t numSuccessiveRejections = 0;           // the number of successive rejections of solution.
-  };
+    private:
+        /** computes the ratio between actual reduction and predicted reduction */
+        scalar_t reductionToPredictedReduction(const scalar_t actualReduction, const scalar_t expectedReduction) const {
+            if (std::abs(actualReduction) < baseSettings_.minRelCost || expectedReduction <= baseSettings_.minRelCost) {
+                return 1.0;
+            } else if (actualReduction < 0.0) {
+                return 0.0;
+            } else {
+                return actualReduction / expectedReduction;
+            }
+        }
 
-  const levenberg_marquardt::Settings settings_;
-  LevenbergMarquardtModule lmModule_;
+        // Levenberg-Marquardt
+        struct LevenbergMarquardtModule {
+            scalar_t riccatiMultiple = 0.0; // the Riccati multiple for Tikhonov regularization.
+            scalar_t riccatiMultipleAdaptiveRatio = 1.0;
+            // the adaptive ratio of geometric progression for Riccati multiple.
+            size_t numSuccessiveRejections = 0; // the number of successive rejections of solution.
+        };
 
-  RolloutBase& rolloutRef_;
-  OptimalControlProblem& optimalControlProblemRef_;
-  std::function<scalar_t(PerformanceIndex)> meritFunc_;
+        const levenberg_marquardt::Settings settings_;
+        LevenbergMarquardtModule lmModule_;
 
-  DualSolution tempDualSolution_;
-};
+        RolloutBase &rolloutRef_;
+        OptimalControlProblem &optimalControlProblemRef_;
+        std::function<scalar_t(PerformanceIndex)> meritFunc_;
 
-}  // namespace ocs2
+        DualSolution tempDualSolution_;
+    };
+} // namespace ocs2

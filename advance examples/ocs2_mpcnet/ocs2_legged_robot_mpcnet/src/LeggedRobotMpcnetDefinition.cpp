@@ -36,88 +36,87 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_legged_robot/gait/MotionPhaseDefinition.h>
 #include <ocs2_robotic_tools/common/RotationTransforms.h>
 
-namespace ocs2 {
-namespace legged_robot {
 
-vector_t LeggedRobotMpcnetDefinition::getObservation(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
-                                                     const TargetTrajectories& targetTrajectories) {
-  /**
-   * generalized time
-   */
-  const feet_array_t<LegPhase> swingPhasePerLeg = getSwingPhasePerLeg(t, modeSchedule);
-  vector_t generalizedTime(3 * swingPhasePerLeg.size());
-  // phase
-  for (int i = 0; i < swingPhasePerLeg.size(); i++) {
-    if (swingPhasePerLeg[i].phase < 0.0) {
-      generalizedTime[i] = 0.0;
-    } else {
-      generalizedTime[i] = swingPhasePerLeg[i].phase;
+namespace ocs2::legged_robot {
+    vector_t LeggedRobotMpcnetDefinition::getObservation(scalar_t t, const vector_t &x,
+                                                         const ModeSchedule &modeSchedule,
+                                                         const TargetTrajectories &targetTrajectories) {
+        /**
+         * generalized time
+         */
+        const feet_array_t<LegPhase> swingPhasePerLeg = getSwingPhasePerLeg(t, modeSchedule);
+        vector_t generalizedTime(3 * swingPhasePerLeg.size());
+        // phase
+        for (int i = 0; i < swingPhasePerLeg.size(); i++) {
+            if (swingPhasePerLeg[i].phase < 0.0) {
+                generalizedTime[i] = 0.0;
+            } else {
+                generalizedTime[i] = swingPhasePerLeg[i].phase;
+            }
+        }
+        // phase rate
+        for (int i = 0; i < swingPhasePerLeg.size(); i++) {
+            if (swingPhasePerLeg[i].phase < 0.0) {
+                generalizedTime[i + swingPhasePerLeg.size()] = 0.0;
+            } else {
+                generalizedTime[i + swingPhasePerLeg.size()] = 1.0 / swingPhasePerLeg[i].duration;
+            }
+        }
+        // sin(pi * phase)
+        for (int i = 0; i < swingPhasePerLeg.size(); i++) {
+            if (swingPhasePerLeg[i].phase < 0.0) {
+                generalizedTime[i + 2 * swingPhasePerLeg.size()] = 0.0;
+            } else {
+                generalizedTime[i + 2 * swingPhasePerLeg.size()] = std::sin(M_PI * swingPhasePerLeg[i].phase);
+            }
+        }
+        /**
+         * relative state
+         */
+        vector_t relativeState = x - targetTrajectories.getDesiredState(t);
+        const matrix3_t R = getRotationMatrixFromZyxEulerAngles<scalar_t>(x.segment<3>(9)).transpose();
+        relativeState.segment<3>(0) = R * relativeState.segment<3>(0);
+        relativeState.segment<3>(3) = R * relativeState.segment<3>(3);
+        relativeState.segment<3>(6) = R * relativeState.segment<3>(6);
+        // TODO(areske): use quaternionDistance() for orientation error?
+        /**
+         * observation
+         */
+        vector_t observation(36);
+        observation << generalizedTime, relativeState;
+        return observation;
     }
-  }
-  // phase rate
-  for (int i = 0; i < swingPhasePerLeg.size(); i++) {
-    if (swingPhasePerLeg[i].phase < 0.0) {
-      generalizedTime[i + swingPhasePerLeg.size()] = 0.0;
-    } else {
-      generalizedTime[i + swingPhasePerLeg.size()] = 1.0 / swingPhasePerLeg[i].duration;
+
+    std::pair<matrix_t, vector_t> LeggedRobotMpcnetDefinition::getActionTransformation(scalar_t t, const vector_t &x,
+        const ModeSchedule &modeSchedule,
+        const TargetTrajectories &targetTrajectories) {
+        const matrix3_t R = getRotationMatrixFromZyxEulerAngles<scalar_t>(x.segment<3>(9));
+        matrix_t actionTransformationMatrix = matrix_t::Identity(24, 24);
+        actionTransformationMatrix.block<3, 3>(0, 0) = R;
+        actionTransformationMatrix.block<3, 3>(3, 3) = R;
+        actionTransformationMatrix.block<3, 3>(6, 6) = R;
+        actionTransformationMatrix.block<3, 3>(9, 9) = R;
+        // TODO(areske): check why less robust with weight compensating bias?
+        // const auto contactFlags = modeNumber2StanceLeg(modeSchedule.modeAtTime(t));
+        // const vector_t actionTransformationVector = weightCompensatingInput(centroidalModelInfo_, contactFlags);
+        return {actionTransformationMatrix, vector_t::Zero(24)};
     }
-  }
-  // sin(pi * phase)
-  for (int i = 0; i < swingPhasePerLeg.size(); i++) {
-    if (swingPhasePerLeg[i].phase < 0.0) {
-      generalizedTime[i + 2 * swingPhasePerLeg.size()] = 0.0;
-    } else {
-      generalizedTime[i + 2 * swingPhasePerLeg.size()] = std::sin(M_PI * swingPhasePerLeg[i].phase);
+
+    bool LeggedRobotMpcnetDefinition::isValid(scalar_t t, const vector_t &x, const ModeSchedule &modeSchedule,
+                                              const TargetTrajectories &targetTrajectories) {
+        const vector_t deviation = x - defaultState_;
+        if (std::abs(deviation[8]) > allowedHeightDeviation_) {
+            std::cerr << "[LeggedRobotMpcnetDefinition::isValid] height diverged: " << x[8] << "\n";
+            return false;
+        }
+        if (std::abs(deviation[10]) > allowedPitchDeviation_) {
+            std::cerr << "[LeggedRobotMpcnetDefinition::isValid] pitch diverged: " << x[10] << "\n";
+            return false;
+        }
+        if (std::abs(deviation[11]) > allowedRollDeviation_) {
+            std::cerr << "[LeggedRobotMpcnetDefinition::isValid] roll diverged: " << x[11] << "\n";
+            return false;
+        }
+        return true;
     }
-  }
-  /**
-   * relative state
-   */
-  vector_t relativeState = x - targetTrajectories.getDesiredState(t);
-  const matrix3_t R = getRotationMatrixFromZyxEulerAngles<scalar_t>(x.segment<3>(9)).transpose();
-  relativeState.segment<3>(0) = R * relativeState.segment<3>(0);
-  relativeState.segment<3>(3) = R * relativeState.segment<3>(3);
-  relativeState.segment<3>(6) = R * relativeState.segment<3>(6);
-  // TODO(areske): use quaternionDistance() for orientation error?
-  /**
-   * observation
-   */
-  vector_t observation(36);
-  observation << generalizedTime, relativeState;
-  return observation;
-}
-
-std::pair<matrix_t, vector_t> LeggedRobotMpcnetDefinition::getActionTransformation(scalar_t t, const vector_t& x,
-                                                                                   const ModeSchedule& modeSchedule,
-                                                                                   const TargetTrajectories& targetTrajectories) {
-  const matrix3_t R = getRotationMatrixFromZyxEulerAngles<scalar_t>(x.segment<3>(9));
-  matrix_t actionTransformationMatrix = matrix_t::Identity(24, 24);
-  actionTransformationMatrix.block<3, 3>(0, 0) = R;
-  actionTransformationMatrix.block<3, 3>(3, 3) = R;
-  actionTransformationMatrix.block<3, 3>(6, 6) = R;
-  actionTransformationMatrix.block<3, 3>(9, 9) = R;
-  // TODO(areske): check why less robust with weight compensating bias?
-  // const auto contactFlags = modeNumber2StanceLeg(modeSchedule.modeAtTime(t));
-  // const vector_t actionTransformationVector = weightCompensatingInput(centroidalModelInfo_, contactFlags);
-  return {actionTransformationMatrix, vector_t::Zero(24)};
-}
-
-bool LeggedRobotMpcnetDefinition::isValid(scalar_t t, const vector_t& x, const ModeSchedule& modeSchedule,
-                                          const TargetTrajectories& targetTrajectories) {
-  const vector_t deviation = x - defaultState_;
-  if (std::abs(deviation[8]) > allowedHeightDeviation_) {
-    std::cerr << "[LeggedRobotMpcnetDefinition::isValid] height diverged: " << x[8] << "\n";
-    return false;
-  } else if (std::abs(deviation[10]) > allowedPitchDeviation_) {
-    std::cerr << "[LeggedRobotMpcnetDefinition::isValid] pitch diverged: " << x[10] << "\n";
-    return false;
-  } else if (std::abs(deviation[11]) > allowedRollDeviation_) {
-    std::cerr << "[LeggedRobotMpcnetDefinition::isValid] roll diverged: " << x[11] << "\n";
-    return false;
-  } else {
-    return true;
-  }
-}
-
-}  // namespace legged_robot
-}  // namespace ocs2
+} // namespace ocs2::legged_robot

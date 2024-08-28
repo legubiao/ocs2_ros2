@@ -29,26 +29,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ocs2_core/dynamics/SystemDynamicsBase.h>
 #include <ocs2_oc/oc_problem/OptimalControlProblem.h>
 
-#include "ocs2_qp_solver/QpSolverTypes.h"
 #include "ocs2_qp_solver/QpTrajectories.h"
 
-namespace ocs2 {
-namespace qp_solver {
-
-/**
- * Solves a constrained discrete-time linear quadratic control problem around a provided linearization trajectory.
- * The time horizon and discretization steps are defined by the time trajectory of the provided linearization.
- *
- * @param optimalControProblem: The optimal control problem definition.
- * @param nominalTrajectory : time, state and input trajectory to make the linear quadratic approximation around
- * @param initialState : state at the start of the horizon.
- * @return time, state, and input solution.
- */
-ContinuousTrajectory solveLinearQuadraticOptimalControlProblem(OptimalControlProblem& optimalControProblem,
-                                                               const ContinuousTrajectory& nominalTrajectory, const vector_t& initialState);
-
-}  // namespace qp_solver
-}  // namespace ocs2
+namespace ocs2::qp_solver {
+    /**
+    * Solves a constrained discrete-time linear quadratic control problem around a provided linearization trajectory.
+    * The time horizon and discretization steps are defined by the time trajectory of the provided linearization.
+    *
+    * @param optimalControProblem: The optimal control problem definition.
+    * @param nominalTrajectory : time, state and input trajectory to make the linear quadratic approximation around
+    * @param initialState : state at the start of the horizon.
+    * @return time, state, and input solution.
+    */
+    ContinuousTrajectory solveLinearQuadraticOptimalControlProblem(OptimalControlProblem &optimalControProblem,
+                                                                   const ContinuousTrajectory &nominalTrajectory,
+                                                                   const vector_t &initialState);
+}

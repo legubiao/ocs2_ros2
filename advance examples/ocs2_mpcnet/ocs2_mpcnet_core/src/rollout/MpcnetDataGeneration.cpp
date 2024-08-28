@@ -36,9 +36,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 namespace ocs2::mpcnet {
-    const data_array_t *MpcnetDataGeneration::run(scalar_t alpha, const std::string &policyFilePath, scalar_t timeStep,
-                                                  size_t dataDecimation,
-                                                  size_t nSamples, const matrix_t &samplingCovariance,
+    const data_array_t *MpcnetDataGeneration::run(const scalar_t alpha, const std::string &policyFilePath,
+                                                  const scalar_t timeStep,
+                                                  const size_t dataDecimation,
+                                                  const size_t nSamples, const matrix_t &samplingCovariance,
                                                   const SystemObservation &initialObservation,
                                                   const ModeSchedule &modeSchedule,
                                                   const TargetTrajectories &targetTrajectories) {
@@ -64,11 +65,11 @@ namespace ocs2::mpcnet {
                 // step system
                 step(timeStep);
 
-                // downsample the data signal by an integer factor
+                // down-sample the data signal by an integer factor
                 if (iteration % dataDecimation == 0) {
                     // get nominal data point
-                    const vector_t deviation = vector_t::Zero(primalSolution_.stateTrajectory_.front().size());
-                    dataArray_.push_back(getDataPoint(*mpcPtr_, *mpcnetDefinitionPtr_, deviation));
+                    dataArray_.push_back(getDataPoint(*mpcPtr_, *mpcnetDefinitionPtr_,
+                                                      vector_t::Zero(primalSolution_.stateTrajectory_.front().size())));
 
                     // get samples around nominal data point
                     for (int i = 0; i < nSamples; i++) {

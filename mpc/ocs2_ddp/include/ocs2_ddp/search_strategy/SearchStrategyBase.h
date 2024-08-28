@@ -29,13 +29,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <functional>
 #include <utility>
 #include <vector>
 
 #include <ocs2_core/Types.h>
 #include <ocs2_core/control/LinearController.h>
-#include <ocs2_core/model_data/Metrics.h>
 #include <ocs2_core/model_data/ModelData.h>
 #include <ocs2_core/reference/ModeSchedule.h>
 #include <ocs2_oc/oc_data/DualSolution.h>
@@ -46,133 +44,137 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_ddp/search_strategy/StrategySettings.h"
 
 namespace ocs2 {
+    // forward declaration
+    namespace search_strategy {
+        struct Solution;
+        struct SolutionRef;
+    } // namespace search_strategy
 
-// forward declaration
-namespace search_strategy {
-struct Solution;
-struct SolutionRef;
-}  // namespace search_strategy
+    /**
+     * This class is an interface class for search strategies such as line-search, trust-region.
+     */
+    class SearchStrategyBase {
+    public:
+        /**
+         * Constructor.
+         * @param [in] baseSettings: The basic settings for the search strategy algorithms.
+         */
+        explicit SearchStrategyBase(search_strategy::Settings baseSettings) : baseSettings_(std::move(baseSettings)) {
+        }
 
-/**
- * This class is an interface class for search strategies such as line-search, trust-region.
- */
-class SearchStrategyBase {
- public:
-  /**
-   * Constructor.
-   * @param [in] baseSettings: The basic settings for the search strategy algorithms.
-   */
-  explicit SearchStrategyBase(search_strategy::Settings baseSettings) : baseSettings_(std::move(baseSettings)) {}
+        virtual ~SearchStrategyBase() = default;
 
-  virtual ~SearchStrategyBase() = default;
-  SearchStrategyBase(const SearchStrategyBase&) = delete;
-  SearchStrategyBase& operator=(const SearchStrategyBase&) = delete;
+        SearchStrategyBase(const SearchStrategyBase &) = delete;
 
-  /**
-   * Resets the class to its state after construction.
-   */
-  virtual void reset() = 0;
+        SearchStrategyBase &operator=(const SearchStrategyBase &) = delete;
 
-  /**
-   * Finds the optimal trajectories, controller, and performance index based on the given controller and its increment.
-   *
-   * @param [in] timePeriod: Initial and final times pair.
-   * @param [in] initState: Initial state
-   * @param [in] expectedCost: The expected cost based on the LQ model optimization.
-   * @param [in] unoptimizedController: The unoptimized controller which search will be performed.
-   * @param [in] dualSolution: The dual solution.
-   * @param [in] ModeSchedule The current mode schedule.
-   * @param [in/out]
-   * @param [out] solution: Output of search (primalSolution, performanceIndex, problemMetrics, avgTimeStep)
-   * @return whether the search was successful or failed.
-   */
-  virtual bool run(const std::pair<scalar_t, scalar_t>& timePeriod, const vector_t& initState, const scalar_t expectedCost,
-                   const LinearController& unoptimizedController, const DualSolution& dualSolution, const ModeSchedule& modeSchedule,
-                   search_strategy::SolutionRef solution) = 0;
+        /**
+         * Resets the class to its state after construction.
+         */
+        virtual void reset() = 0;
 
-  /**
-   * Checks convergence of the main loop of DDP.
-   *
-   * @param [in] unreliableControllerIncrement: True if the controller is designed based on an unreliable LQ approximation such as
-   * operating trajectories
-   * @param [in] previousPerformanceIndex: The previous iteration's PerformanceIndex.
-   * @param [in] currentPerformanceIndex: The current iteration's PerformanceIndex.
-   * @return A pair of (isOptimizationConverged, infoString)
-   */
-  virtual std::pair<bool, std::string> checkConvergence(bool unreliableControllerIncrement,
-                                                        const PerformanceIndex& previousPerformanceIndex,
-                                                        const PerformanceIndex& currentPerformanceIndex) const = 0;
+        /**
+         * Finds the optimal trajectories, controller, and performance index based on the given controller and its increment.
+         *
+         * @param [in] timePeriod: Initial and final times pair.
+         * @param [in] initState: Initial state
+         * @param [in] expectedCost: The expected cost based on the LQ model optimization.
+         * @param [in] unoptimizedController: The unoptimized controller which search will be performed.
+         * @param [in] dualSolution: The dual solution.
+         * @param [in] modeSchedule The current mode schedule.
+         * @param [in/out]
+         * @param [out] solution: Output of search (primalSolution, performanceIndex, problemMetrics, avgTimeStep)
+         * @return whether the search was successful or failed.
+         */
+        virtual bool run(const std::pair<scalar_t, scalar_t> &timePeriod, const vector_t &initState,
+                         const scalar_t expectedCost,
+                         const LinearController &unoptimizedController, const DualSolution &dualSolution,
+                         const ModeSchedule &modeSchedule,
+                         search_strategy::SolutionRef solution) = 0;
 
-  /**
-   * Computes the Riccati modification based on the strategy.
-   *
-   * @param [in] projectedModelData: The projected data model
-   * @param [out] deltaQm: The Riccati modifier to cost 2nd derivative w.r.t. state.
-   * @param [out] deltaGv: The Riccati modifier to cost derivative w.r.t. input.
-   * @param [out] deltaGm: The Riccati modifier to cost input-state derivative.
-   */
-  virtual void computeRiccatiModification(const ModelData& projectedModelData, matrix_t& deltaQm, vector_t& deltaGv,
-                                          matrix_t& deltaGm) const = 0;
+        /**
+         * Checks convergence of the main loop of DDP.
+         *
+         * @param [in] unreliableControllerIncrement: True if the controller is designed based on an unreliable LQ approximation such as
+         * operating trajectories
+         * @param [in] previousPerformanceIndex: The previous iteration's PerformanceIndex.
+         * @param [in] currentPerformanceIndex: The current iteration's PerformanceIndex.
+         * @return A pair of (isOptimizationConverged, infoString)
+         */
+        virtual std::pair<bool, std::string> checkConvergence(bool unreliableControllerIncrement,
+                                                              const PerformanceIndex &previousPerformanceIndex,
+                                                              const PerformanceIndex &currentPerformanceIndex) const =
+        0;
 
-  /**
-   * Augments the Hessian of Hamiltonian based on the strategy.
-   *
-   * @param [in] modelData: The model data.
-   * @param [in] Hm: The Hessian of Hamiltonian that should be augmented.
-   * @return The augmented Hamiltonian's Hessian.
-   */
-  virtual matrix_t augmentHamiltonianHessian(const ModelData& modelData, const matrix_t& Hm) const = 0;
+        /**
+         * Computes the Riccati modification based on the strategy.
+         *
+         * @param [in] projectedModelData: The projected data model
+         * @param [out] deltaQm: The Riccati modifier to cost 2nd derivative w.r.t. state.
+         * @param [out] deltaGv: The Riccati modifier to cost derivative w.r.t. input.
+         * @param [out] deltaGm: The Riccati modifier to cost input-state derivative.
+         */
+        virtual void computeRiccatiModification(const ModelData &projectedModelData, matrix_t &deltaQm,
+                                                vector_t &deltaGv,
+                                                matrix_t &deltaGm) const = 0;
 
- protected:
-  const search_strategy::Settings baseSettings_;
-};
+        /**
+         * Augments the Hessian of Hamiltonian based on the strategy.
+         *
+         * @param [in] modelData: The model data.
+         * @param [in] Hm: The Hessian of Hamiltonian that should be augmented.
+         * @return The augmented Hamiltonian's Hessian.
+         */
+        virtual matrix_t augmentHamiltonianHessian(const ModelData &modelData, const matrix_t &Hm) const = 0;
 
-}  // namespace ocs2
+    protected:
+        const search_strategy::Settings baseSettings_;
+    };
+} // namespace ocs2
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 namespace ocs2 {
-namespace search_strategy {
+    namespace search_strategy {
+        struct Solution {
+            scalar_t avgTimeStep;
+            DualSolution dualSolution;
+            PrimalSolution primalSolution;
+            ProblemMetrics problemMetrics;
+            PerformanceIndex performanceIndex;
+        };
 
-struct Solution {
-  scalar_t avgTimeStep;
-  DualSolution dualSolution;
-  PrimalSolution primalSolution;
-  ProblemMetrics problemMetrics;
-  PerformanceIndex performanceIndex;
-};
+        struct SolutionRef {
+            SolutionRef(Solution &s)
+                : avgTimeStep(s.avgTimeStep),
+                  dualSolution(s.dualSolution),
+                  primalSolution(s.primalSolution),
+                  problemMetrics(s.problemMetrics),
+                  performanceIndex(s.performanceIndex) {
+            }
 
-struct SolutionRef {
-  SolutionRef(Solution& s)
-      : avgTimeStep(s.avgTimeStep),
-        dualSolution(s.dualSolution),
-        primalSolution(s.primalSolution),
-        problemMetrics(s.problemMetrics),
-        performanceIndex(s.performanceIndex) {}
+            SolutionRef(scalar_t &avgTimeStepArg, DualSolution &dualSolutionArg, PrimalSolution &primalSolutionArg,
+                        ProblemMetrics &problemMetricsArg,
+                        PerformanceIndex &performanceIndexArg)
+                : avgTimeStep(avgTimeStepArg),
+                  dualSolution(dualSolutionArg),
+                  primalSolution(primalSolutionArg),
+                  problemMetrics(problemMetricsArg),
+                  performanceIndex(performanceIndexArg) {
+            }
 
-  SolutionRef(scalar_t& avgTimeStepArg, DualSolution& dualSolutionArg, PrimalSolution& primalSolutionArg, ProblemMetrics& problemMetricsArg,
-              PerformanceIndex& performanceIndexArg)
-      : avgTimeStep(avgTimeStepArg),
-        dualSolution(dualSolutionArg),
-        primalSolution(primalSolutionArg),
-        problemMetrics(problemMetricsArg),
-        performanceIndex(performanceIndexArg) {}
+            scalar_t &avgTimeStep;
+            DualSolution &dualSolution;
+            PrimalSolution &primalSolution;
+            ProblemMetrics &problemMetrics;
+            PerformanceIndex &performanceIndex;
+        };
 
-  scalar_t& avgTimeStep;
-  DualSolution& dualSolution;
-  PrimalSolution& primalSolution;
-  ProblemMetrics& problemMetrics;
-  PerformanceIndex& performanceIndex;
-};
-
-inline void swap(SolutionRef lhs, SolutionRef rhs) {
-  std::swap(lhs.avgTimeStep, rhs.avgTimeStep);
-  lhs.dualSolution.swap(rhs.dualSolution);
-  lhs.primalSolution.swap(rhs.primalSolution);
-  lhs.problemMetrics.swap(rhs.problemMetrics);
-  ocs2::swap(lhs.performanceIndex, rhs.performanceIndex);
-}
-
-}  // namespace search_strategy
-}  // namespace ocs2
+        inline void swap(const SolutionRef &lhs, const SolutionRef &rhs) {
+            std::swap(lhs.avgTimeStep, rhs.avgTimeStep);
+            lhs.dualSolution.swap(rhs.dualSolution);
+            lhs.primalSolution.swap(rhs.primalSolution);
+            lhs.problemMetrics.swap(rhs.problemMetrics);
+            ocs2::swap(lhs.performanceIndex, rhs.performanceIndex);
+        }
+    } // namespace search_strategy
+} // namespace ocs2

@@ -40,6 +40,7 @@ namespace ocs2::legged_robot {
         explicit MpcNetDummy(const std::string &robot_name);
 
         ~MpcNetDummy() override = default;
+
         void init();
 
         std::shared_ptr<LeggedRobotInterface> interface_;

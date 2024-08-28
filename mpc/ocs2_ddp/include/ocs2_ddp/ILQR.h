@@ -36,63 +36,64 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "riccati_equations/DiscreteTimeRiccatiEquations.h"
 
 namespace ocs2 {
+    /**
+     * This class is an interface class for the single-thread and multi-thread ILQR.
+     */
+    class ILQR : public GaussNewtonDDP {
+    public:
+        /**
+         * Constructor
+         *
+         * @param [in] ddpSettings: Structure containing the settings for the DDP algorithm.
+         * @param [in] rollout: The rollout class used for simulating the system dynamics.
+         * @param [in] optimalControlProblem: The optimal control problem formulation.
+         * @param [in] initializer: This class initializes the state-input for the time steps that no controller is available.
+         */
+        ILQR(const ddp::Settings &ddpSettings, const RolloutBase &rollout, const OptimalControlProblem &optimalControlProblem,
+             const Initializer &initializer);
 
-/**
- * This class is an interface class for the single-thread and multi-thread ILQR.
- */
-class ILQR : public GaussNewtonDDP {
- public:
-  /**
-   * Constructor
-   *
-   * @param [in] ddpSettings: Structure containing the settings for the DDP algorithm.
-   * @param [in] rollout: The rollout class used for simulating the system dynamics.
-   * @param [in] optimalControlProblem: The optimal control problem formulation.
-   * @param [in] initializer: This class initializes the state-input for the time steps that no controller is available.
-   */
-  ILQR(ddp::Settings ddpSettings, const RolloutBase& rollout, const OptimalControlProblem& optimalControlProblem,
-       const Initializer& initializer);
+        /**
+         * Default destructor.
+         */
+        ~ILQR() override = default;
 
-  /**
-   * Default destructor.
-   */
-  ~ILQR() override = default;
+    protected:
+        scalar_t solveSequentialRiccatiEquations(
+            const ScalarFunctionQuadraticApproximation &finalValueFunction) override;
 
- protected:
-  scalar_t solveSequentialRiccatiEquations(const ScalarFunctionQuadraticApproximation& finalValueFunction) override;
+        void riccatiEquationsWorker(size_t workerIndex, const std::pair<int, int> &partitionInterval,
+                                    const ScalarFunctionQuadraticApproximation &finalValueFunction) override;
 
-  void riccatiEquationsWorker(size_t workerIndex, const std::pair<int, int>& partitionInterval,
-                              const ScalarFunctionQuadraticApproximation& finalValueFunction) override;
+        void calculateControllerWorker(size_t timeIndex, const PrimalDataContainer &primalData,
+                                       const DualDataContainer &dualData,
+                                       LinearController &dstController) override;
 
-  void calculateControllerWorker(size_t timeIndex, const PrimalDataContainer& primalData, const DualDataContainer& dualData,
-                                 LinearController& dstController) override;
+        matrix_t computeHamiltonianHessian(const ModelData &modelData, const matrix_t &Sm) const override;
 
-  matrix_t computeHamiltonianHessian(const ModelData& modelData, const matrix_t& Sm) const override;
+        void approximateIntermediateLQ(const DualSolution &dualSolution, PrimalDataContainer &primalData) override;
 
-  void approximateIntermediateLQ(const DualSolution& dualSolution, PrimalDataContainer& primalData) override;
+        /**
+         * Calculates the discrete-time LQ approximation from the continuous-time LQ approximation.
+         *
+         * @param [in] system: system dynamic.
+         * @param [in] time: time t_k.
+         * @param [in] state: state x_k.
+         * @param [in] input: input u_k.
+         * @param [in] timeStep: Time step between the x_{k} and x_{k+1}.
+         * @param [in] continuousTimeModelData: continuous time model data.
+         * @param [out] modelData: Discretized mode data.
+         */
+        void discreteLQWorker(SystemDynamicsBase &system, scalar_t time, const vector_t &state, const vector_t &input,
+                              scalar_t timeStep,
+                              const ModelData &continuousTimeModelData, ModelData &modelData);
 
-  /**
-   * Calculates the discrete-time LQ approximation from the continuous-time LQ approximation.
-   *
-   * @param [in] system: system dynamic.
-   * @param [in] time: time t_k.
-   * @param [in] state: state x_k.
-   * @param [in] input: input u_k.
-   * @param [in] timeStep: Time step between the x_{k} and x_{k+1}.
-   * @param [in] continuousTimeModelData: continuous time model data.
-   * @param [out] modelData: Discretized mode data.
-   */
-  void discreteLQWorker(SystemDynamicsBase& system, scalar_t time, const vector_t& state, const vector_t& input, scalar_t timeStep,
-                        const ModelData& continuousTimeModelData, ModelData& modelData);
+        /****************
+         *** Variables **
+         ****************/
+        matrix_array_t projectedKmTrajectoryStock_; // projected feedback
+        vector_array_t projectedLvTrajectoryStock_; // projected feedforward
 
-  /****************
-   *** Variables **
-   ****************/
-  matrix_array_t projectedKmTrajectoryStock_;  // projected feedback
-  vector_array_t projectedLvTrajectoryStock_;  // projected feedforward
-
-  DynamicsSensitivityDiscretizer sensitivityDiscretizer_;
-  std::vector<std::unique_ptr<DiscreteTimeRiccatiEquations>> riccatiEquationsPtrStock_;
-};
-
-}  // namespace ocs2
+        DynamicsSensitivityDiscretizer sensitivityDiscretizer_;
+        std::vector<std::unique_ptr<DiscreteTimeRiccatiEquations> > riccatiEquationsPtrStock_;
+    };
+} // namespace ocs2

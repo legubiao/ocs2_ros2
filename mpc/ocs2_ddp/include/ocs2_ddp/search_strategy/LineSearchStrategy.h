@@ -34,7 +34,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include <ocs2_core/Types.h>
-#include <ocs2_core/dynamics/SystemDynamicsBase.h>
 #include <ocs2_core/thread_support/ThreadPool.h>
 
 #include <ocs2_oc/oc_problem/OptimalControlProblem.h>
@@ -44,94 +43,101 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_ddp/search_strategy/StrategySettings.h"
 
 namespace ocs2 {
+    /**
+     * Line search strategy: The class computes the nominal controller and the nominal trajectories as well the corresponding performance
+     * indices. It line-searches on the feedforward parts of the controller and chooses the largest acceptable step-size.
+     */
+    class LineSearchStrategy final : public SearchStrategyBase {
+    public:
+        /**
+         * Constructor.
+         *
+         * @param [in] baseSettings: The basic settings for the search strategy algorithms.
+         * @param [in] settings: The line search settings.
+         * @param [in] threadPoolRef: A reference to the thread pool instance.
+         * @param [in] rolloutRefStock: An array of references to the rollout.
+         * @param [in] optimalControlProblemRef: An array of references to the optimal control problem.
+         * @param [in] meritFunc: the merit function which gets the PerformanceIndex and returns the merit function value.
+         */
+        LineSearchStrategy(const search_strategy::Settings &baseSettings, const line_search::Settings &settings,
+                           ThreadPool &threadPoolRef,
+                           std::vector<std::reference_wrapper<RolloutBase> > rolloutRefStock,
+                           std::vector<std::reference_wrapper<OptimalControlProblem> > optimalControlProblemRef,
+                           std::function<scalar_t(const PerformanceIndex &)> meritFunc);
 
-/**
- * Line search strategy: The class computes the nominal controller and the nominal trajectories as well the corresponding performance
- * indices. It line-searches on the feedforward parts of the controller and chooses the largest acceptable step-size.
- */
-class LineSearchStrategy final : public SearchStrategyBase {
- public:
-  /**
-   * Constructor.
-   *
-   * @param [in] baseSettings: The basic settings for the search strategy algorithms.
-   * @param [in] settings: The line search settings.
-   * @param [in] threadPoolRef: A reference to the thread pool instance.
-   * @param [in] rolloutRefStock: An array of references to the rollout.
-   * @param [in] optimalControlProblemRef: An array of references to the optimal control problem.
-   * @param [in] meritFunc: the merit function which gets the PerformanceIndex and returns the merit function value.
-   */
-  LineSearchStrategy(search_strategy::Settings baseSettings, line_search::Settings settings, ThreadPool& threadPoolRef,
-                     std::vector<std::reference_wrapper<RolloutBase>> rolloutRefStock,
-                     std::vector<std::reference_wrapper<OptimalControlProblem>> optimalControlProblemRef,
-                     std::function<scalar_t(const PerformanceIndex&)> meritFunc);
+        ~LineSearchStrategy() override = default;
 
-  ~LineSearchStrategy() override = default;
-  LineSearchStrategy(const LineSearchStrategy&) = delete;
-  LineSearchStrategy& operator=(const LineSearchStrategy&) = delete;
+        LineSearchStrategy(const LineSearchStrategy &) = delete;
 
-  void reset() override {}
+        LineSearchStrategy &operator=(const LineSearchStrategy &) = delete;
 
-  bool run(const std::pair<scalar_t, scalar_t>& timePeriod, const vector_t& initState, const scalar_t expectedCost,
-           const LinearController& unoptimizedController, const DualSolution& dualSolution, const ModeSchedule& modeSchedule,
-           search_strategy::SolutionRef solution) override;
+        void reset() override {
+        }
 
-  std::pair<bool, std::string> checkConvergence(bool unreliableControllerIncrement, const PerformanceIndex& previousPerformanceIndex,
-                                                const PerformanceIndex& currentPerformanceIndex) const override;
+        bool run(const std::pair<scalar_t, scalar_t> &timePeriod, const vector_t &initState,
+                 scalar_t expectedCost,
+                 const LinearController &unoptimizedController, const DualSolution &dualSolution,
+                 const ModeSchedule &modeSchedule,
+                 search_strategy::SolutionRef solution) override;
 
-  void computeRiccatiModification(const ModelData& projectedModelData, matrix_t& deltaQm, vector_t& deltaGv,
-                                  matrix_t& deltaGm) const override;
+        std::pair<bool, std::string> checkConvergence(bool unreliableControllerIncrement,
+                                                      const PerformanceIndex &previousPerformanceIndex,
+                                                      const PerformanceIndex &currentPerformanceIndex) const override;
 
-  matrix_t augmentHamiltonianHessian(const ModelData& /*modelData*/, const matrix_t& Hm) const override { return Hm; }
+        void computeRiccatiModification(const ModelData &projectedModelData, matrix_t &deltaQm, vector_t &deltaGv,
+                                        matrix_t &deltaGm) const override;
 
- private:
-  struct LineSearchInputRef {
-    const std::pair<scalar_t, scalar_t>* timePeriodPtr;
-    const vector_t* initStatePtr;
-    const LinearController* unoptimizedControllerPtr;
-    const DualSolution* dualSolutionPtr;
-    const ModeSchedule* modeSchedulePtr;
-  };
+        matrix_t augmentHamiltonianHessian(const ModelData & /*modelData*/, const matrix_t &Hm) const override {
+            return Hm;
+        }
 
-  /** number of line search iterations (the if statements order is important) */
-  size_t maxNumOfSearches() const;
+    private:
+        struct LineSearchInputRef {
+            const std::pair<scalar_t, scalar_t> *timePeriodPtr;
+            const vector_t *initStatePtr;
+            const LinearController *unoptimizedControllerPtr;
+            const DualSolution *dualSolutionPtr;
+            const ModeSchedule *modeSchedulePtr;
+        };
 
-  /** Computes the solution on a thread and a given stepLength  */
-  void computeSolution(size_t taskId, scalar_t stepLength, search_strategy::Solution& solution);
+        /** number of line search iterations (the if statements order is important) */
+        size_t maxNumOfSearches() const;
 
-  /**
-   * Defines line search task on a thread with various learning rates and choose the largest acceptable step-size.
-   * The class computes the nominal controller and the nominal trajectories as well the corresponding performance indices.
-   */
-  void lineSearchTask(const size_t taskId);
+        /** Computes the solution on a thread and a given stepLength  */
+        void computeSolution(size_t taskId, scalar_t stepLength, search_strategy::Solution &solution);
 
-  /** Prints to output. */
-  void printString(const std::string& text) const;
+        /**
+         * Defines line search task on a thread with various learning rates and choose the largest acceptable step-size.
+         * The class computes the nominal controller and the nominal trajectories as well the corresponding performance indices.
+         */
+        void lineSearchTask(size_t taskId);
 
-  const line_search::Settings settings_;
-  ThreadPool& threadPoolRef_;
-  std::vector<DualSolution> tempDualSolutions_;
-  std::vector<search_strategy::Solution> workersSolution_;
-  std::vector<std::reference_wrapper<RolloutBase>> rolloutRefStock_;
-  std::vector<std::reference_wrapper<OptimalControlProblem>> optimalControlProblemRefStock_;
-  std::function<scalar_t(PerformanceIndex)> meritFunc_;
+        /** Prints to output. */
+        void printString(const std::string &text) const;
 
-  // input
-  LineSearchInputRef lineSearchInputRef_;
-  // output
-  std::atomic<scalar_t> bestStepSize_{0.0};
-  search_strategy::SolutionRef* bestSolutionRef_;
+        const line_search::Settings settings_;
+        ThreadPool &threadPoolRef_;
+        std::vector<DualSolution> tempDualSolutions_;
+        std::vector<search_strategy::Solution> workersSolution_;
+        std::vector<std::reference_wrapper<RolloutBase> > rolloutRefStock_;
+        std::vector<std::reference_wrapper<OptimalControlProblem> > optimalControlProblemRefStock_;
+        std::function<scalar_t(PerformanceIndex)> meritFunc_;
 
-  // convergence check
-  scalar_t baselineMerit_ = 0.0;                  // the merit of the rollout for zero learning rate
-  scalar_t unoptimizedControllerUpdateIS_ = 0.0;  // integral of the squared (IS) norm of the controller update.
+        // input
+        LineSearchInputRef lineSearchInputRef_;
+        // output
+        std::atomic<scalar_t> bestStepSize_{0.0};
+        search_strategy::SolutionRef *bestSolutionRef_;
 
-  // threading
-  std::atomic_size_t nextTaskId_{0};
-  std::atomic_size_t alphaExpNext_{0};
-  std::vector<bool> alphaProcessed_;
-  std::mutex lineSearchResultMutex_;
-  mutable std::mutex outputDisplayGuardMutex_;
-};
+        // convergence check
+        scalar_t baselineMerit_ = 0.0; // the merit of the rollout for zero learning rate
+        scalar_t unoptimizedControllerUpdateIS_ = 0.0; // integral of the squared (IS) norm of the controller update.
 
-}  // namespace ocs2
+        // threading
+        std::atomic_size_t nextTaskId_{0};
+        std::atomic_size_t alphaExpNext_{0};
+        std::vector<bool> alphaProcessed_;
+        std::mutex lineSearchResultMutex_;
+        mutable std::mutex outputDisplayGuardMutex_;
+    };
+} // namespace ocs2

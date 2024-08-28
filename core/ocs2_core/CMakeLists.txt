@@ -131,26 +131,6 @@ ament_target_dependencies(${PROJECT_NAME}
 )
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
-add_executable(${PROJECT_NAME}_lintTarget src/lintTarget.cpp)
-ament_target_dependencies(${PROJECT_NAME}_lintTarget ${dependencies})
-target_link_libraries(${PROJECT_NAME}_lintTarget ${PROJECT_NAME})
-
-#########################
-###   CLANG TOOLING   ###
-#########################
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling for target " ${PROJECT_NAME}_lintTarget)
-    add_clang_tooling(
-            TARGETS
-            ${PROJECT_NAME}
-            ${PROJECT_NAME}_lintTarget
-            SOURCE_DIRS src include
-            CT_HEADER_DIRS include
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
-
 #############
 ## Install ##
 #############
@@ -174,10 +154,10 @@ ament_export_dependencies(${dependencies})
 #############
 ## Testing ##
 #############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
-
 if (BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+
     find_package(ament_cmake_gtest REQUIRED)
 
     ament_add_gtest(test_control

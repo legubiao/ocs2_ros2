@@ -30,91 +30,73 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <mutex>
 
-#include <ocs2_core/misc/LinearAlgebra.h>
-#include <ocs2_core/misc/Numerics.h>
-
 #include <ocs2_oc/oc_solver/SolverBase.h>
 #include <ocs2_oc/synchronized_module/ReferenceManager.h>
 
 namespace ocs2 {
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-SolverBase::SolverBase() : referenceManagerPtr_(new ReferenceManager) {}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void SolverBase::run(scalar_t initTime, const vector_t& initState, scalar_t finalTime) {
-  preRun(initTime, initState, finalTime);
-  runImpl(initTime, initState, finalTime);
-  postRun();
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void SolverBase::run(scalar_t initTime, const vector_t& initState, scalar_t finalTime, const ControllerBase* externalControllerPtr) {
-  preRun(initTime, initState, finalTime);
-  runImpl(initTime, initState, finalTime, externalControllerPtr);
-  postRun();
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void SolverBase::run(scalar_t initTime, const vector_t& initState, scalar_t finalTime, const PrimalSolution& primalSolution) {
-  preRun(initTime, initState, finalTime);
-  runImpl(initTime, initState, finalTime, primalSolution);
-  postRun();
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-PrimalSolution SolverBase::primalSolution(scalar_t finalTime) const {
-  PrimalSolution primalSolution;
-  getPrimalSolution(finalTime, &primalSolution);
-  return primalSolution;
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void SolverBase::printString(const std::string& text) const {
-  std::lock_guard<std::mutex> outputDisplayGuard(outputDisplayGuardMutex_);
-  std::cerr << text << '\n';
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void SolverBase::preRun(scalar_t initTime, const vector_t& initState, scalar_t finalTime) {
-  referenceManagerPtr_->preSolverRun(initTime, finalTime, initState);
-
-  for (auto& module : synchronizedModules_) {
-    module->preSolverRun(initTime, finalTime, initState, *referenceManagerPtr_);
-  }
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void SolverBase::postRun() {
-  if (!synchronizedModules_.empty() || !solverObservers_.empty()) {
-    const auto solution = primalSolution(getFinalTime());
-    for (auto& module : synchronizedModules_) {
-      module->postSolverRun(solution);
+    
+    SolverBase::SolverBase() : referenceManagerPtr_(new ReferenceManager) {
     }
-    for (auto& observer : solverObservers_) {
-      observer->extractTermConstraint(getOptimalControlProblem(), solution, getSolutionMetrics());
-      observer->extractTermLagrangianMetrics(getOptimalControlProblem(), solution, getSolutionMetrics());
-      if (getDualSolution() != nullptr) {
-        observer->extractTermMultipliers(getOptimalControlProblem(), *getDualSolution());
-      }
-    }
-  }
-}
 
-}  // namespace ocs2
+    
+    void SolverBase::run(scalar_t initTime, const vector_t &initState, scalar_t finalTime) {
+        preRun(initTime, initState, finalTime);
+        runImpl(initTime, initState, finalTime);
+        postRun();
+    }
+
+    
+    void SolverBase::run(scalar_t initTime, const vector_t &initState, scalar_t finalTime,
+                         const ControllerBase *externalControllerPtr) {
+        preRun(initTime, initState, finalTime);
+        runImpl(initTime, initState, finalTime, externalControllerPtr);
+        postRun();
+    }
+
+    
+    void SolverBase::run(scalar_t initTime, const vector_t &initState, scalar_t finalTime,
+                         const PrimalSolution &primalSolution) {
+        preRun(initTime, initState, finalTime);
+        runImpl(initTime, initState, finalTime, primalSolution);
+        postRun();
+    }
+
+    
+    PrimalSolution SolverBase::primalSolution(scalar_t finalTime) const {
+        PrimalSolution primalSolution;
+        getPrimalSolution(finalTime, &primalSolution);
+        return primalSolution;
+    }
+
+    
+    void SolverBase::printString(const std::string &text) const {
+        std::lock_guard outputDisplayGuard(outputDisplayGuardMutex_);
+        std::cerr << text << '\n';
+    }
+
+    
+    void SolverBase::preRun(scalar_t initTime, const vector_t &initState, scalar_t finalTime) {
+        referenceManagerPtr_->preSolverRun(initTime, finalTime, initState);
+
+        for (auto &module: synchronizedModules_) {
+            module->preSolverRun(initTime, finalTime, initState, *referenceManagerPtr_);
+        }
+    }
+
+    
+    void SolverBase::postRun() {
+        if (!synchronizedModules_.empty() || !solverObservers_.empty()) {
+            const auto solution = primalSolution(getFinalTime());
+            for (auto &module: synchronizedModules_) {
+                module->postSolverRun(solution);
+            }
+            for (auto &observer: solverObservers_) {
+                observer->extractTermConstraint(getOptimalControlProblem(), solution, getSolutionMetrics());
+                observer->extractTermLagrangianMetrics(getOptimalControlProblem(), solution, getSolutionMetrics());
+                if (getDualSolution() != nullptr) {
+                    observer->extractTermMultipliers(getOptimalControlProblem(), *getDualSolution());
+                }
+            }
+        }
+    }
+} // namespace ocs2

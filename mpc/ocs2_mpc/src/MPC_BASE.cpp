@@ -27,6 +27,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include <iostream>
 #include <ocs2_mpc/MPC_BASE.h>
 
 namespace ocs2 {
@@ -41,7 +42,7 @@ namespace ocs2 {
     }
 
 
-    bool MPC_BASE::run(scalar_t currentTime, const vector_t &currentState) {
+    bool MPC_BASE::run(const scalar_t currentTime, const vector_t &currentState) {
         // check if the current time exceeds the solver final limit
         if (!initRun_ && currentTime >= getSolverPtr()->getFinalTime()) {
             std::cerr << "WARNING: The MPC time-horizon is smaller than the MPC starting time.\n";

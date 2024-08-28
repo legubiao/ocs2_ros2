@@ -29,7 +29,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ostream>
 #include <string>
 
 #include <ocs2_core/Types.h>
@@ -38,110 +37,106 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_sqp/SqpSolverStatus.h"
 
-namespace ocs2 {
-namespace sqp {
+namespace ocs2::sqp {
+    struct LogEntry {
+        // Problem info
+        size_t problemNumber = 0;
+        scalar_t time = 0.0; // horizon start time for the currently solved problem
 
-struct LogEntry {
-  // Problem info
-  size_t problemNumber = 0;
-  scalar_t time = 0.0;  // horizon start time for the currently solved problem
+        // Iteration info
+        size_t iteration = 0;
 
-  // Iteration info
-  size_t iteration = 0;
+        // Computation time
+        scalar_t linearQuadraticApproximationTime = 0.0;
+        scalar_t solveQpTime = 0.0;
+        scalar_t linesearchTime = 0.0;
 
-  // Computation time
-  scalar_t linearQuadraticApproximationTime = 0.0;
-  scalar_t solveQpTime = 0.0;
-  scalar_t linesearchTime = 0.0;
+        // Line search
+        PerformanceIndex baselinePerformanceIndex; // before taking the step
+        scalar_t totalConstraintViolationBaseline; // constraint metric used in the line search
+        StepInfo stepInfo;
 
-  // Line search
-  PerformanceIndex baselinePerformanceIndex;  // before taking the step
-  scalar_t totalConstraintViolationBaseline;  // constraint metric used in the line search
-  StepInfo stepInfo;
+        // Convergence
+        Convergence convergence = Convergence::FALSE;
+    };
 
-  // Convergence
-  Convergence convergence = Convergence::FALSE;
-};
+    std::ostream &operator<<(std::ostream &stream, const LogEntry &logEntry);
 
-std::ostream& operator<<(std::ostream& stream, const LogEntry& logEntry);
+    std::string logHeader();
 
-std::string logHeader();
+    template<typename T>
+    class Logger {
+    public:
+        explicit Logger(size_t numberOfEntries);
 
-template <typename T>
-class Logger {
- public:
-  explicit Logger(size_t numberOfEntries);
+        T &currentEntry();
 
-  T& currentEntry();
+        void advance();
 
-  void advance();
+        void write(std::ostream &stream) const;
 
-  void write(std::ostream& stream) const;
+    private:
+        using const_iterator = typename std::vector<T>::const_iterator;
+        using iterator = typename std::vector<T>::iterator;
 
- private:
-  using const_iterator = typename std::vector<T>::const_iterator;
-  using iterator = typename std::vector<T>::iterator;
+        bool full_;
+        const_iterator front_;
+        iterator back_;
+        std::vector<T> data_;
+    };
 
-  bool full_;
-  const_iterator front_;
-  iterator back_;
-  std::vector<T> data_;
-};
-
-template <typename T>
-Logger<T>::Logger(size_t numberOfEntries)
-    : full_(false),
-      data_(numberOfEntries + 1, T())  // +1 so we have space for a new element to write to when full.
-{
-  front_ = data_.begin();
-  back_ = data_.begin();
-}
-
-template <typename T>
-T& Logger<T>::currentEntry() {
-  return *back_;
-}
-
-template <typename T>
-void Logger<T>::advance() {
-  // move current entry iterator
-  ++back_;
-
-  // Wrap back pointer
-  if (back_ == data_.end()) {
-    back_ = data_.begin();
-    full_ = true;
-  }
-
-  // Move (+wrap) front point
-  if (full_) {
-    ++front_;
-    if (front_ == data_.end()) {
-      front_ = data_.begin();
+    template<typename T>
+    Logger<T>::Logger(size_t numberOfEntries)
+        : full_(false),
+          data_(numberOfEntries + 1, T()) // +1 so we have space for a new element to write to when full.
+    {
+        front_ = data_.begin();
+        back_ = data_.begin();
     }
-  }
-}
 
-template <typename T>
-void Logger<T>::write(std::ostream& stream) const {
-  const_iterator writeIt = front_;
-
-  if (writeIt > back_) {
-    // write front -> end
-    while (writeIt != data_.end()) {
-      stream << *writeIt;
-      ++writeIt;
+    template<typename T>
+    T &Logger<T>::currentEntry() {
+        return *back_;
     }
-    // wrap around
-    writeIt = data_.cbegin();
-  }
 
-  // write front -> back
-  while (writeIt < back_) {
-    stream << *writeIt;
-    ++writeIt;
-  }
+    template<typename T>
+    void Logger<T>::advance() {
+        // move current entry iterator
+        ++back_;
+
+        // Wrap back pointer
+        if (back_ == data_.end()) {
+            back_ = data_.begin();
+            full_ = true;
+        }
+
+        // Move (+wrap) front point
+        if (full_) {
+            ++front_;
+            if (front_ == data_.end()) {
+                front_ = data_.begin();
+            }
+        }
+    }
+
+    template<typename T>
+    void Logger<T>::write(std::ostream &stream) const {
+        const_iterator writeIt = front_;
+
+        if (writeIt > back_) {
+            // write front -> end
+            while (writeIt != data_.end()) {
+                stream << *writeIt;
+                ++writeIt;
+            }
+            // wrap around
+            writeIt = data_.cbegin();
+        }
+
+        // write front -> back
+        while (writeIt < back_) {
+            stream << *writeIt;
+            ++writeIt;
+        }
+    }
 }
-
-}  // namespace sqp
-}  // namespace ocs2

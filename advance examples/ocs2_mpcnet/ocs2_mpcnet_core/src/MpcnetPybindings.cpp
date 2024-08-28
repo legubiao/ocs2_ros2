@@ -54,9 +54,11 @@ PYBIND11_MODULE(MpcnetPybindings, m) {
     VECTOR_TYPE_BINDING(ocs2::size_array_t, "size_array")
     VECTOR_TYPE_BINDING(ocs2::scalar_array_t, "scalar_array")
     VECTOR_TYPE_BINDING(ocs2::matrix_array_t, "matrix_array")
+
     VECTOR_TYPE_BINDING(std::vector<ocs2::SystemObservation>, "SystemObservationArray")
     VECTOR_TYPE_BINDING(std::vector<ocs2::ModeSchedule>, "ModeScheduleArray")
     VECTOR_TYPE_BINDING(std::vector<ocs2::TargetTrajectories>, "TargetTrajectoriesArray")
+
     VECTOR_TYPE_BINDING(ocs2::mpcnet::data_array_t, "DataArray")
     VECTOR_TYPE_BINDING(ocs2::mpcnet::metrics_array_t, "MetricsArray")
 

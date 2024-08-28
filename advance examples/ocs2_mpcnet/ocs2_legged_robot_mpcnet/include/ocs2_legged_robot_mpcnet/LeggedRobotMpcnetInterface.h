@@ -58,7 +58,7 @@ namespace ocs2::legged_robot {
          * @param [in] leggedRobotInterface : The legged robot interface.
          * @return Pointer to the MPC.
          */
-        std::unique_ptr<MPC_BASE> getMpc(LeggedRobotInterface &leggedRobotInterface);
+        static std::unique_ptr<MPC_BASE> getMpc(const LeggedRobotInterface &leggedRobotInterface);
 
         // Legged robot interface pointers (keep alive for Pinocchio interface)
         std::vector<std::unique_ptr<LeggedRobotInterface> > leggedRobotInterfacePtrs_;

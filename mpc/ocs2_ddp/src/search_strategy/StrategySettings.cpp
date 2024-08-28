@@ -38,86 +38,81 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/misc/LoadData.h>
 
 namespace ocs2 {
+    namespace search_strategy {
+        std::string toString(const Type strategy) {
+            static const std::unordered_map<Type, std::string> strategyMap{
+                {Type::LINE_SEARCH, "LINE_SEARCH"},
+                {Type::LEVENBERG_MARQUARDT, "LEVENBERG_MARQUARDT"}
+            };
+            return strategyMap.at(strategy);
+        }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-namespace search_strategy {
+        Type fromString(std::string name) {
+            static const std::unordered_map<std::string, Type> strategyMap{
+                {"LINE_SEARCH", Type::LINE_SEARCH},
+                {"LEVENBERG_MARQUARDT", Type::LEVENBERG_MARQUARDT}
+            };
+            std::transform(name.begin(), name.end(), name.begin(), toupper);
+            return strategyMap.at(name);
+        }
+    } // namespace search_strategy
 
-std::string toString(Type strategy) {
-  static const std::unordered_map<Type, std::string> strategyMap{{Type::LINE_SEARCH, "LINE_SEARCH"},
-                                                                 {Type::LEVENBERG_MARQUARDT, "LEVENBERG_MARQUARDT"}};
-  return strategyMap.at(strategy);
-}
 
-Type fromString(std::string name) {
-  static const std::unordered_map<std::string, Type> strategyMap{{"LINE_SEARCH", Type::LINE_SEARCH},
-                                                                 {"LEVENBERG_MARQUARDT", Type::LEVENBERG_MARQUARDT}};
-  std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-  return strategyMap.at(name);
-}
+    namespace line_search {
+        Settings load(const std::string &filename, const std::string &fieldName, bool verbose) {
+            boost::property_tree::ptree pt;
+            read_info(filename, pt);
+            if (verbose) {
+                std::cerr << " #### LINE_SEARCH Settings: {\n";
+            }
 
-}  // namespace search_strategy
+            Settings settings;
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-namespace line_search {
+            loadData::loadPtreeValue(pt, settings.minStepLength, fieldName + ".minStepLength", verbose);
+            loadData::loadPtreeValue(pt, settings.maxStepLength, fieldName + ".maxStepLength", verbose);
+            loadData::loadPtreeValue(pt, settings.contractionRate, fieldName + ".contractionRate", verbose);
+            loadData::loadPtreeValue(pt, settings.armijoCoefficient, fieldName + ".armijoCoefficient", verbose);
 
-Settings load(const std::string& filename, const std::string& fieldName, bool verbose) {
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_info(filename, pt);
-  if (verbose) {
-    std::cerr << " #### LINE_SEARCH Settings: {\n";
-  }
+            std::string hessianCorrectionStrategyName =
+                    toString(settings.hessianCorrectionStrategy);
+            loadData::loadPtreeValue(pt, hessianCorrectionStrategyName, fieldName + ".hessianCorrectionStrategy",
+                                     verbose);
+            settings.hessianCorrectionStrategy = hessian_correction::fromString(hessianCorrectionStrategyName);
 
-  Settings settings;
+            loadData::loadPtreeValue(pt, settings.hessianCorrectionMultiple, fieldName + ".hessianCorrectionMultiple",
+                                     verbose);
 
-  loadData::loadPtreeValue(pt, settings.minStepLength, fieldName + ".minStepLength", verbose);
-  loadData::loadPtreeValue(pt, settings.maxStepLength, fieldName + ".maxStepLength", verbose);
-  loadData::loadPtreeValue(pt, settings.contractionRate, fieldName + ".contractionRate", verbose);
-  loadData::loadPtreeValue(pt, settings.armijoCoefficient, fieldName + ".armijoCoefficient", verbose);
+            if (verbose) {
+                std::cerr << " #### }" << std::endl;
+            }
 
-  std::string hessianCorrectionStrategyName = hessian_correction::toString(settings.hessianCorrectionStrategy);
-  loadData::loadPtreeValue(pt, hessianCorrectionStrategyName, fieldName + ".hessianCorrectionStrategy", verbose);
-  settings.hessianCorrectionStrategy = hessian_correction::fromString(hessianCorrectionStrategyName);
+            return settings;
+        }
+    } // namespace line_search
 
-  loadData::loadPtreeValue(pt, settings.hessianCorrectionMultiple, fieldName + ".hessianCorrectionMultiple", verbose);
 
-  if (verbose) {
-    std::cerr << " #### }" << std::endl;
-  }
+    namespace levenberg_marquardt {
+        Settings load(const std::string &filename, const std::string &fieldName, bool verbose) {
+            boost::property_tree::ptree pt;
+            read_info(filename, pt);
+            if (verbose) {
+                std::cerr << " #### LEVENBERG_MARQUARDT Settings: {\n";
+            }
 
-  return settings;
-}
+            Settings settings;
 
-}  // namespace line_search
+            loadData::loadPtreeValue(pt, settings.minAcceptedPho, fieldName + ".minAcceptedPho", verbose);
+            loadData::loadPtreeValue(pt, settings.riccatiMultipleDefaultRatio,
+                                     fieldName + ".riccatiMultipleDefaultRatio", verbose);
+            loadData::loadPtreeValue(pt, settings.riccatiMultipleDefaultFactor,
+                                     fieldName + ".riccatiMultipleDefaultFactor", verbose);
+            loadData::loadPtreeValue(pt, settings.maxNumSuccessiveRejections, fieldName + ".maxNumSuccessiveRejections",
+                                     verbose);
+            if (verbose) {
+                std::cerr << " #### }" << std::endl;
+            }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-namespace levenberg_marquardt {
-
-Settings load(const std::string& filename, const std::string& fieldName, bool verbose) {
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_info(filename, pt);
-  if (verbose) {
-    std::cerr << " #### LEVENBERG_MARQUARDT Settings: {\n";
-  }
-
-  Settings settings;
-
-  loadData::loadPtreeValue(pt, settings.minAcceptedPho, fieldName + ".minAcceptedPho", verbose);
-  loadData::loadPtreeValue(pt, settings.riccatiMultipleDefaultRatio, fieldName + ".riccatiMultipleDefaultRatio", verbose);
-  loadData::loadPtreeValue(pt, settings.riccatiMultipleDefaultFactor, fieldName + ".riccatiMultipleDefaultFactor", verbose);
-  loadData::loadPtreeValue(pt, settings.maxNumSuccessiveRejections, fieldName + ".maxNumSuccessiveRejections", verbose);
-  if (verbose) {
-    std::cerr << " #### }" << std::endl;
-  }
-
-  return settings;
-}
-
-}  // namespace levenberg_marquardt
-
-}  // namespace ocs2
+            return settings;
+        }
+    } // namespace levenberg_marquardt
+} // namespace ocs2

@@ -34,54 +34,56 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/misc/LoadData.h>
 
-namespace ocs2 {
-namespace sqp {
 
-Settings loadSettings(const std::string& filename, const std::string& fieldName, bool verbose) {
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_info(filename, pt);
+namespace ocs2::sqp {
+    Settings loadSettings(const std::string &filename, const std::string &fieldName, bool verbose) {
+        boost::property_tree::ptree pt;
+        read_info(filename, pt);
 
-  Settings settings;
+        Settings settings;
 
-  if (verbose) {
-    std::cerr << "\n #### Multiple-Shooting SQP Settings:";
-    std::cerr << "\n #### =============================================================================\n";
-  }
+        if (verbose) {
+            std::cerr << "\n #### Multiple-Shooting SQP Settings:";
+            std::cerr << "\n #### =============================================================================\n";
+        }
 
-  loadData::loadPtreeValue(pt, settings.sqpIteration, fieldName + ".sqpIteration", verbose);
-  loadData::loadPtreeValue(pt, settings.deltaTol, fieldName + ".deltaTol", verbose);
-  loadData::loadPtreeValue(pt, settings.alpha_decay, fieldName + ".alpha_decay", verbose);
-  loadData::loadPtreeValue(pt, settings.alpha_min, fieldName + ".alpha_min", verbose);
-  loadData::loadPtreeValue(pt, settings.gamma_c, fieldName + ".gamma_c", verbose);
-  loadData::loadPtreeValue(pt, settings.g_max, fieldName + ".g_max", verbose);
-  loadData::loadPtreeValue(pt, settings.g_min, fieldName + ".g_min", verbose);
-  loadData::loadPtreeValue(pt, settings.armijoFactor, fieldName + ".armijoFactor", verbose);
-  loadData::loadPtreeValue(pt, settings.costTol, fieldName + ".costTol", verbose);
-  loadData::loadPtreeValue(pt, settings.dt, fieldName + ".dt", verbose);
-  loadData::loadPtreeValue(pt, settings.useFeedbackPolicy, fieldName + ".useFeedbackPolicy", verbose);
-  loadData::loadPtreeValue(pt, settings.createValueFunction, fieldName + ".createValueFunction", verbose);
-  auto integratorName = sensitivity_integrator::toString(settings.integratorType);
-  loadData::loadPtreeValue(pt, integratorName, fieldName + ".integratorType", verbose);
-  settings.integratorType = sensitivity_integrator::fromString(integratorName);
-  loadData::loadPtreeValue(pt, settings.inequalityConstraintMu, fieldName + ".inequalityConstraintMu", verbose);
-  loadData::loadPtreeValue(pt, settings.inequalityConstraintDelta, fieldName + ".inequalityConstraintDelta", verbose);
-  loadData::loadPtreeValue(pt, settings.projectStateInputEqualityConstraints, fieldName + ".projectStateInputEqualityConstraints", verbose);
-  loadData::loadPtreeValue(pt, settings.extractProjectionMultiplier, fieldName + ".extractProjectionMultiplier", verbose);
-  loadData::loadPtreeValue(pt, settings.printSolverStatus, fieldName + ".printSolverStatus", verbose);
-  loadData::loadPtreeValue(pt, settings.printSolverStatistics, fieldName + ".printSolverStatistics", verbose);
-  loadData::loadPtreeValue(pt, settings.printLinesearch, fieldName + ".printLinesearch", verbose);
-  loadData::loadPtreeValue(pt, settings.enableLogging, fieldName + ".enableLogging", verbose);
-  loadData::loadPtreeValue(pt, settings.logSize, fieldName + ".logSize", verbose);
-  loadData::loadPtreeValue(pt, settings.logFilePath, fieldName + ".logFilePath", verbose);
-  loadData::loadPtreeValue(pt, settings.nThreads, fieldName + ".nThreads", verbose);
-  loadData::loadPtreeValue(pt, settings.threadPriority, fieldName + ".threadPriority", verbose);
+        loadData::loadPtreeValue(pt, settings.sqpIteration, fieldName + ".sqpIteration", verbose);
+        loadData::loadPtreeValue(pt, settings.deltaTol, fieldName + ".deltaTol", verbose);
+        loadData::loadPtreeValue(pt, settings.alpha_decay, fieldName + ".alpha_decay", verbose);
+        loadData::loadPtreeValue(pt, settings.alpha_min, fieldName + ".alpha_min", verbose);
+        loadData::loadPtreeValue(pt, settings.gamma_c, fieldName + ".gamma_c", verbose);
+        loadData::loadPtreeValue(pt, settings.g_max, fieldName + ".g_max", verbose);
+        loadData::loadPtreeValue(pt, settings.g_min, fieldName + ".g_min", verbose);
+        loadData::loadPtreeValue(pt, settings.armijoFactor, fieldName + ".armijoFactor", verbose);
+        loadData::loadPtreeValue(pt, settings.costTol, fieldName + ".costTol", verbose);
+        loadData::loadPtreeValue(pt, settings.dt, fieldName + ".dt", verbose);
+        loadData::loadPtreeValue(pt, settings.useFeedbackPolicy, fieldName + ".useFeedbackPolicy", verbose);
+        loadData::loadPtreeValue(pt, settings.createValueFunction, fieldName + ".createValueFunction", verbose);
+        auto integratorName = sensitivity_integrator::toString(settings.integratorType);
+        loadData::loadPtreeValue(pt, integratorName, fieldName + ".integratorType", verbose);
+        settings.integratorType = sensitivity_integrator::fromString(integratorName);
+        loadData::loadPtreeValue(pt, settings.inequalityConstraintMu, fieldName + ".inequalityConstraintMu", verbose);
+        loadData::loadPtreeValue(pt, settings.inequalityConstraintDelta, fieldName + ".inequalityConstraintDelta",
+                                 verbose);
+        loadData::loadPtreeValue(pt, settings.projectStateInputEqualityConstraints,
+                                 fieldName + ".projectStateInputEqualityConstraints", verbose);
+        loadData::loadPtreeValue(pt, settings.extractProjectionMultiplier, fieldName + ".extractProjectionMultiplier",
+                                 verbose);
+        loadData::loadPtreeValue(pt, settings.printSolverStatus, fieldName + ".printSolverStatus", verbose);
+        loadData::loadPtreeValue(pt, settings.printSolverStatistics, fieldName + ".printSolverStatistics", verbose);
+        loadData::loadPtreeValue(pt, settings.printLinesearch, fieldName + ".printLinesearch", verbose);
+        loadData::loadPtreeValue(pt, settings.enableLogging, fieldName + ".enableLogging", verbose);
+        loadData::loadPtreeValue(pt, settings.logSize, fieldName + ".logSize", verbose);
+        loadData::loadPtreeValue(pt, settings.logFilePath, fieldName + ".logFilePath", verbose);
+        loadData::loadPtreeValue(pt, settings.nThreads, fieldName + ".nThreads", verbose);
+        loadData::loadPtreeValue(pt, settings.threadPriority, fieldName + ".threadPriority", verbose);
 
-  if (verbose) {
-    std::cerr << settings.hpipmSettings;
-    std::cerr << " #### =============================================================================" << std::endl;
-  }
+        if (verbose) {
+            std::cerr << settings.hpipmSettings;
+            std::cerr << " #### =============================================================================" <<
+                    std::endl;
+        }
 
-  return settings;
-}
-}  // namespace sqp
-}  // namespace ocs2
+        return settings;
+    }
+} // namespace ocs2::sqp

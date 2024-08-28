@@ -24,6 +24,11 @@ find_package(ocs2_slp REQUIRED)
 find_package(ocs2_sqp REQUIRED)
 find_package(ocs2_python_interface REQUIRED)
 
+configure_file(
+        "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/package_path.h.in"
+        "${PROJECT_BINARY_DIR}/include/${PROJECT_NAME}/package_path.h" @ONLY
+)
+
 ###########
 ## Build ##
 ###########

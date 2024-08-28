@@ -31,39 +31,35 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/Types.h>
 
-namespace ocs2 {
-namespace qp_solver {
+namespace ocs2::qp_solver {
+    /** A time, state, input trajectory. The last timepoint has only a state, no input */
+    struct ContinuousTrajectory {
+        /** time trajectory, size N+1 */
+        scalar_array_t timeTrajectory;
+        /** trajectory of state vectors, size N+1 */
+        vector_array_t stateTrajectory;
+        /** trajectory of input vectors, size N */
+        vector_array_t inputTrajectory;
+    };
 
-/** A time, state, input trajectory. The last timepoint has only a state, no input */
-struct ContinuousTrajectory {
-  /** time trajectory, size N+1 */
-  scalar_array_t timeTrajectory;
-  /** trajectory of state vectors, size N+1 */
-  vector_array_t stateTrajectory;
-  /** trajectory of input vectors, size N */
-  vector_array_t inputTrajectory;
-};
+    /** Adds state and inputs of two trajectories, time is not added. */
+    ContinuousTrajectory operator+(const ContinuousTrajectory &lhs, const ContinuousTrajectory &rhs);
 
-/** Adds state and inputs of two trajectories, time is not added. */
-ContinuousTrajectory operator+(const ContinuousTrajectory& lhs, const ContinuousTrajectory& rhs);
+    /** Reference to a point along a trajectory. Does not own the state-input data. */
+    struct TrajectoryRef {
+        /** time */
+        scalar_t t;
+        /** state */
+        const vector_t &x;
+        /** input */
+        const vector_t &u;
+    };
 
-/** Reference to a point along a trajectory. Does not own the state-input data. */
-struct TrajectoryRef {
-  /** time */
-  scalar_t t;
-  /** state */
-  const vector_t& x;
-  /** input */
-  const vector_t& u;
-};
-
-/** Reference to the state at a point along a trajectory. Does not own the state data. */
-struct StateTrajectoryRef {
-  /** time */
-  scalar_t t;
-  /** state */
-  const vector_t& x;
-};
-
-}  // namespace qp_solver
-}  // namespace ocs2
+    /** Reference to the state at a point along a trajectory. Does not own the state data. */
+    struct StateTrajectoryRef {
+        /** time */
+        scalar_t t;
+        /** state */
+        const vector_t &x;
+    };
+}

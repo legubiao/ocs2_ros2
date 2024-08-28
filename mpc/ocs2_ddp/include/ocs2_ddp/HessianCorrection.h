@@ -34,35 +34,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/NumericTraits.h>
 #include <ocs2_core/misc/LinearAlgebra.h>
 
-namespace ocs2 {
-namespace hessian_correction {
+namespace ocs2::hessian_correction {
+    /**
+     * @brief The Hessian matrix correction strategy
+     * Enum used in selecting either DIAGONAL_SHIFT, CHOLESKY_MODIFICATION, EIGENVALUE_MODIFICATION, or GERSHGORIN_MODIFICATION strategies.
+     */
+    enum class Strategy { DIAGONAL_SHIFT, CHOLESKY_MODIFICATION, EIGENVALUE_MODIFICATION, GERSHGORIN_MODIFICATION };
 
-/**
- * @brief The Hessian matrix correction strategy
- * Enum used in selecting either DIAGONAL_SHIFT, CHOLESKY_MODIFICATION, EIGENVALUE_MODIFICATION, or GERSHGORIN_MODIFICATION strategies.
- */
-enum class Strategy { DIAGONAL_SHIFT, CHOLESKY_MODIFICATION, EIGENVALUE_MODIFICATION, GERSHGORIN_MODIFICATION };
+    /**
+     * Get string name of Hessian_Correction type
+     * @param [in] strategy: Hessian_Correction type enum
+     */
+    std::string toString(Strategy strategy);
 
-/**
- * Get string name of Hessian_Correction type
- * @param [in] strategy: Hessian_Correction type enum
- */
-std::string toString(Strategy strategy);
+    /**
+     * Get Hessian_Correction type from string name, useful for reading config file
+     * @param [in] name: Hessian_Correction name
+     */
+    Strategy fromString(const std::string &name);
 
-/**
- * Get Hessian_Correction type from string name, useful for reading config file
- * @param [in] name: Hessian_Correction name
- */
-Strategy fromString(const std::string& name);
-
-/**
- * Shifts the Hessian based on the strategy defined by Line_Search::hessianCorrectionStrategy_.
- *
- * @param [in] strategy: Hessian matrix correction strategy.
- * @param [in, out] matrix: The Hessian matrix.
- * @param [in] minEigenvalue: The minimum expected eigenvalue after correction.
- */
-void shiftHessian(Strategy strategy, matrix_t& matrix, scalar_t minEigenvalue = numeric_traits::limitEpsilon<scalar_t>());
-
-}  // namespace hessian_correction
-}  // namespace ocs2
+    /**
+     * Shifts the Hessian based on the strategy defined by Line_Search::hessianCorrectionStrategy_.
+     *
+     * @param [in] strategy: Hessian matrix correction strategy.
+     * @param [in, out] matrix: The Hessian matrix.
+     * @param [in] minEigenvalue: The minimum expected eigenvalue after correction.
+     */
+    void shiftHessian(Strategy strategy, matrix_t &matrix,
+                      scalar_t minEigenvalue = numeric_traits::limitEpsilon<scalar_t>());
+}

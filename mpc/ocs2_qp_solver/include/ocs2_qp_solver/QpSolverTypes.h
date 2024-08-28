@@ -31,22 +31,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/Types.h>
 
-namespace ocs2 {
-namespace qp_solver {
+namespace ocs2::qp_solver {
+    /** Defines the quadratic cost and  linear dynamics at a give stage */
+    struct LinearQuadraticStage {
+        /** Quadratic approximation of the cost */
+        ScalarFunctionQuadraticApproximation cost;
+        /** Linear approximation of the dynamics */
+        VectorFunctionLinearApproximation dynamics;
+        /** Linear approximation of the constraints */
+        VectorFunctionLinearApproximation constraints;
 
-/** Defines the quadratic cost and  linear dynamics at a give stage */
-struct LinearQuadraticStage {
-  /** Quadratic approximation of the cost */
-  ScalarFunctionQuadraticApproximation cost;
-  /** Linear approximation of the dynamics */
-  VectorFunctionLinearApproximation dynamics;
-  /** Linear approximation of the constraints */
-  VectorFunctionLinearApproximation constraints;
+        LinearQuadraticStage() = default;
 
-  LinearQuadraticStage() = default;
-  LinearQuadraticStage(ScalarFunctionQuadraticApproximation c, VectorFunctionLinearApproximation d, VectorFunctionLinearApproximation g)
-      : cost(std::move(c)), dynamics(std::move(d)), constraints(std::move(g)) {}
-};
-
-}  // namespace qp_solver
-}  // namespace ocs2
+        LinearQuadraticStage(ScalarFunctionQuadraticApproximation c, VectorFunctionLinearApproximation d,
+                             VectorFunctionLinearApproximation g)
+            : cost(std::move(c)), dynamics(std::move(d)), constraints(std::move(g)) {
+        }
+    };
+}

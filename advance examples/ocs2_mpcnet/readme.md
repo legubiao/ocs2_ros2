@@ -15,7 +15,7 @@ I just install the latest libraries until 2024.8:
 
 Nvidia A500 can train ballbot but cannot train legged robot.
 
-## Install ONNX Runtime
+## 1. Install ONNX Runtime
 ONNX Runtime is an inferencing and training accelerator. Here, it is used for deploying learned MPC-Net policies in C++ code. To locally install it, do the following:
 
 * Download the onnxruntime release from Github [onnxruntime 1.19](https://github.com/microsoft/onnxruntime/releases/download/v1.19.0/onnxruntime-linux-x64-1.19.0.tgz)
@@ -25,11 +25,17 @@ ONNX Runtime is an inferencing and training accelerator. Here, it is used for de
   * Move the `lib/pkgconfig` folder to `/usr/local/lib/pkgconfig`
   * Move the `lib` to `/usr/local/lib64`
   * ```bash
-    sudo ldconfig
+    sudo mv include/ /usr/local/include/onnxruntime/
+    sudo mv lib/cmake/ /usr/local/share
+    sudo mv lib/pkgconfig/ /usr/local/lib
+    sudo mv lib/ /usr/local/lib64
     ```
 * check the install
   * ```bash
     export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib64
+    
+    sudo ldconfig
     pkg-config --cflags --libs libonnxruntime
     ```
   * The output should be something like:
@@ -38,7 +44,9 @@ ONNX Runtime is an inferencing and training accelerator. Here, it is used for de
   
   
 
-## Build and Run pretrained MPC-Net
+## 2. Build and Run pretrained MPC-Net
+
+### 2.1 Ballbot
 ```bash
 cd ~/ocs2_ws
 colcon build --packages-up-to ocs2_ballbot_mpcnet --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
@@ -49,7 +57,14 @@ source ~/ocs2_ws/install/setup.bash
 ros2 launch ocs2_ballbot_mpcnet ballbot_mpcnet.launch.py
 ```
 
-## Create Python Venv
+### 2.2 Legged Robot
+```bash
+cd ~/ocs2_ws
+colcon build --packages-up-to ocs2_legged_robot_mpcnet --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+```
+
+## 3. Train MPC-Net
+### 3.1 Create Python Venv
 
 * install python3-venv
 ```bash
@@ -68,18 +83,31 @@ python3 -m venv mpcnet
 source ~/venvs/mpcnet/bin/activate
 pip install -r ocs2_mpcnet_core/requirements.txt
 ```
-
-## Train MPC-Net
 below command assumes that you are in the venv and sourced ros2 workspace.
 
+### 3.2 Ballbot
 * train the MPC-Net
 ```bash
-cd ~/ocs2_ws/src/ocs2_ros2/advance\ examples/ocs2_mpcnet/ocs2_mpcnet_core/ocs2_mpcnet_core/
+source ~/ocs2_ws/install/setup.bash
+cd ~/ocs2_ws/src/ocs2_ros2/advance\ examples/ocs2_mpcnet/ocs2_ballbot_mpcnet/ocs2_ballbot_mpcnet
 python train.py
 ```
 * check the tensorboard
 ```bash
-cd ~/ocs2_ws/src/ocs2_ros2/advance\ examples/ocs2_mpcnet/ocs2_mpcnet_core/ocs2_mpcnet_core/
+cd ~/ocs2_ws/src/ocs2_ros2/advance\ examples/ocs2_mpcnet/ocs2_ballbot_mpcnet/ocs2_ballbot_mpcnet
 tensorboard --logdir=runs
 ```
 to run the trained model, copy the .onnx and .pt file in the runs folder to the policy folder. 
+
+### 3.3 Legged Robot
+* train the MPC-Net
+```bash
+source ~/ocs2_ws/install/setup.bash
+cd ~/ocs2_ws/src/ocs2_ros2/advance\ examples/ocs2_mpcnet/ocs2_legged_robot_mpcnet/ocs2_legged_robot_mpcnet
+python train.py
+```
+* check the tensorboard
+```bash
+cd ~/ocs2_ws/src/ocs2_ros2/advance\ examples/ocs2_mpcnet/ocs2_legged_robot_mpcnet/ocs2_legged_robot_mpcnet
+tensorboard --logdir=runs
+```

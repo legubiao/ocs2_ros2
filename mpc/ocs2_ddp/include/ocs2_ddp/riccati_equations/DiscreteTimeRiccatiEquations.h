@@ -29,129 +29,129 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <Eigen/Dense>
-#include <Eigen/StdVector>
-
 #include <ocs2_core/Types.h>
 #include <ocs2_core/model_data/ModelData.h>
 
 #include "ocs2_ddp/riccati_equations/RiccatiModification.h"
 
 namespace ocs2 {
+    /**
+     * Data cache for discrete-time Riccati equation
+     */
+    struct DiscreteTimeRiccatiData {
+        vector_t Sm_projectedHv_;
+        matrix_t Sm_projectedAm_;
+        matrix_t Sm_projectedBm_;
+        vector_t Sv_plus_Sm_projectedHv_;
 
-/**
- * Data cache for discrete-time Riccati equation
- */
-struct DiscreteTimeRiccatiData {
-  vector_t Sm_projectedHv_;
-  matrix_t Sm_projectedAm_;
-  matrix_t Sm_projectedBm_;
-  vector_t Sv_plus_Sm_projectedHv_;
+        matrix_t projectedHm_;
+        matrix_t projectedGm_;
+        vector_t projectedGv_;
 
-  matrix_t projectedHm_;
-  matrix_t projectedGm_;
-  vector_t projectedGv_;
+        matrix_t projectedKm_T_projectedGm_;
+        matrix_t projectedHm_projectedKm_;
+        vector_t projectedHm_projectedLv_;
 
-  matrix_t projectedKm_T_projectedGm_;
-  matrix_t projectedHm_projectedKm_;
-  vector_t projectedHm_projectedLv_;
+        // risk sensitive data
+        vector_t Sigma_Sv_;
+        matrix_t I_minus_Sm_Sigma_;
+        matrix_t inv_I_minus_Sm_Sigma_;
+        scalar_t sNextStochastic_ = 0.0;
+        vector_t SvNextStochastic_;
+        matrix_t SmNextStochastic_;
+    };
 
-  // risk sensitive data
-  vector_t Sigma_Sv_;
-  matrix_t I_minus_Sm_Sigma_;
-  matrix_t inv_I_minus_Sm_Sigma_;
-  scalar_t sNextStochastic_ = 0.0;
-  vector_t SvNextStochastic_;
-  matrix_t SmNextStochastic_;
-};
+    /**
+     * This class implements the Riccati difference equations for iLQR problem.
+     */
+    class DiscreteTimeRiccatiEquations {
+    public:
+        /**
+         * Constructor.
+         *
+         * @param [in] reducedFormRiccati: The reduced form of the Riccati equation is yield by assuming that Hessein of
+         * the Hamiltonian is positive definite. In this case, the computation of Riccati equation is more efficient.
+         * @param [in] isRiskSensitive: Neither the risk sensitive variant is used or not.
+         */
+        explicit DiscreteTimeRiccatiEquations(bool reducedFormRiccati, bool isRiskSensitive = false);
 
-/**
- * This class implements the Riccati difference equations for iLQR problem.
- */
-class DiscreteTimeRiccatiEquations {
- public:
-  /**
-   * Constructor.
-   *
-   * @param [in] reducedFormRiccati: The reduced form of the Riccati equation is yield by assuming that Hessein of
-   * the Hamiltonian is positive definite. In this case, the computation of Riccati equation is more efficient.
-   * @param [in] isRiskSensitive: Neither the risk sensitive variant is used or not.
-   */
-  explicit DiscreteTimeRiccatiEquations(bool reducedFormRiccati, bool isRiskSensitive = false);
+        /**
+         * Default destructor.
+         */
+        ~DiscreteTimeRiccatiEquations() = default;
 
-  /**
-   * Default destructor.
-   */
-  ~DiscreteTimeRiccatiEquations() = default;
+        /**
+         * Sets risk-sensitive coefficient.
+         */
+        void setRiskSensitiveCoefficient(scalar_t riskSensitiveCoeff);
 
-  /**
-   * Sets risk-sensitive coefficient.
-   */
-  void setRiskSensitiveCoefficient(scalar_t riskSensitiveCoeff);
+        /**
+         * Computes one step Riccati difference equations.
+         *
+         * @param [in] projectedModelData: The projected model data.
+         * @param [in] riccatiModification: The RiccatiModification.
+         * @param [in] SmNext: The Riccati matrix of the next time step.
+         * @param [in] SvNext: The Riccati vector of the next time step.
+         * @param [in] sNext: The Riccati scalar of the next time step.
+         * @param [out] projectedKm: The projected feedback controller.
+         * @param [out] projectedLv: The projected feedforward controller.
+         * @param [out] Sm: The current Riccati matrix.
+         * @param [out] Sv: The current Riccati vector.
+         * @param [out] s: The current Riccati scalar.
+         */
+        void computeMap(const ModelData &projectedModelData, const riccati_modification::Data &riccatiModification,
+                        const matrix_t &SmNext,
+                        const vector_t &SvNext, const scalar_t &sNext, matrix_t &projectedKm, vector_t &projectedLv,
+                        matrix_t &Sm, vector_t &Sv,
+                        scalar_t &s);
 
-  /**
-   * Computes one step Riccati difference equations.
-   *
-   * @param [in] projectedModelData: The projected model data.
-   * @param [in] riccatiModification: The RiccatiModification.
-   * @param [in] SmNext: The Riccati matrix of the next time step.
-   * @param [in] SvNext: The Riccati vector of the next time step.
-   * @param [in] sNext: The Riccati scalar of the next time step.
-   * @param [out] projectedKm: The projected feedback controller.
-   * @param [out] projectedLv: The projected feedforward controller.
-   * @param [out] Sm: The current Riccati matrix.
-   * @param [out] Sv: The current Riccati vector.
-   * @param [out] s: The current Riccati scalar.
-   */
-  void computeMap(const ModelData& projectedModelData, const riccati_modification::Data& riccatiModification, const matrix_t& SmNext,
-                  const vector_t& SvNext, const scalar_t& sNext, matrix_t& projectedKm, vector_t& projectedLv, matrix_t& Sm, vector_t& Sv,
-                  scalar_t& s);
+    private:
+        /**
+         * Computes one step Riccati difference equations for ILQR formulation.
+         *
+         * @param [in] projectedModelData: The projected model data.
+         * @param [in] riccatiModification: The RiccatiModification.
+         * @param [in] SmNext: The Riccati matrix of the next time step.
+         * @param [in] SvNext: The Riccati vector of the next time step.
+         * @param [in] sNext: The Riccati scalar of the next time step.
+         * @param [out] dreCache: The discrete-time Riccati equation cache date.
+         * @param [out] projectedKm: The projected feedback controller.
+         * @param [out] projectedLv: The projected feedforward controller.
+         * @param [out] Sm: The current Riccati matrix.
+         * @param [out] Sv: The current Riccati vector.
+         * @param [out] s: The current Riccati scalar.
+         */
+        void computeMapILQR(const ModelData &projectedModelData, const riccati_modification::Data &riccatiModification,
+                            const matrix_t &SmNext,
+                            const vector_t &SvNext, const scalar_t &sNext, DiscreteTimeRiccatiData &dreCache,
+                            matrix_t &projectedKm,
+                            vector_t &projectedLv, matrix_t &Sm, vector_t &Sv, scalar_t &s) const;
 
- private:
-  /**
-   * Computes one step Riccati difference equations for ILQR formulation.
-   *
-   * @param [in] projectedModelData: The projected model data.
-   * @param [in] riccatiModification: The RiccatiModification.
-   * @param [in] SmNext: The Riccati matrix of the next time step.
-   * @param [in] SvNext: The Riccati vector of the next time step.
-   * @param [in] sNext: The Riccati scalar of the next time step.
-   * @param [out] dreCache: The discrete-time Riccati equation cache date.
-   * @param [out] projectedKm: The projected feedback controller.
-   * @param [out] projectedLv: The projected feedforward controller.
-   * @param [out] Sm: The current Riccati matrix.
-   * @param [out] Sv: The current Riccati vector.
-   * @param [out] s: The current Riccati scalar.
-   */
-  void computeMapILQR(const ModelData& projectedModelData, const riccati_modification::Data& riccatiModification, const matrix_t& SmNext,
-                      const vector_t& SvNext, const scalar_t& sNext, DiscreteTimeRiccatiData& dreCache, matrix_t& projectedKm,
-                      vector_t& projectedLv, matrix_t& Sm, vector_t& Sv, scalar_t& s) const;
+        /**
+         * Computes one step Riccati difference equations for ILEG formulation.
+         *
+         * @param [in] projectedModelData: The projected model data.
+         * @param [in] riccatiModification: The RiccatiModification.
+         * @param [in] SmNext: The Riccati matrix of the next time step.
+         * @param [in] SvNext: The Riccati vector of the next time step.
+         * @param [in] sNext: The Riccati scalar of the next time step.
+         * @param [out] dreCache: The discrete-time Riccati equation cache date.
+         * @param [out] projectedKm: The projected feedback controller.
+         * @param [out] projectedLv: The projected feedforward controller.
+         * @param [out] Sm: The current Riccati matrix.
+         * @param [out] Sv: The current Riccati vector.
+         * @param [out] s: The current Riccati scalar.
+         */
+        void computeMapILEG(const ModelData &projectedModelData, const riccati_modification::Data &riccatiModification,
+                            const matrix_t &SmNext,
+                            const vector_t &SvNext, const scalar_t &sNext, DiscreteTimeRiccatiData &dreCache,
+                            matrix_t &projectedKm,
+                            vector_t &projectedLv, matrix_t &Sm, vector_t &Sv, scalar_t &s) const;
 
-  /**
-   * Computes one step Riccati difference equations for ILEG formulation.
-   *
-   * @param [in] projectedModelData: The projected model data.
-   * @param [in] riccatiModification: The RiccatiModification.
-   * @param [in] SmNext: The Riccati matrix of the next time step.
-   * @param [in] SvNext: The Riccati vector of the next time step.
-   * @param [in] sNext: The Riccati scalar of the next time step.
-   * @param [out] dreCache: The discrete-time Riccati equation cache date.
-   * @param [out] projectedKm: The projected feedback controller.
-   * @param [out] projectedLv: The projected feedforward controller.
-   * @param [out] Sm: The current Riccati matrix.
-   * @param [out] Sv: The current Riccati vector.
-   * @param [out] s: The current Riccati scalar.
-   */
-  void computeMapILEG(const ModelData& projectedModelData, const riccati_modification::Data& riccatiModification, const matrix_t& SmNext,
-                      const vector_t& SvNext, const scalar_t& sNext, DiscreteTimeRiccatiData& dreCache, matrix_t& projectedKm,
-                      vector_t& projectedLv, matrix_t& Sm, vector_t& Sv, scalar_t& s) const;
+        bool reducedFormRiccati_;
+        bool isRiskSensitive_;
+        scalar_t riskSensitiveCoeff_ = 0.0;
 
- private:
-  bool reducedFormRiccati_;
-  bool isRiskSensitive_;
-  scalar_t riskSensitiveCoeff_ = 0.0;
-
-  DiscreteTimeRiccatiData discreteTimeRiccatiData_;
-};
-
-}  // namespace ocs2
+        DiscreteTimeRiccatiData discreteTimeRiccatiData_;
+    };
+} // namespace ocs2

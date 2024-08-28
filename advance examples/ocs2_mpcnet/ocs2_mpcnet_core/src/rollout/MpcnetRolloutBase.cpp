@@ -33,7 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 namespace ocs2::mpcnet {
-    void MpcnetRolloutBase::set(scalar_t alpha, const std::string &policyFilePath,
+    void MpcnetRolloutBase::set(const scalar_t alpha, const std::string &policyFilePath,
                                 const SystemObservation &initialObservation,
                                 const ModeSchedule &modeSchedule, const TargetTrajectories &targetTrajectories) {
         // init system observation
@@ -53,7 +53,7 @@ namespace ocs2::mpcnet {
     }
 
 
-    void MpcnetRolloutBase::step(scalar_t timeStep) {
+    void MpcnetRolloutBase::step(const scalar_t timeStep) {
         // run mpc
         if (!mpcPtr_->run(systemObservation_.time, systemObservation_.state)) {
             throw std::runtime_error("[MpcnetRolloutBase::step] main routine of MPC returned false.");
@@ -86,7 +86,7 @@ namespace ocs2::mpcnet {
                                            referenceManagerPtr_->getModeSchedule(),
                                            referenceManagerPtr_->getTargetTrajectories())) {
             throw std::runtime_error(
-                "MpcnetDataGeneration::run Tuple (time, state, modeSchedule, targetTrajectories) is not valid.");
+                "[MpcnetRolloutBase::step] Tuple (time, state, modeSchedule, targetTrajectories) is not valid.");
         }
     }
 } // namespace ocs2::mpcnet

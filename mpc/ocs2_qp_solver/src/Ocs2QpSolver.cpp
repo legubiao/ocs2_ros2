@@ -32,24 +32,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_qp_solver/QpDiscreteTranscription.h"
 #include "ocs2_qp_solver/QpSolver.h"
 
-namespace ocs2 {
-namespace qp_solver {
+namespace ocs2::qp_solver {
+    ContinuousTrajectory solveLinearQuadraticOptimalControlProblem(OptimalControlProblem &optimalControProblem,
+                                                                   const ContinuousTrajectory &nominalTrajectory,
+                                                                   const vector_t &initialState) {
+        // Approximate
+        const auto lqApproximation = getLinearQuadraticApproximation(optimalControProblem, nominalTrajectory);
 
-ContinuousTrajectory solveLinearQuadraticOptimalControlProblem(OptimalControlProblem& optimalControProblem,
-                                                               const ContinuousTrajectory& nominalTrajectory,
-                                                               const vector_t& initialState) {
-  // Approximate
-  const auto lqApproximation = getLinearQuadraticApproximation(optimalControProblem, nominalTrajectory);
+        // Solve for an update step
+        ContinuousTrajectory deltaSolution;
+        deltaSolution.timeTrajectory = nominalTrajectory.timeTrajectory;
+        std::tie(deltaSolution.stateTrajectory, deltaSolution.inputTrajectory) =
+                solveLinearQuadraticProblem(lqApproximation, initialState - nominalTrajectory.stateTrajectory.front());
 
-  // Solve for an update step
-  ContinuousTrajectory deltaSolution;
-  deltaSolution.timeTrajectory = nominalTrajectory.timeTrajectory;
-  std::tie(deltaSolution.stateTrajectory, deltaSolution.inputTrajectory) =
-      solveLinearQuadraticProblem(lqApproximation, initialState - nominalTrajectory.stateTrajectory.front());
-
-  // Take a full step: Add update to nominal trajectory
-  return nominalTrajectory + deltaSolution;
+        // Take a full step: Add update to nominal trajectory
+        return nominalTrajectory + deltaSolution;
+    }
 }
-
-}  // namespace qp_solver
-}  // namespace ocs2

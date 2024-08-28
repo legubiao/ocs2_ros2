@@ -29,23 +29,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_qp_solver/QpTrajectories.h"
 
-namespace ocs2 {
-namespace qp_solver {
+namespace ocs2::qp_solver {
+    ContinuousTrajectory operator+(const ContinuousTrajectory &lhs, const ContinuousTrajectory &rhs) {
+        // Copy lhs into sum
+        ContinuousTrajectory sum(lhs);
 
-ContinuousTrajectory operator+(const ContinuousTrajectory& lhs, const ContinuousTrajectory& rhs) {
-  // Copy lhs into sum
-  ContinuousTrajectory sum(lhs);
+        for (int k = 0; k < sum.inputTrajectory.size(); ++k) {
+            sum.inputTrajectory[k] += rhs.inputTrajectory[k];
+        }
 
-  for (int k = 0; k < sum.inputTrajectory.size(); ++k) {
-    sum.inputTrajectory[k] += rhs.inputTrajectory[k];
-  }
-
-  // Sum states
-  for (int k = 0; k < sum.stateTrajectory.size(); ++k) {
-    sum.stateTrajectory[k] += rhs.stateTrajectory[k];
-  }
-  return sum;
+        // Sum states
+        for (int k = 0; k < sum.stateTrajectory.size(); ++k) {
+            sum.stateTrajectory[k] += rhs.stateTrajectory[k];
+        }
+        return sum;
+    }
 }
-
-}  // namespace qp_solver
-}  // namespace ocs2

@@ -31,64 +31,61 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iomanip>
 
-namespace ocs2 {
-namespace sqp {
 
-std::ostream& operator<<(std::ostream& stream, const LogEntry& logEntry) {
-  const std::string delim = ", ";
-  const std::string lineEnd = "\n";
-  // clang-format off
-  stream  << std::setprecision(16) // print decimals up to machine epsilon of double (~10^-16)
-          << logEntry.problemNumber << delim
-          << logEntry.time << delim
-          << logEntry.iteration << delim
-          << logEntry.linearQuadraticApproximationTime << delim
-          << logEntry.solveQpTime << delim
-          << logEntry.linesearchTime << delim
-          << logEntry.baselinePerformanceIndex.merit << delim
-          << logEntry.baselinePerformanceIndex.dynamicsViolationSSE << delim
-          << logEntry.baselinePerformanceIndex.equalityConstraintsSSE << delim
-          << logEntry.totalConstraintViolationBaseline << delim
-          << logEntry.stepInfo.stepSize << delim
-          << toString(logEntry.stepInfo.stepType) << delim
-          << logEntry.stepInfo.dx_norm << delim
-          << logEntry.stepInfo.du_norm << delim
-          << logEntry.stepInfo.performanceAfterStep.merit << delim
-          << logEntry.stepInfo.performanceAfterStep.dynamicsViolationSSE << delim
-          << logEntry.stepInfo.performanceAfterStep.equalityConstraintsSSE << delim
-          << logEntry.stepInfo.totalConstraintViolationAfterStep << delim
-          << toString(logEntry.convergence) << lineEnd;
-  // clang-format on
-  return stream;
-}
+namespace ocs2::sqp {
+    std::ostream &operator<<(std::ostream &stream, const LogEntry &logEntry) {
+        const std::string delim = ", ";
+        const std::string lineEnd = "\n";
+        // clang-format off
+        stream << std::setprecision(16) // print decimals up to machine epsilon of double (~10^-16)
+                << logEntry.problemNumber << delim
+                << logEntry.time << delim
+                << logEntry.iteration << delim
+                << logEntry.linearQuadraticApproximationTime << delim
+                << logEntry.solveQpTime << delim
+                << logEntry.linesearchTime << delim
+                << logEntry.baselinePerformanceIndex.merit << delim
+                << logEntry.baselinePerformanceIndex.dynamicsViolationSSE << delim
+                << logEntry.baselinePerformanceIndex.equalityConstraintsSSE << delim
+                << logEntry.totalConstraintViolationBaseline << delim
+                << logEntry.stepInfo.stepSize << delim
+                << toString(logEntry.stepInfo.stepType) << delim
+                << logEntry.stepInfo.dx_norm << delim
+                << logEntry.stepInfo.du_norm << delim
+                << logEntry.stepInfo.performanceAfterStep.merit << delim
+                << logEntry.stepInfo.performanceAfterStep.dynamicsViolationSSE << delim
+                << logEntry.stepInfo.performanceAfterStep.equalityConstraintsSSE << delim
+                << logEntry.stepInfo.totalConstraintViolationAfterStep << delim
+                << toString(logEntry.convergence) << lineEnd;
+        // clang-format on
+        return stream;
+    }
 
-std::string logHeader() {
-  const std::string delim = ", ";
-  const std::string lineEnd = "\n";
-  std::stringstream stream;
-  // clang-format off
-  stream  << "problemNumber" << delim
-          << "time" << delim
-          << "iteration" << delim
-          << "linearQuadraticApproximationTime" << delim
-          << "solveQpTime" << delim
-          << "linesearchTime" << delim
-          << "baselinePerformanceIndex/merit" << delim
-          << "baselinePerformanceIndex/dynamicsViolationSSE" << delim
-          << "baselinePerformanceIndex/equalityConstraintsSSE" << delim
-          << "totalConstraintViolationBaseline" << delim
-          << "stepSize" << delim
-          << "stepType" << delim
-          << "dxNorm" << delim
-          << "duNorm" << delim
-          << "performanceAfterStep/merit" << delim
-          << "performanceAfterStep/dynamicsViolationSSE" << delim
-          << "performanceAfterStep/equalityConstraintsSSE" << delim
-          << "totalConstraintViolationAfterStep" << delim
-          << "convergence" << lineEnd;
-  // clang-format on
-  return stream.str();
-}
-
-}  // namespace sqp
-}  // namespace ocs2
+    std::string logHeader() {
+        const std::string delim = ", ";
+        const std::string lineEnd = "\n";
+        std::stringstream stream;
+        // clang-format off
+        stream << "problemNumber" << delim
+                << "time" << delim
+                << "iteration" << delim
+                << "linearQuadraticApproximationTime" << delim
+                << "solveQpTime" << delim
+                << "linesearchTime" << delim
+                << "baselinePerformanceIndex/merit" << delim
+                << "baselinePerformanceIndex/dynamicsViolationSSE" << delim
+                << "baselinePerformanceIndex/equalityConstraintsSSE" << delim
+                << "totalConstraintViolationBaseline" << delim
+                << "stepSize" << delim
+                << "stepType" << delim
+                << "dxNorm" << delim
+                << "duNorm" << delim
+                << "performanceAfterStep/merit" << delim
+                << "performanceAfterStep/dynamicsViolationSSE" << delim
+                << "performanceAfterStep/equalityConstraintsSSE" << delim
+                << "totalConstraintViolationAfterStep" << delim
+                << "convergence" << lineEnd;
+        // clang-format on
+        return stream.str();
+    }
+} // namespace ocs2::sqp
