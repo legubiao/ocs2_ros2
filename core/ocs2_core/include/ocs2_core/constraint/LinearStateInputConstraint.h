@@ -32,36 +32,34 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/constraint/StateInputConstraint.h>
 
 namespace ocs2 {
+    /**
+     * Linear state-input constraint
+     */
+    class LinearStateInputConstraint final : public StateInputConstraint {
+    public:
+        /**
+         * Constructor
+         *
+         * @param[in] e: Constant term in C * x + D * u + e = 0
+         * @param[in] C: x factor in C * x + D * u + e = 0
+         * @param[in] D: u factor in C * x + D * u + e = 0
+         */
+        LinearStateInputConstraint(vector_t e, matrix_t C, matrix_t D);
 
-/**
- * Linear state-input constraint
- */
-class LinearStateInputConstraint : public StateInputConstraint {
- public:
-  /**
-   * Constructor
-   *
-   * @param[in] e: Constant term in C * x + D * u + e = 0
-   * @param[in] C: x factor in C * x + D * u + e = 0
-   * @param[in] D: u factor in C * x + D * u + e = 0
-   */
-  LinearStateInputConstraint(vector_t e, matrix_t C, matrix_t D);
+        ~LinearStateInputConstraint() override = default;
 
-  ~LinearStateInputConstraint() override = default;
+        [[nodiscard]] LinearStateInputConstraint *clone() const override;
 
-  LinearStateInputConstraint* clone() const override;
+        [[nodiscard]] size_t getNumConstraints(scalar_t time) const override;
 
-  size_t getNumConstraints(scalar_t time) const final;
+        [[nodiscard]] vector_t getValue(scalar_t t, const vector_t &x, const vector_t &u,
+                                        const PreComputation & /* preComputation */) const override;
 
-  vector_t getValue(scalar_t t, const vector_t& x, const vector_t& u, const PreComputation& /* preComputation */) const final;
+        [[nodiscard]] VectorFunctionLinearApproximation getLinearApproximation(scalar_t t, const vector_t &x, const vector_t &u,
+                                                                 const PreComputation &) const override;
 
-  VectorFunctionLinearApproximation getLinearApproximation(scalar_t t, const vector_t& x, const vector_t& u,
-                                                           const PreComputation& /* preComputation */) const final;
-
- public:
-  vector_t e_; /**< State input constraint */
-  matrix_t C_; /**< State input constraint derivative wrt. state */
-  matrix_t D_; /**< State input constraint derivative wrt. input */
-};
-
-}  // namespace ocs2
+        vector_t e_; /**< State input constraint */
+        matrix_t C_; /**< State input constraint derivative wrt. state */
+        matrix_t D_; /**< State input constraint derivative wrt. input */
+    };
+} // namespace ocs2

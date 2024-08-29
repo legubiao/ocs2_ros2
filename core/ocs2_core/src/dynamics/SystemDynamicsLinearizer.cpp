@@ -31,9 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 SystemDynamicsLinearizer::SystemDynamicsLinearizer(std::unique_ptr<ControlledSystemBase> nonlinearSystemPtr,
                                                    bool doubleSidedDerivative /*= true*/, bool isSecondOrderSystem /*= false*/,
                                                    scalar_t eps /*= Eigen::NumTraits<scalar_t>::epsilon()*/)
@@ -43,9 +41,7 @@ SystemDynamicsLinearizer::SystemDynamicsLinearizer(std::unique_ptr<ControlledSys
       isSecondOrderSystem_(isSecondOrderSystem),
       eps_(eps) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 SystemDynamicsLinearizer::SystemDynamicsLinearizer(const SystemDynamicsLinearizer& other)
     : SystemDynamicsBase(other),
       controlledSystemPtr_(other.controlledSystemPtr_->clone()),
@@ -53,24 +49,18 @@ SystemDynamicsLinearizer::SystemDynamicsLinearizer(const SystemDynamicsLinearize
       isSecondOrderSystem_(other.isSecondOrderSystem_),
       eps_(other.eps_) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 SystemDynamicsLinearizer* SystemDynamicsLinearizer::clone() const {
   return new SystemDynamicsLinearizer(*this);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 vector_t SystemDynamicsLinearizer::computeFlowMap(scalar_t time, const vector_t& state, const vector_t& input,
                                                   const PreComputation& preComp) {
   return controlledSystemPtr_->computeFlowMap(time, state, input, preComp);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 VectorFunctionLinearApproximation SystemDynamicsLinearizer::linearApproximation(scalar_t t, const vector_t& x, const vector_t& u,
                                                                                 const PreComputation& preComp) {
   VectorFunctionLinearApproximation linearDynamics;

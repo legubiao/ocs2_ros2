@@ -7,7 +7,7 @@ This folder contains basic examples for the OCS2 library.
 * build
 ```bash
 cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_double_integrator_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --packages-up-to ocs2_double_integrator_ros
 ```
 * run
 ```bash
@@ -21,7 +21,7 @@ ros2 launch ocs2_double_integrator_ros double_integrator.launch.py
 * build
 ```bash
 cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_cartpole_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --packages-up-to ocs2_cartpole_ros
 ```
 * run
 ```bash
@@ -35,7 +35,7 @@ ros2 launch ocs2_cartpole_ros cartpole.launch.py
 * build
 ```bash
 cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_ballbot_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --packages-up-to ocs2_ballbot_ros
 ```
 * run
 ```bash
@@ -48,7 +48,7 @@ ros2 launch ocs2_ballbot_ros ballbot_ddp.launch.py
 * build
 ```bash
 cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_quadrotor_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --packages-up-to ocs2_quadrotor_ros 
 ```
 * run
 ```bash
@@ -61,7 +61,7 @@ ros2 launch ocs2_quadrotor_ros quadrotor.launch.py
 * build
 ```bash
 cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_mobile_manipulator_ros --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --packages-up-to ocs2_mobile_manipulator_ros 
 ```
 * run Mabi-Mobile
 ```bash
@@ -94,7 +94,7 @@ ros2 launch ocs2_mobile_manipulator_ros manipulator_ridgeback_ur5.launch.py
 * build
 ```bash
 cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_legged_robot_ros ocs2_self_collision_visualization --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --packages-up-to ocs2_legged_robot_ros
 ```
 * run
 ```bash

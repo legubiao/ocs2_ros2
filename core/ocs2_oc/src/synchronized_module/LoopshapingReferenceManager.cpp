@@ -30,20 +30,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_oc/synchronized_module/LoopshapingReferenceManager.h"
 
 namespace ocs2 {
+    LoopshapingReferenceManager::LoopshapingReferenceManager(
+        std::shared_ptr<ReferenceManagerInterface> referenceManagerPtr,
+        std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr)
+        : ReferenceManagerDecorator(std::move(referenceManagerPtr)),
+          loopshapingDefinitionPtr_(std::move(loopshapingDefinitionPtr)) {
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-LoopshapingReferenceManager::LoopshapingReferenceManager(std::shared_ptr<ReferenceManagerInterface> referenceManagerPtr,
-                                                         std::shared_ptr<LoopshapingDefinition> loopshapingDefinitionPtr)
-    : ReferenceManagerDecorator(std::move(referenceManagerPtr)), loopshapingDefinitionPtr_(std::move(loopshapingDefinitionPtr)) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void LoopshapingReferenceManager::preSolverRun(scalar_t initTime, scalar_t finalTime, const vector_t& initState) {
-  const vector_t systemState = loopshapingDefinitionPtr_->getSystemState(initState);
-  referenceManagerPtr_->preSolverRun(initTime, finalTime, systemState);
-};
-
-}  // namespace ocs2
+    void LoopshapingReferenceManager::preSolverRun(scalar_t initTime, scalar_t finalTime, const vector_t &initState) {
+        const vector_t systemState = loopshapingDefinitionPtr_->getSystemState(initState);
+        referenceManagerPtr_->preSolverRun(initTime, finalTime, systemState);
+    }
+} // namespace ocs2

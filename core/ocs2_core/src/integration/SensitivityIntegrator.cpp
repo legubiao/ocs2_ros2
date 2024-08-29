@@ -35,9 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 DynamicsDiscretizer selectDynamicsDiscretization(SensitivityIntegratorType integratorType) {
   switch (integratorType) {
     case SensitivityIntegratorType::EULER:
@@ -51,9 +49,7 @@ DynamicsDiscretizer selectDynamicsDiscretization(SensitivityIntegratorType integ
   }
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 DynamicsSensitivityDiscretizer selectDynamicsSensitivityDiscretization(SensitivityIntegratorType integratorType) {
   switch (integratorType) {
     case SensitivityIntegratorType::EULER:
@@ -69,9 +65,7 @@ DynamicsSensitivityDiscretizer selectDynamicsSensitivityDiscretization(Sensitivi
 
 namespace sensitivity_integrator {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::string toString(SensitivityIntegratorType integratorType) {
   static const std::unordered_map<SensitivityIntegratorType, std::string> integratorMap = {
       {SensitivityIntegratorType::EULER, "EULER"}, {SensitivityIntegratorType::RK2, "RK2"}, {SensitivityIntegratorType::RK4, "RK4"}};
@@ -79,9 +73,7 @@ std::string toString(SensitivityIntegratorType integratorType) {
   return integratorMap.at(integratorType);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 SensitivityIntegratorType fromString(const std::string& name) {
   static const std::unordered_map<std::string, SensitivityIntegratorType> integratorMap = {
       {"EULER", SensitivityIntegratorType::EULER}, {"RK2", SensitivityIntegratorType::RK2}, {"RK4", SensitivityIntegratorType::RK4}};

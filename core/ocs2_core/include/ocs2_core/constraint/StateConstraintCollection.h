@@ -35,40 +35,40 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/misc/Collection.h>
 
 namespace ocs2 {
+    /**
+     * Constraint collection class
+     *
+     * This class collects a variable number of constraint functions and provides methods to get the
+     * concatenated constraint vectors and approximations. Each constraint can be accessed through its
+     * string name and can be activated or deactivated.
+     */
+    class StateConstraintCollection : public Collection<StateConstraint> {
+    public:
+        StateConstraintCollection() = default;
 
-/**
- * Constraint collection class
- *
- * This class collects a variable number of constraint functions and provides methods to get the
- * concatenated constraint vectors and approximations. Each constraint can be accessed through its
- * string name and can be activated or deactivated.
- */
-class StateConstraintCollection : public Collection<StateConstraint> {
- public:
-  StateConstraintCollection() = default;
-  ~StateConstraintCollection() override = default;
-  StateConstraintCollection* clone() const override;
+        ~StateConstraintCollection() override = default;
 
-  /** Returns the number of active constraints at a given time. */
-  size_t getNumConstraints(scalar_t time) const;
+        StateConstraintCollection *clone() const override;
 
-  /** Returns the number of active constraints at a given time for each term. If a term is inactive, its size is zero. */
-  size_array_t getTermsSize(scalar_t time) const;
+        /** Returns the number of active constraints at a given time. */
+        size_t getNumConstraints(scalar_t time) const;
 
-  /** Get an array of all constraints. If a term is inactive, the corresponding element is a vector of size zero. */
-  virtual vector_array_t getValue(scalar_t time, const vector_t& state, const PreComputation& preComp) const;
+        /** Returns the number of active constraints at a given time for each term. If a term is inactive, its size is zero. */
+        size_array_t getTermsSize(scalar_t time) const;
 
-  /** Get the constraint linear approximation */
-  virtual VectorFunctionLinearApproximation getLinearApproximation(scalar_t time, const vector_t& state,
-                                                                   const PreComputation& preComp) const;
+        /** Get an array of all constraints. If a term is inactive, the corresponding element is a vector of size zero. */
+        virtual vector_array_t getValue(scalar_t time, const vector_t &state, const PreComputation &preComp) const;
 
-  /** Get the constraint quadratic approximation */
-  virtual VectorFunctionQuadraticApproximation getQuadraticApproximation(scalar_t time, const vector_t& state,
-                                                                         const PreComputation& preComp) const;
+        /** Get the constraint linear approximation */
+        virtual VectorFunctionLinearApproximation getLinearApproximation(scalar_t time, const vector_t &state,
+                                                                         const PreComputation &preComp) const;
 
- protected:
-  /** Copy constructor */
-  StateConstraintCollection(const StateConstraintCollection& other);
-};
+        /** Get the constraint quadratic approximation */
+        virtual VectorFunctionQuadraticApproximation getQuadraticApproximation(scalar_t time, const vector_t &state,
+                                                                               const PreComputation &preComp) const;
 
-}  // namespace ocs2
+    protected:
+        /** Copy constructor */
+        StateConstraintCollection(const StateConstraintCollection &other);
+    };
+} // namespace ocs2

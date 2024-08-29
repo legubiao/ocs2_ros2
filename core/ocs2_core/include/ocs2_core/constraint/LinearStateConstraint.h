@@ -32,34 +32,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/constraint/StateConstraint.h>
 
 namespace ocs2 {
+    /**
+     * Linear state-only constraint
+     */
+    class LinearStateConstraint final : public StateConstraint {
+    public:
+        /**
+         * Constructor
+         *
+         * @param [in] h: Constant term in F * x + h = 0
+         * @param [in] F: x factor in F * x + h = 0
+         */
+        LinearStateConstraint(vector_t h, matrix_t F);
 
-/**
- * Linear state-only constraint
- */
-class LinearStateConstraint : public StateConstraint {
- public:
-  /**
-   * Constructor
-   *
-   * @param [in] h: Constant term in F * x + h = 0
-   * @param [in] F: x factor in F * x + h = 0
-   */
-  LinearStateConstraint(vector_t h, matrix_t F);
+        ~LinearStateConstraint() override = default;
 
-  ~LinearStateConstraint() override = default;
+        [[nodiscard]] LinearStateConstraint *clone() const override;
 
-  LinearStateConstraint* clone() const override;
+        [[nodiscard]] size_t getNumConstraints(scalar_t time) const override;
 
-  size_t getNumConstraints(scalar_t time) const final;
+        [[nodiscard]] vector_t getValue(scalar_t t, const vector_t &x,
+                                        const PreComputation & /* preComputation */) const override;
 
-  vector_t getValue(scalar_t t, const vector_t& x, const PreComputation& /* preComputation */) const final;
+        [[nodiscard]] VectorFunctionLinearApproximation getLinearApproximation(scalar_t t, const vector_t &x,
+                                                                               const PreComputation &) const override;
 
-  VectorFunctionLinearApproximation getLinearApproximation(scalar_t t, const vector_t& x,
-                                                           const PreComputation& /* preComputation */) const final;
-
- public:
-  vector_t h_; /**< State only constraint */
-  matrix_t F_; /**< State only constraint derivative wrt. state */
-};
-
-}  // namespace ocs2
+        vector_t h_; /**< State only constraint */
+        matrix_t F_; /**< State only constraint derivative wrt. state */
+    };
+} // namespace ocs2

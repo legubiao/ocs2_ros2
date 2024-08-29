@@ -30,106 +30,95 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/constraint/StateConstraintCollection.h>
 
 namespace ocs2 {
+    StateConstraintCollection::StateConstraintCollection(const StateConstraintCollection &other) = default;
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-StateConstraintCollection::StateConstraintCollection(const StateConstraintCollection& other) : Collection<StateConstraint>(other) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-StateConstraintCollection* StateConstraintCollection::clone() const {
-  return new StateConstraintCollection(*this);
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-size_t StateConstraintCollection::getNumConstraints(scalar_t time) const {
-  size_t numConstraints = 0;
-  for (const auto& constraintTerm : this->terms_) {
-    if (constraintTerm->isActive(time)) {
-      numConstraints += constraintTerm->getNumConstraints(time);
+    StateConstraintCollection *StateConstraintCollection::clone() const {
+        return new StateConstraintCollection(*this);
     }
-  }
-  return numConstraints;
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-size_array_t StateConstraintCollection::getTermsSize(scalar_t time) const {
-  size_array_t termsSize(this->terms_.size(), 0);
-  for (size_t i = 0; i < this->terms_.size(); ++i) {
-    if (this->terms_[i]->isActive(time)) {
-      termsSize[i] = this->terms_[i]->getNumConstraints(time);
+
+    size_t StateConstraintCollection::getNumConstraints(scalar_t time) const {
+        size_t numConstraints = 0;
+        for (const auto &constraintTerm: this->terms_) {
+            if (constraintTerm->isActive(time)) {
+                numConstraints += constraintTerm->getNumConstraints(time);
+            }
+        }
+        return numConstraints;
     }
-  }
-  return termsSize;
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-vector_array_t StateConstraintCollection::getValue(scalar_t time, const vector_t& state, const PreComputation& preComp) const {
-  vector_array_t constraintValues(this->terms_.size());
-  for (size_t i = 0; i < this->terms_.size(); ++i) {
-    if (this->terms_[i]->isActive(time)) {
-      constraintValues[i] = this->terms_[i]->getValue(time, state, preComp);
+
+    size_array_t StateConstraintCollection::getTermsSize(scalar_t time) const {
+        size_array_t termsSize(this->terms_.size(), 0);
+        for (size_t i = 0; i < this->terms_.size(); ++i) {
+            if (this->terms_[i]->isActive(time)) {
+                termsSize[i] = this->terms_[i]->getNumConstraints(time);
+            }
+        }
+        return termsSize;
     }
-  }  // end of i loop
-  return constraintValues;
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-VectorFunctionLinearApproximation StateConstraintCollection::getLinearApproximation(scalar_t time, const vector_t& state,
-                                                                                    const PreComputation& preComp) const {
-  VectorFunctionLinearApproximation linearApproximation(getNumConstraints(time), state.rows());
 
-  // append linearApproximation of each constraintTerm
-  size_t i = 0;
-  for (const auto& constraintTerm : this->terms_) {
-    if (constraintTerm->isActive(time)) {
-      const auto constraintTermApproximation = constraintTerm->getLinearApproximation(time, state, preComp);
-      const size_t nc = constraintTermApproximation.f.rows();
-      linearApproximation.f.segment(i, nc) = constraintTermApproximation.f;
-      linearApproximation.dfdx.middleRows(i, nc) = constraintTermApproximation.dfdx;
-      i += nc;
+    vector_array_t StateConstraintCollection::getValue(scalar_t time, const vector_t &state,
+                                                       const PreComputation &preComp) const {
+        vector_array_t constraintValues(this->terms_.size());
+        for (size_t i = 0; i < this->terms_.size(); ++i) {
+            if (this->terms_[i]->isActive(time)) {
+                constraintValues[i] = this->terms_[i]->getValue(time, state, preComp);
+            }
+        } // end of i loop
+        return constraintValues;
     }
-  }
 
-  return linearApproximation;
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-VectorFunctionQuadraticApproximation StateConstraintCollection::getQuadraticApproximation(scalar_t time, const vector_t& state,
-                                                                                          const PreComputation& preComp) const {
-  const auto numConstraints = getNumConstraints(time);
+    VectorFunctionLinearApproximation StateConstraintCollection::getLinearApproximation(
+        scalar_t time, const vector_t &state,
+        const PreComputation &preComp) const {
+        VectorFunctionLinearApproximation linearApproximation(static_cast<int>(getNumConstraints(time)),
+                                                              static_cast<int>(state.rows()));
 
-  VectorFunctionQuadraticApproximation quadraticApproximation;
-  quadraticApproximation.f.resize(numConstraints);
-  quadraticApproximation.dfdx.resize(numConstraints, state.rows());
-  quadraticApproximation.dfdxx.reserve(numConstraints);  // Use reserve instead of resize to avoid unnecessary allocations.
+        // append linearApproximation of each constraintTerm
+        size_t i = 0;
+        for (const auto &constraintTerm: this->terms_) {
+            if (constraintTerm->isActive(time)) {
+                const auto constraintTermApproximation = constraintTerm->getLinearApproximation(time, state, preComp);
+                const size_t nc = constraintTermApproximation.f.rows();
+                linearApproximation.f.segment(static_cast<long>(i), nc) = constraintTermApproximation.f;
+                linearApproximation.dfdx.middleRows(static_cast<long>(i), nc) = constraintTermApproximation.dfdx;
+                i += nc;
+            }
+        }
 
-  // append quadraticApproximation of each constraintTerm
-  size_t i = 0;
-  for (const auto& constraintTerm : this->terms_) {
-    if (constraintTerm->isActive(time)) {
-      auto constraintTermApproximation = constraintTerm->getQuadraticApproximation(time, state, preComp);
-      const size_t nc = constraintTermApproximation.f.rows();
-      quadraticApproximation.f.segment(i, nc) = constraintTermApproximation.f;
-      quadraticApproximation.dfdx.middleRows(i, nc) = constraintTermApproximation.dfdx;
-      appendVectorToVectorByMoving(quadraticApproximation.dfdxx, std::move(constraintTermApproximation.dfdxx));
-      i += nc;
+        return linearApproximation;
     }
-  }
 
-  return quadraticApproximation;
-}
 
-}  // namespace ocs2
+    VectorFunctionQuadraticApproximation StateConstraintCollection::getQuadraticApproximation(
+        scalar_t time, const vector_t &state,
+        const PreComputation &preComp) const {
+        const auto numConstraints = getNumConstraints(time);
+
+        VectorFunctionQuadraticApproximation quadraticApproximation;
+        quadraticApproximation.f.resize(static_cast<long>(numConstraints));
+        quadraticApproximation.dfdx.resize(static_cast<long>(numConstraints), state.rows());
+        quadraticApproximation.dfdxx.reserve(numConstraints);
+        // Use reserve instead of resize to avoid unnecessary allocations.
+
+        // append quadraticApproximation of each constraintTerm
+        long i = 0;
+        for (const auto &constraintTerm: this->terms_) {
+            if (constraintTerm->isActive(time)) {
+                auto constraintTermApproximation = constraintTerm->getQuadraticApproximation(time, state, preComp);
+                const size_t nc = constraintTermApproximation.f.rows();
+                quadraticApproximation.f.segment(i, nc) = constraintTermApproximation.f;
+                quadraticApproximation.dfdx.middleRows(i, nc) = constraintTermApproximation.dfdx;
+                appendVectorToVectorByMoving(quadraticApproximation.dfdxx,
+                                             std::move(constraintTermApproximation.dfdxx));
+                i += static_cast<long>(nc);
+            }
+        }
+
+        return quadraticApproximation;
+    }
+} // namespace ocs2

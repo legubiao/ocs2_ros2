@@ -36,18 +36,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2 {
 namespace LoopshapingSoftConstraint {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::unique_ptr<StateCostCollection> create(const StateCostCollection& systemSoftConstraint,
                                             std::shared_ptr<LoopshapingDefinition> loopshapingDefinition) {
   // State-only soft constraint wrapper is identical to LoopshapingStateCost wrapper.
   return std::make_unique<LoopshapingStateCost>(systemSoftConstraint, std::move(loopshapingDefinition));
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::unique_ptr<StateInputCostCollection> create(const StateInputCostCollection& systemSoftConstraint,
                                                  std::shared_ptr<LoopshapingDefinition> loopshapingDefinition) {
   switch (loopshapingDefinition->getType()) {

@@ -30,108 +30,87 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/control/StateBasedLinearController.h>
 
 namespace ocs2 {
+    void StateBasedLinearController::setController(ControllerBase *ctrlPtr) {
+        if (ctrlPtr == nullptr) {
+            throw std::runtime_error("The controller pointer is null!");
+        }
+        ctrlPtr_ = ctrlPtr;
+        ctrlEventTimes_ = ctrlPtr->controllerEventTimes();
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void StateBasedLinearController::setController(ControllerBase* ctrlPtr) {
-  if (ctrlPtr == nullptr) {
-    throw std::runtime_error("The controller pointer is null!");
-  }
-  ctrlPtr_ = ctrlPtr;
-  ctrlEventTimes_ = ctrlPtr->controllerEventTimes();
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-vector_t StateBasedLinearController::computeTrajectorySpreadingInput(scalar_t t, const vector_t& x, const scalar_array_t& ctrlEventTimes,
-                                                                     ControllerBase* ctrlPtr) {
-  size_t currentMode = static_cast<size_t>(x.tail(1).value());
-  size_t numEvents = ctrlEventTimes.size();
+    vector_t StateBasedLinearController::computeTrajectorySpreadingInput(
+        const scalar_t t, const vector_t &x, const scalar_array_t &ctrlEventTimes,
+        ControllerBase *ctrlPtr) {
+        const size_t currentMode = static_cast<size_t>(x.tail(1).value());
+        const size_t numEvents = ctrlEventTimes.size();
 
-  if (numEvents == 0)  // Simple case in which the controller does not contain any events
-  {
-    return ctrlPtr->computeInput(t, x);
-  }
+        if (numEvents == 0) // Simple case in which the controller does not contain any events
+        {
+            return ctrlPtr->computeInput(t, x);
+        }
 
-  scalar_t tauMinus = (numEvents > currentMode) ? ctrlEventTimes[currentMode] : ctrlEventTimes.back();
-  scalar_t tau = (numEvents > currentMode + 1) ? ctrlEventTimes[currentMode + 1] : ctrlEventTimes.back();
-  scalar_t tauPlus = (numEvents > currentMode + 2) ? ctrlEventTimes[currentMode + 2] : ctrlEventTimes.back();
+        const scalar_t tauMinus = (numEvents > currentMode) ? ctrlEventTimes[currentMode] : ctrlEventTimes.back();
+        const scalar_t tau = (numEvents > currentMode + 1) ? ctrlEventTimes[currentMode + 1] : ctrlEventTimes.back();
 
-  bool pastAllEvents = (currentMode >= numEvents - 1) && (t > tauMinus);
-  const scalar_t eps = numeric_traits::weakEpsilon<scalar_t>();
+        const bool pastAllEvents = (currentMode >= numEvents - 1) && (t > tauMinus);
+        constexpr auto eps = numeric_traits::weakEpsilon<scalar_t>();
 
-  if (pastAllEvents) {
-    return ctrlPtr->computeInput(t, x);
-    // return normal input signal
-  } else if (t < tauMinus) {
-    // if event happened before the event time for which the controller was designed
-    return ctrlPtr->computeInput(tauMinus + 2.0 * eps, x);
-    // request input 1 epsilon after the designed event time
-  } else if (t > tau) {
-    // if event has not happened yet at the event time for which the controller was designed
-    return ctrlPtr->computeInput(tau - eps, x);
-    // request input 1 epsilon before the designed event time
-  }
-  // normal case: t > tauMinus && t < tau
-  return ctrlPtr->computeInput(t, x);
-}
+        if (pastAllEvents) {
+            return ctrlPtr->computeInput(t, x);
+            // return normal input signal
+        }
+        if (t < tauMinus) {
+            // if event happened before the event time for which the controller was designed
+            return ctrlPtr->computeInput(tauMinus + 2.0 * eps, x);
+            // request input 1 epsilon after the designed event time
+        }
+        if (t > tau) {
+            // if event has not happened yet at the event time for which the controller was designed
+            return ctrlPtr->computeInput(tau - eps, x);
+            // request input 1 epsilon before the designed event time
+        }
+        // normal case: t > tauMinus && t < tau
+        return ctrlPtr->computeInput(t, x);
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-vector_t StateBasedLinearController::computeInput(scalar_t t, const vector_t& x) {
-  return computeTrajectorySpreadingInput(t, x, ctrlEventTimes_, ctrlPtr_);
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void StateBasedLinearController::concatenate(const ControllerBase* nextController, int index, int length) {
-  ctrlPtr_->concatenate(nextController, index, length);
-}
+    vector_t StateBasedLinearController::computeInput(scalar_t t, const vector_t &x) {
+        return computeTrajectorySpreadingInput(t, x, ctrlEventTimes_, ctrlPtr_);
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-int StateBasedLinearController::size() const {
-  return ctrlPtr_->size();
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-ControllerType StateBasedLinearController::getType() const {
-  return ctrlPtr_->getType();
-}
+    void StateBasedLinearController::concatenate(const ControllerBase *nextController, int index, int length) {
+        ctrlPtr_->concatenate(nextController, index, length);
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void StateBasedLinearController::clear() {
-  ctrlPtr_->clear();
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-bool StateBasedLinearController::empty() const {
-  return ctrlPtr_->empty();
-}
+    int StateBasedLinearController::size() const {
+        return ctrlPtr_->size();
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void StateBasedLinearController::display() const {
-  ctrlPtr_->display();
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-StateBasedLinearController* StateBasedLinearController::clone() const {
-  return new StateBasedLinearController(*this);
-}
+    ControllerType StateBasedLinearController::getType() const {
+        return ctrlPtr_->getType();
+    }
 
-}  // namespace ocs2
+
+    void StateBasedLinearController::clear() {
+        ctrlPtr_->clear();
+    }
+
+
+    bool StateBasedLinearController::empty() const {
+        return ctrlPtr_->empty();
+    }
+
+
+    void StateBasedLinearController::display() const {
+        ctrlPtr_->display();
+    }
+
+
+    StateBasedLinearController *StateBasedLinearController::clone() const {
+        return new StateBasedLinearController(*this);
+    }
+} // namespace ocs2

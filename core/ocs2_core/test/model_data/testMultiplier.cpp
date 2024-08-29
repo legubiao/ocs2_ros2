@@ -70,7 +70,7 @@ inline MultiplierCollection interpolateNew(const LinearInterpolation::index_alph
     areSameSize = areSameSize && (lhs_stateInputIneq.size() == rhs_stateInputIneq.size());
 
     if (areSameSize) {
-      const auto f = [alpha](const vector_t& lhs, const vector_t& rhs) -> vector_t { return alpha * lhs + (scalar_t(1.0) - alpha) * rhs; };
+      const auto f = [alpha](const vector_t& lhs, const vector_t& rhs) -> vector_t { return alpha * lhs + (static_cast<scalar_t>(1.0) - alpha) * rhs; };
       MultiplierCollection out;
       out.stateEq = toMultipliers(getSizes(dataArray[index].stateEq), f(lhs_stateEq, rhs_stateEq));
       out.stateIneq = toMultipliers(getSizes(dataArray[index].stateIneq), f(lhs_stateIneq, rhs_stateIneq));

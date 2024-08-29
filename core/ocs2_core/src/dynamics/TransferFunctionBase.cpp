@@ -31,9 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 inline void padeApproximation(scalar_t timeDelay, vector_t& numCoefficients, vector_t& denCoefficients, size_t numZeros, size_t numPoles) {
   numCoefficients.resize(numZeros + 1);
   denCoefficients.resize(numPoles + 1);
@@ -59,9 +57,7 @@ inline void padeApproximation(scalar_t timeDelay, vector_t& numCoefficients, vec
   std::runtime_error("padeApproximation not implemented for nZeros=" + std::to_string(numZeros) + " nPoles= " + std::to_string(numPoles));
 };
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 inline vector_t multiplyPolynomials(const vector_t& p_lhs, const vector_t& p_rhs) {
   vector_t p_result(p_lhs.size() + p_rhs.size() - 1);
   p_result.setZero();
@@ -73,18 +69,14 @@ inline vector_t multiplyPolynomials(const vector_t& p_lhs, const vector_t& p_rhs
   return p_result;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 TransferFunctionBase::TransferFunctionBase(vector_t numCoefficients, vector_t denCoefficients, scalar_t timedelay, bool balance)
     : numCoefficients_(std::move(numCoefficients)),
       denCoefficients_(std::move(denCoefficients)),
       timeDelay_(timedelay),
       balance_(balance){};
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void TransferFunctionBase::absorbDelay(size_t numZeros, size_t numPoles) {
   if (timeDelay_ > delayTol_) {
     // Approximate delay
@@ -98,18 +90,14 @@ void TransferFunctionBase::absorbDelay(size_t numZeros, size_t numPoles) {
   delayAbsorbed_ = true;
 };
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void TransferFunctionBase::normalize() {
   scalar_t scaling = denCoefficients_(0);
   numCoefficients_ /= scaling;
   denCoefficients_ /= scaling;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void TransferFunctionBase::getStateSpace(matrix_t& A, matrix_t& B, matrix_t& C, matrix_t& D) {
   if (numCoefficients_.size() > denCoefficients_.size()) {
     throw std::runtime_error("Transfer function must be proper to convert to a state space model");

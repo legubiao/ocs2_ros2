@@ -35,9 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 vector_array_t LoopshapingStateInputConstraint::getValue(scalar_t t, const vector_t& x, const vector_t& u,
                                                          const PreComputation& preComp) const {
   if (this->empty()) {

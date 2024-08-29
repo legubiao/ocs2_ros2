@@ -88,7 +88,7 @@ void MRT_ROS_Dummy_Loop::synchronizedDummyLoop(
   // Determine the ratio between MPC updates and simulation steps.
   const auto mpcUpdateRatio =
       std::max(static_cast<size_t>(mrtDesiredFrequency_ / mpcDesiredFrequency_),
-               size_t(1));
+               static_cast<size_t>(1));
 
   // Loop variables
   size_t loopCounter = 0;

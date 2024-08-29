@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_anymal_loopshaping_mpc)
 
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 ## Find ament_cmake macros and libraries
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_anymal_mpc REQUIRED)
@@ -38,20 +41,6 @@ target_link_libraries(${PROJECT_NAME}_dummy_mrt_node ${PROJECT_NAME})
 add_executable(${PROJECT_NAME}_perceptive_demo src/PerceptiveMpcDemo.cpp)
 ament_target_dependencies(${PROJECT_NAME}_perceptive_demo ${dependencies})
 target_link_libraries(${PROJECT_NAME}_perceptive_demo ${PROJECT_NAME})
-
-#########################
-###   CLANG TOOLING   ###
-#########################
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling")
-    add_clang_tooling(
-            TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_mpc_node ${PROJECT_NAME}_dummy_mrt_node
-            SOURCE_DIRS src include
-            CT_HEADER_DIRS include
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
 
 #############
 ## Install ##

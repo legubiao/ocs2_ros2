@@ -38,37 +38,37 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Helper factory functions
  */
 namespace ocs2 {
+    /**
+     * Factory function for state augmented Lagrangian.
+     * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
+     * @param [in] penaltyPtrArray: An array of pointers to the penalty function on the constraint.
+     */
+    std::unique_ptr<StateAugmentedLagrangian> create(std::unique_ptr<StateConstraint> constraintPtr,
+                                                     std::vector<std::unique_ptr<augmented::AugmentedPenaltyBase> >
+                                                     penaltyPtrArray);
 
-/**
- * Factory function for state augmented Lagrangian.
- * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
- * @param [in] penaltyPtrArray: An array of pointers to the penalty function on the constraint.
- */
-std::unique_ptr<StateAugmentedLagrangian> create(std::unique_ptr<StateConstraint> constraintPtr,
-                                                 std::vector<std::unique_ptr<augmented::AugmentedPenaltyBase>> penaltyPtrArray);
+    /**
+     * Factory function for state augmented Lagrangian.
+     * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
+     * @param [in] penaltyPtr: A pointer to the penalty function on the constraint.
+     */
+    std::unique_ptr<StateAugmentedLagrangian> create(std::unique_ptr<StateConstraint> constraintPtr,
+                                                     std::unique_ptr<augmented::AugmentedPenaltyBase> penaltyPtr);
 
-/**
- * Factory function for state augmented Lagrangian.
- * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
- * @param [in] penaltyPtr: A pointer to the penalty function on the constraint.
- */
-std::unique_ptr<StateAugmentedLagrangian> create(std::unique_ptr<StateConstraint> constraintPtr,
-                                                 std::unique_ptr<augmented::AugmentedPenaltyBase> penaltyPtr);
+    /**
+     * Factory function for state-input augmented Lagrangian.
+     * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
+     * @param [in] penaltyPtrArray: An array of pointers to the penalty function on the constraint.
+     */
+    std::unique_ptr<StateInputAugmentedLagrangian> create(std::unique_ptr<StateInputConstraint> constraintPtr,
+                                                          std::vector<std::unique_ptr<augmented::AugmentedPenaltyBase> >
+                                                          penaltyPtrArray);
 
-/**
- * Factory function for state-input augmented Lagrangian.
- * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
- * @param [in] penaltyPtrArray: An array of pointers to the penalty function on the constraint.
- */
-std::unique_ptr<StateInputAugmentedLagrangian> create(std::unique_ptr<StateInputConstraint> constraintPtr,
-                                                      std::vector<std::unique_ptr<augmented::AugmentedPenaltyBase>> penaltyPtrArray);
-
-/**
- * Factory function for state-input augmented Lagrangian.
- * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
- * @param [in] penaltyPtr: A pointer to the penalty function on the constraint.
- */
-std::unique_ptr<StateInputAugmentedLagrangian> create(std::unique_ptr<StateInputConstraint> constraintPtr,
-                                                      std::unique_ptr<augmented::AugmentedPenaltyBase> penaltyPtr);
-
-}  // namespace ocs2
+    /**
+     * Factory function for state-input augmented Lagrangian.
+     * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
+     * @param [in] penaltyPtr: A pointer to the penalty function on the constraint.
+     */
+    std::unique_ptr<StateInputAugmentedLagrangian> create(std::unique_ptr<StateInputConstraint> constraintPtr,
+                                                          std::unique_ptr<augmented::AugmentedPenaltyBase> penaltyPtr);
+} // namespace ocs2

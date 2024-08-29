@@ -31,9 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void StateInputCostGaussNewtonAd::initialize(size_t stateDim, size_t inputDim, size_t parameterDim, const std::string& modelName,
                                              const std::string& modelFolder, bool recompileLibraries, bool verbose) {
   auto costVectorAd = [=](const ad_vector_t& x, const ad_vector_t& p, ad_vector_t& y) {
@@ -52,15 +50,11 @@ void StateInputCostGaussNewtonAd::initialize(size_t stateDim, size_t inputDim, s
   }
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 StateInputCostGaussNewtonAd::StateInputCostGaussNewtonAd(const StateInputCostGaussNewtonAd& rhs)
     : StateInputCost(rhs), adInterfacePtr_(new ocs2::CppAdInterface(*rhs.adInterfacePtr_)) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 scalar_t StateInputCostGaussNewtonAd::getValue(scalar_t time, const vector_t& state, const vector_t& input,
                                                const TargetTrajectories& targetTrajectories, const PreComputation& preComputation) const {
   vector_t timeStateInput(1 + state.rows() + input.rows());

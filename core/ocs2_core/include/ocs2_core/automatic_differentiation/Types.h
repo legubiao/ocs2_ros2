@@ -38,15 +38,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/Types.h>
 
 namespace ocs2 {
+    /** Scalar type. */
+    using ad_base_t = CppAD::cg::CG<scalar_t>;
 
-/** Scalar type. */
-using ad_base_t = CppAD::cg::CG<scalar_t>;
+    using ad_scalar_t = CppAD::AD<ad_base_t>;
 
-using ad_scalar_t = CppAD::AD<ad_base_t>;
+    /** Dynamic-size vector type. */
+    using ad_vector_t = Eigen::Matrix<ad_scalar_t, Eigen::Dynamic, 1>;
 
-/** Dynamic-size vector type. */
-using ad_vector_t = Eigen::Matrix<ad_scalar_t, Eigen::Dynamic, 1>;
-
-using ad_matrix_t = Eigen::Matrix<ad_scalar_t, Eigen::Dynamic, Eigen::Dynamic>;
-
-}  // namespace ocs2
+    using ad_matrix_t = Eigen::Matrix<ad_scalar_t, Eigen::Dynamic, Eigen::Dynamic>;
+} // namespace ocs2

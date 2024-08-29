@@ -31,20 +31,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/loopshaping/dynamics/LoopshapingFilterDynamics.h>
 
 namespace ocs2 {
+    void LoopshapingFilterDynamics::integrate(scalar_t dt, const vector_t &input) {
+        // Set up ODE with ZOH input
+        OdeFunc ode_fun(std::bind(&LoopshapingFilterDynamics::computeFlowMap, this, std::placeholders::_1,
+                                  std::placeholders::_2, input));
 
-void LoopshapingFilterDynamics::integrate(scalar_t dt, const vector_t& input) {
-  // Set up ODE with ZOH input
-  OdeFunc ode_fun(std::bind(&LoopshapingFilterDynamics::computeFlowMap, this, std::placeholders::_1, std::placeholders::_2, input));
+        vector_array_t stateTrajectory;
+        Observer observer(&stateTrajectory);
+        integrator_->integrateAdaptive(ode_fun, observer, filterState_, 0.0, dt, dt);
 
-  vector_array_t stateTrajectory;
-  Observer observer(&stateTrajectory);
-  integrator_->integrateAdaptive(ode_fun, observer, filterState_, 0.0, dt, dt);
+        filterState_ = stateTrajectory.back();
+    }
 
-  filterState_ = stateTrajectory.back();
-}
-
-vector_t LoopshapingFilterDynamics::computeFlowMap(scalar_t time, const vector_t& filterState, const vector_t& input) const {
-  return loopshapingDefinition_->filterFlowMap(filterState, input);
-}
-
-}  // namespace ocs2
+    vector_t LoopshapingFilterDynamics::computeFlowMap(scalar_t time, const vector_t &filterState,
+                                                       const vector_t &input) const {
+        return loopshapingDefinition_->filterFlowMap(filterState, input);
+    }
+} // namespace ocs2

@@ -31,43 +31,42 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/loopshaping/cost/LoopshapingStateCost.h>
 
 namespace ocs2 {
+    scalar_t LoopshapingStateCost::getValue(scalar_t t, const vector_t &x, const TargetTrajectories &targetTrajectories,
+                                            const PreComputation &preComp) const {
+        if (this->empty()) {
+            return 0.0;
+        }
 
-scalar_t LoopshapingStateCost::getValue(scalar_t t, const vector_t& x, const TargetTrajectories& targetTrajectories,
-                                        const PreComputation& preComp) const {
-  if (this->empty()) {
-    return 0.0;
-  }
+        const auto &preCompLS = cast<LoopshapingPreComputation>(preComp);
+        const auto &x_system = preCompLS.getSystemState();
 
-  const LoopshapingPreComputation& preCompLS = cast<LoopshapingPreComputation>(preComp);
-  const auto& x_system = preCompLS.getSystemState();
+        return StateCostCollection::getValue(t, x_system, targetTrajectories, preCompLS.getSystemPreComputation());
+    }
 
-  return StateCostCollection::getValue(t, x_system, targetTrajectories, preCompLS.getSystemPreComputation());
-}
+    ScalarFunctionQuadraticApproximation LoopshapingStateCost::getQuadraticApproximation(scalar_t t, const vector_t &x,
+        const TargetTrajectories &targetTrajectories,
+        const PreComputation &preComp) const {
+        if (this->empty()) {
+            return ScalarFunctionQuadraticApproximation::Zero(x.rows());
+        }
 
-ScalarFunctionQuadraticApproximation LoopshapingStateCost::getQuadraticApproximation(scalar_t t, const vector_t& x,
-                                                                                     const TargetTrajectories& targetTrajectories,
-                                                                                     const PreComputation& preComp) const {
-  if (this->empty()) {
-    return ScalarFunctionQuadraticApproximation::Zero(x.rows());
-  }
+        const auto &preCompLS = cast<LoopshapingPreComputation>(preComp);
+        const auto &x_system = preCompLS.getSystemState();
+        const auto stateDim = x.rows();
+        const auto sysStateDim = x_system.rows();
+        const auto filtStateDim = x.rows() - sysStateDim;
 
-  const LoopshapingPreComputation& preCompLS = cast<LoopshapingPreComputation>(preComp);
-  const auto& x_system = preCompLS.getSystemState();
-  const auto stateDim = x.rows();
-  const auto sysStateDim = x_system.rows();
-  const auto filtStateDim = x.rows() - sysStateDim;
+        const auto Phi_system =
+                StateCostCollection::getQuadraticApproximation(t, x_system, targetTrajectories,
+                                                               preCompLS.getSystemPreComputation());
 
-  const auto Phi_system =
-      StateCostCollection::getQuadraticApproximation(t, x_system, targetTrajectories, preCompLS.getSystemPreComputation());
-
-  ScalarFunctionQuadraticApproximation Phi;
-  Phi.f = Phi_system.f;
-  Phi.dfdx.resize(stateDim);
-  Phi.dfdx.head(sysStateDim) = Phi_system.dfdx;
-  Phi.dfdx.tail(filtStateDim).setZero();
-  Phi.dfdxx.setZero(stateDim, stateDim);
-  Phi.dfdxx.topLeftCorner(sysStateDim, sysStateDim) = Phi_system.dfdxx;
-  return Phi;
-}
-
-}  // namespace ocs2
+        ScalarFunctionQuadraticApproximation Phi;
+        Phi.f = Phi_system.f;
+        Phi.dfdx.resize(stateDim);
+        Phi.dfdx.head(sysStateDim) = Phi_system.dfdx;
+        Phi.dfdx.tail(filtStateDim).setZero();
+        Phi.dfdxx.setZero(stateDim, stateDim);
+        Phi.dfdxx.topLeftCorner(sysStateDim, sysStateDim) = Phi_system.dfdxx;
+        return Phi;
+    }
+} // namespace ocs2

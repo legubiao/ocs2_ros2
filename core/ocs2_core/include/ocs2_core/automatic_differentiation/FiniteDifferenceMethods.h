@@ -33,15 +33,19 @@
 #include <ocs2_core/dynamics/ControlledSystemBase.h>
 
 namespace ocs2 {
+    matrix_t finiteDifferenceDerivative(std::function<vector_t(const vector_t &)> f, const vector_t &x0,
+                                        scalar_t eps = Eigen::NumTraits<scalar_t>::epsilon(),
+                                        bool doubleSidedDerivative = true);
 
-matrix_t finiteDifferenceDerivative(std::function<vector_t(const vector_t&)> f, const vector_t& x0,
-                                    scalar_t eps = Eigen::NumTraits<scalar_t>::epsilon(), bool doubleSidedDerivative = true);
+    matrix_t finiteDifferenceDerivativeState(ControlledSystemBase &system, scalar_t t, const vector_t &x,
+                                             const vector_t &u,
+                                             scalar_t eps = Eigen::NumTraits<scalar_t>::epsilon(),
+                                             bool doubleSidedDerivative = true,
+                                             bool isSecondOrderSystem = false);
 
-matrix_t finiteDifferenceDerivativeState(ControlledSystemBase& system, scalar_t t, const vector_t& x, const vector_t& u,
-                                         scalar_t eps = Eigen::NumTraits<scalar_t>::epsilon(), bool doubleSidedDerivative = true,
-                                         bool isSecondOrderSystem = false);
-
-matrix_t finiteDifferenceDerivativeInput(ControlledSystemBase& system, scalar_t t, const vector_t& x, const vector_t& u,
-                                         scalar_t eps = Eigen::NumTraits<scalar_t>::epsilon(), bool doubleSidedDerivative = true,
-                                         bool isSecondOrderSystem = false);
-}  // namespace ocs2
+    matrix_t finiteDifferenceDerivativeInput(ControlledSystemBase &system, scalar_t t, const vector_t &x,
+                                             const vector_t &u,
+                                             scalar_t eps = Eigen::NumTraits<scalar_t>::epsilon(),
+                                             bool doubleSidedDerivative = true,
+                                             bool isSecondOrderSystem = false);
+} // namespace ocs2

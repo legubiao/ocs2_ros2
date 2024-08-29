@@ -31,9 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void StateInputCostCppAd::initialize(size_t stateDim, size_t inputDim, size_t parameterDim, const std::string& modelName,
                                      const std::string& modelFolder, bool recompileLibraries, bool verbose) {
   auto costAd = [=](const ad_vector_t& x, const ad_vector_t& p, ad_vector_t& y) {
@@ -53,9 +51,7 @@ void StateInputCostCppAd::initialize(size_t stateDim, size_t inputDim, size_t pa
   }
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 StateInputCostCppAd::StateInputCostCppAd(const StateInputCostCppAd& rhs)
     : StateInputCost(rhs), adInterfacePtr_(new ocs2::CppAdInterface(*rhs.adInterfacePtr_)) {}
 

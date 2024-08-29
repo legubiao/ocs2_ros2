@@ -30,71 +30,64 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_oc/rollout/RootFinder.h>
 
 namespace ocs2 {
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void RootFinder::setInitBracket(pair_t timeInt, pair_t guardInt) {
-  if (guardInt.first * guardInt.second > 0) {
-    throw std::runtime_error("Bracket function values should have opposite signs!");
-  }
-  timeInt_ = timeInt;
-  guardInt_ = guardInt;
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void RootFinder::updateBracket(const scalar_t& query, const scalar_t& fQuery) {
-  if (fQuery * guardInt_.first < 0) {
-    guardInt_.second = guardInt_.first;
-    timeInt_.second = timeInt_.first;
-
-    guardInt_.first = fQuery;
-    timeInt_.first = query;
-
-  } else {
-    scalar_t gamma;
-    switch (rootFindingAlgorithm_) {
-      case (RootFinderType::ANDERSON_BJORCK): {
-        gamma = 1 - (fQuery / guardInt_.first);
-        if (gamma < 0) {
-          gamma = 0.5;
+    void RootFinder::setInitBracket(pair_t timeInt, pair_t guardInt) {
+        if (guardInt.first * guardInt.second > 0) {
+            throw std::runtime_error("Bracket function values should have opposite signs!");
         }
-        break;
-      }
-      case (RootFinderType::PEGASUS): {
-        gamma = guardInt_.first / (guardInt_.first + fQuery);
-        break;
-      }
-      case (RootFinderType::ILLINOIS): {
-        gamma = 0.5;
-        break;
-      }
-      case (RootFinderType::REGULA_FALSI): {
-        gamma = 1.0;
-        break;
-      }
-      default: {
-        throw std::runtime_error("Root finding algorithm of type " +
-                                 std::to_string(static_cast<std::underlying_type<RootFinderType>::type>(rootFindingAlgorithm_)) +
-                                 " is not supported.");
-      }
+        timeInt_ = timeInt;
+        guardInt_ = guardInt;
     }
 
-    guardInt_.first = fQuery;
-    timeInt_.first = query;
 
-    guardInt_.second *= gamma;
-  }
-}
+    void RootFinder::updateBracket(const scalar_t &query, const scalar_t &fQuery) {
+        if (fQuery * guardInt_.first < 0) {
+            guardInt_.second = guardInt_.first;
+            timeInt_.second = timeInt_.first;
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void RootFinder::display() {
-  std::cerr << "Root Finding Information\n";
-  std::cerr << "Time Bracket:  [" << timeInt_.first << ";" << timeInt_.second << "]\n";
-  std::cerr << "Value Bracket: [" << guardInt_.first << ";" << guardInt_.second << "]\n";
-}
-}  // namespace ocs2
+            guardInt_.first = fQuery;
+            timeInt_.first = query;
+        } else {
+            scalar_t gamma;
+            switch (rootFindingAlgorithm_) {
+                case (RootFinderType::ANDERSON_BJORCK): {
+                    gamma = 1 - (fQuery / guardInt_.first);
+                    if (gamma < 0) {
+                        gamma = 0.5;
+                    }
+                    break;
+                }
+                case (RootFinderType::PEGASUS): {
+                    gamma = guardInt_.first / (guardInt_.first + fQuery);
+                    break;
+                }
+                case (RootFinderType::ILLINOIS): {
+                    gamma = 0.5;
+                    break;
+                }
+                case (RootFinderType::REGULA_FALSI): {
+                    gamma = 1.0;
+                    break;
+                }
+                default: {
+                    throw std::runtime_error("Root finding algorithm of type " +
+                                             std::to_string(
+                                                 static_cast<std::underlying_type<RootFinderType>::type>(
+                                                     rootFindingAlgorithm_)) +
+                                             " is not supported.");
+                }
+            }
+
+            guardInt_.first = fQuery;
+            timeInt_.first = query;
+
+            guardInt_.second *= gamma;
+        }
+    }
+
+
+    void RootFinder::display() {
+        std::cerr << "Root Finding Information\n";
+        std::cerr << "Time Bracket:  [" << timeInt_.first << ";" << timeInt_.second << "]\n";
+        std::cerr << "Value Bracket: [" << guardInt_.first << ";" << guardInt_.second << "]\n";
+    }
+} // namespace ocs2

@@ -31,14 +31,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 ControlledSystemBase::ControlledSystemBase(const PreComputation& preComputation) : preCompPtr_(preComputation.clone()) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 ControlledSystemBase::ControlledSystemBase(const ControlledSystemBase& other) : OdeBase(other) {
   assert(other.preCompPtr_ != nullptr);
   preCompPtr_.reset(other.preCompPtr_->clone());

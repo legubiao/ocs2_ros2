@@ -54,7 +54,7 @@ namespace ocs2 {
                                    const OptimalControlProblem &optimalControlProblem,
                                    const Initializer &initializer)
         : ddpSettings_(ddpSettings),
-          threadPool_(std::max(ddpSettings_.nThreads_, size_t(1)) - 1, ddpSettings_.threadPriority_) {
+          threadPool_(std::max(ddpSettings_.nThreads_, static_cast<size_t>(1)) - 1, ddpSettings_.threadPriority_) {
         Eigen::setNbThreads(1); // no multithreading within Eigen.
         Eigen::initParallel();
 

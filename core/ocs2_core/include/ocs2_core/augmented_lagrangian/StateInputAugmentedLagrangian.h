@@ -35,55 +35,61 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/penalties/MultidimensionalPenalty.h>
 
 namespace ocs2 {
+    /** The base class for Augmented Lagrangian penalty of state-input constraint. */
+    class StateInputAugmentedLagrangian final : public StateInputAugmentedLagrangianInterface {
+    public:
+        /**
+         * Constructor.
+         * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
+         * @param [in] penaltyPtrArray: An array of pointers to the penalty function on the constraint.
+         */
+        StateInputAugmentedLagrangian(std::unique_ptr<StateInputConstraint> constraintPtr,
+                                      std::vector<std::unique_ptr<augmented::AugmentedPenaltyBase> > penaltyPtrArray);
 
-/** The base class for Augmented Lagrangian penalty of state-input constraint. */
-class StateInputAugmentedLagrangian final : public StateInputAugmentedLagrangianInterface {
- public:
-  /**
-   * Constructor.
-   * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
-   * @param [in] penaltyPtrArray: An array of pointers to the penalty function on the constraint.
-   */
-  StateInputAugmentedLagrangian(std::unique_ptr<StateInputConstraint> constraintPtr,
-                                std::vector<std::unique_ptr<augmented::AugmentedPenaltyBase>> penaltyPtrArray);
+        /**
+         * Constructor.
+         * @note This allows a varying number of constraints and uses the same penalty function for each constraint.
+         * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
+         * @param [in] penaltyPtr: A pointer to the penalty function on the constraint.
+         */
+        StateInputAugmentedLagrangian(std::unique_ptr<StateInputConstraint> constraintPtr,
+                                      std::unique_ptr<augmented::AugmentedPenaltyBase> penaltyPtr);
 
-  /**
-   * Constructor.
-   * @note This allows a varying number of constraints and uses the same penalty function for each constraint.
-   * @param [in] constraintPtr: A pointer to the constraint which will be enforced as soft constraints.
-   * @param [in] penaltyPtr: A pointer to the penalty function on the constraint.
-   */
-  StateInputAugmentedLagrangian(std::unique_ptr<StateInputConstraint> constraintPtr,
-                                std::unique_ptr<augmented::AugmentedPenaltyBase> penaltyPtr);
+        [[nodiscard]] StateInputAugmentedLagrangian *clone() const override;
 
-  StateInputAugmentedLagrangian* clone() const override;
-  bool isActive(scalar_t time) const override;
-  size_t getNumConstraints(scalar_t time) const override;
+        [[nodiscard]] bool isActive(scalar_t time) const override;
 
-  LagrangianMetrics getValue(scalar_t time, const vector_t& state, const vector_t& input, const Multiplier& multiplier,
-                             const PreComputation& preComp) const override;
+        [[nodiscard]] size_t getNumConstraints(scalar_t time) const override;
 
-  ScalarFunctionQuadraticApproximation getQuadraticApproximation(scalar_t time, const vector_t& state, const vector_t& input,
-                                                                 const Multiplier& multiplier,
-                                                                 const PreComputation& preComp) const override;
+        [[nodiscard]] LagrangianMetrics getValue(scalar_t time, const vector_t &state, const vector_t &input,
+                                                 const Multiplier &multiplier,
+                                                 const PreComputation &preComp) const override;
 
-  std::pair<Multiplier, scalar_t> updateLagrangian(scalar_t time, const vector_t& /*state*/, const vector_t& /*input*/,
-                                                   const vector_t& constraint, const Multiplier& multiplier) const override;
+        [[nodiscard]] ScalarFunctionQuadraticApproximation getQuadraticApproximation(
+            scalar_t time, const vector_t &state,
+            const vector_t &input,
+            const Multiplier &multiplier,
+            const PreComputation &preComp) const override;
 
-  Multiplier initializeLagrangian(scalar_t time) const override;
+        [[nodiscard]] std::pair<Multiplier, scalar_t> updateLagrangian(scalar_t time, const vector_t & /*state*/,
+                                                                       const vector_t & /*input*/,
+                                                                       const vector_t &constraint,
+                                                                       const Multiplier &multiplier) const override;
 
-  /** Gets the wrapped constraint. */
-  template <typename Derived = StateInputConstraint>
-  Derived& get() {
-    static_assert(std::is_base_of<StateInputConstraint, Derived>::value, "Template argument must derive from StateInputConstraint!");
-    return dynamic_cast<Derived&>(*constraintPtr_);
-  }
+        [[nodiscard]] Multiplier initializeLagrangian(scalar_t time) const override;
 
- private:
-  StateInputAugmentedLagrangian(const StateInputAugmentedLagrangian& other);
+        /** Gets the wrapped constraint. */
+        template<typename Derived = StateInputConstraint>
+        Derived &get() {
+            static_assert(std::is_base_of<StateInputConstraint, Derived>::value,
+                          "Template argument must derive from StateInputConstraint!");
+            return dynamic_cast<Derived &>(*constraintPtr_);
+        }
 
-  std::unique_ptr<StateInputConstraint> constraintPtr_;
-  MultidimensionalPenalty penalty_;
-};
+    private:
+        StateInputAugmentedLagrangian(const StateInputAugmentedLagrangian &other);
 
-}  // namespace ocs2
+        std::unique_ptr<StateInputConstraint> constraintPtr_;
+        MultidimensionalPenalty penalty_;
+    };
+} // namespace ocs2

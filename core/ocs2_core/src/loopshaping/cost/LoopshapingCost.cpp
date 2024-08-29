@@ -36,17 +36,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2 {
 namespace LoopshapingCost {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::unique_ptr<StateCostCollection> create(const StateCostCollection& systemCost,
                                             std::shared_ptr<LoopshapingDefinition> loopshapingDefinition) {
   return std::make_unique<LoopshapingStateCost>(systemCost, std::move(loopshapingDefinition));
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::unique_ptr<StateInputCostCollection> create(const StateInputCostCollection& systemCost,
                                                  std::shared_ptr<LoopshapingDefinition> loopshapingDefinition) {
   switch (loopshapingDefinition->getType()) {

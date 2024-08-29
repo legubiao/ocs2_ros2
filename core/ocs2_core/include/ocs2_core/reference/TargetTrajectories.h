@@ -29,35 +29,37 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <ostream>
-
 #include "ocs2_core/Types.h"
 
 namespace ocs2 {
+    /**
+     * This class is an interface class for the user defined target trajectories.
+     */
+    struct TargetTrajectories {
+        explicit TargetTrajectories(size_t size = 0);
 
-/**
- * This class is an interface class for the user defined target trajectories.
- */
-struct TargetTrajectories {
-  explicit TargetTrajectories(size_t size = 0);
-  TargetTrajectories(scalar_array_t desiredTimeTrajectory, vector_array_t desiredStateTrajectory,
-                     vector_array_t desiredInputTrajectory = vector_array_t());
-  void clear();
-  bool empty() const { return timeTrajectory.empty() || stateTrajectory.empty(); }
-  size_t size() const { return timeTrajectory.size(); }
+        TargetTrajectories(scalar_array_t desiredTimeTrajectory, vector_array_t desiredStateTrajectory,
+                           vector_array_t desiredInputTrajectory = vector_array_t());
 
-  bool operator==(const TargetTrajectories& other);
-  bool operator!=(const TargetTrajectories& other) { return !(*this == other); }
+        void clear();
 
-  vector_t getDesiredState(scalar_t time) const;
-  vector_t getDesiredInput(scalar_t time) const;
+        [[nodiscard]] bool empty() const { return timeTrajectory.empty() || stateTrajectory.empty(); }
+        [[nodiscard]] size_t size() const { return timeTrajectory.size(); }
 
-  scalar_array_t timeTrajectory;
-  vector_array_t stateTrajectory;
-  vector_array_t inputTrajectory;
-};
+        bool operator==(const TargetTrajectories &other);
 
-void swap(TargetTrajectories& lh, TargetTrajectories& rh);
-std::ostream& operator<<(std::ostream& out, const TargetTrajectories& targetTrajectories);
+        bool operator!=(const TargetTrajectories &other) { return !(*this == other); }
 
-}  // namespace ocs2
+        [[nodiscard]] vector_t getDesiredState(scalar_t time) const;
+
+        [[nodiscard]] vector_t getDesiredInput(scalar_t time) const;
+
+        scalar_array_t timeTrajectory;
+        vector_array_t stateTrajectory;
+        vector_array_t inputTrajectory;
+    };
+
+    void swap(TargetTrajectories &lh, TargetTrajectories &rh);
+
+    std::ostream &operator<<(std::ostream &out, const TargetTrajectories &targetTrajectories);
+} // namespace ocs2

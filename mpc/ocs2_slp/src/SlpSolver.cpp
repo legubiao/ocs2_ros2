@@ -48,7 +48,7 @@ namespace ocs2 {
 SlpSolver::SlpSolver(slp::Settings settings, const OptimalControlProblem& optimalControlProblem, const Initializer& initializer)
     : settings_(std::move(settings)),
       pipgSolver_(settings_.pipgSettings),
-      threadPool_(std::max(settings_.nThreads - 1, size_t(1)) - 1, settings_.threadPriority) {
+      threadPool_(std::max(settings_.nThreads - 1, static_cast<size_t>(1)) - 1, settings_.threadPriority) {
   Eigen::setNbThreads(1);  // No multithreading within Eigen.
   Eigen::initParallel();
 

@@ -297,7 +297,7 @@ class HpipmInterface::Impl {
     // Return solver status
     int hpipmStatus = -1;
     d_ocp_qp_ipm_get_status(&workspace_, &hpipmStatus);
-    return hpipm_status(hpipmStatus);
+    return static_cast<hpipm_status>(hpipmStatus);
   }
 
   bool getStateSolution(const vector_t& x0, vector_array_t& stateTrajectory) {

@@ -204,9 +204,7 @@ class Integrator final : public IntegratorBase {
   Stepper stepper_;
 };
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <class Stepper>
 inline void Integrator<Stepper>::runIntegrateConst(system_func_t system, observer_func_t observer, const vector_t& initialState,
                                                    scalar_t startTime, scalar_t finalTime, scalar_t dt) {
@@ -224,9 +222,7 @@ inline void Integrator<Stepper>::runIntegrateConst(system_func_t system, observe
   boost::numeric::odeint::integrate_const(stepper_, system, initialStateInternal, startTime, finalTime, dt, observer);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <class Stepper>
 inline void Integrator<Stepper>::runIntegrateAdaptive(system_func_t system, observer_func_t observer, const vector_t& initialState,
                                                       scalar_t startTime, scalar_t finalTime, scalar_t dtInitial, scalar_t AbsTol,
@@ -235,9 +231,7 @@ inline void Integrator<Stepper>::runIntegrateAdaptive(system_func_t system, obse
   integrateAdaptiveSpecialized<Stepper>(system, observer, internalStartState, startTime, finalTime, dtInitial, AbsTol, RelTol);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <class Stepper>
 inline void Integrator<Stepper>::runIntegrateTimes(system_func_t system, observer_func_t observer, const vector_t& initialState,
                                                    typename scalar_array_t::const_iterator beginTimeItr,
@@ -247,9 +241,7 @@ inline void Integrator<Stepper>::runIntegrateTimes(system_func_t system, observe
   integrateTimesSpecialized<Stepper>(system, observer, internalStartState, beginTimeItr, endTimeItr, dtInitial, AbsTol, RelTol);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <class Stepper>
 template <typename S>
 inline typename std::enable_if<std::is_same<S, runge_kutta_dopri5_t>::value, void>::type Integrator<Stepper>::integrateAdaptiveSpecialized(
@@ -259,9 +251,7 @@ inline typename std::enable_if<std::is_same<S, runge_kutta_dopri5_t>::value, voi
                                              finalTime, dtInitial, observer);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <class Stepper>
 template <typename S>
 inline typename std::enable_if<!std::is_same<S, runge_kutta_dopri5_t>::value, void>::type Integrator<Stepper>::integrateAdaptiveSpecialized(
@@ -270,9 +260,7 @@ inline typename std::enable_if<!std::is_same<S, runge_kutta_dopri5_t>::value, vo
   boost::numeric::odeint::integrate_adaptive(stepper_, system, initialState, startTime, finalTime, dtInitial, observer);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <class Stepper>
 template <typename S>
 inline typename std::enable_if<std::is_same<S, runge_kutta_dopri5_t>::value, void>::type Integrator<Stepper>::integrateTimesSpecialized(
@@ -290,9 +278,7 @@ inline typename std::enable_if<std::is_same<S, runge_kutta_dopri5_t>::value, voi
 #endif
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <class Stepper>
 template <typename S>
 inline typename std::enable_if<!std::is_same<S, runge_kutta_dopri5_t>::value, void>::type Integrator<Stepper>::integrateTimesSpecialized(
@@ -309,9 +295,7 @@ inline typename std::enable_if<!std::is_same<S, runge_kutta_dopri5_t>::value, vo
 #endif
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <class Stepper>
 template <typename S>
 inline typename std::enable_if<std::is_same<S, runge_kutta_dopri5_t>::value, void>::type Integrator<Stepper>::initializeStepper(
@@ -319,9 +303,7 @@ inline typename std::enable_if<std::is_same<S, runge_kutta_dopri5_t>::value, voi
   /**do nothing, runge_kutta_5_t does not have a init method */
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <class Stepper>
 template <typename S>
 typename std::enable_if<!(std::is_same<S, runge_kutta_dopri5_t>::value), void>::type Integrator<Stepper>::initializeStepper(

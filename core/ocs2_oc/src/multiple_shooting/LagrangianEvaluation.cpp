@@ -29,38 +29,38 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_oc/multiple_shooting/LagrangianEvaluation.h"
 
-namespace ocs2 {
-namespace multiple_shooting {
 
-ScalarFunctionQuadraticApproximation evaluateLagrangianIntermediateNode(const vector_t& lmd, const vector_t& lmd_next, const vector_t& nu,
-                                                                        ScalarFunctionQuadraticApproximation&& cost,
-                                                                        const VectorFunctionLinearApproximation& dynamics,
-                                                                        const VectorFunctionLinearApproximation& stateInputEqConstraints) {
-  ScalarFunctionQuadraticApproximation lagrangian = std::move(cost);
-  lagrangian.dfdx.noalias() += dynamics.dfdx.transpose() * lmd_next;
-  lagrangian.dfdx.noalias() -= lmd;
-  lagrangian.dfdu.noalias() += dynamics.dfdu.transpose() * lmd_next;
-  if (stateInputEqConstraints.f.size() > 0) {
-    lagrangian.dfdx.noalias() += stateInputEqConstraints.dfdx.transpose() * nu;
-    lagrangian.dfdu.noalias() += stateInputEqConstraints.dfdu.transpose() * nu;
-  }
-  return lagrangian;
-}
+namespace ocs2::multiple_shooting {
+    ScalarFunctionQuadraticApproximation evaluateLagrangianIntermediateNode(
+        const vector_t &lmd, const vector_t &lmd_next, const vector_t &nu,
+        ScalarFunctionQuadraticApproximation &&cost,
+        const VectorFunctionLinearApproximation &dynamics,
+        const VectorFunctionLinearApproximation &stateInputEqConstraints) {
+        ScalarFunctionQuadraticApproximation lagrangian = std::move(cost);
+        lagrangian.dfdx.noalias() += dynamics.dfdx.transpose() * lmd_next;
+        lagrangian.dfdx.noalias() -= lmd;
+        lagrangian.dfdu.noalias() += dynamics.dfdu.transpose() * lmd_next;
+        if (stateInputEqConstraints.f.size() > 0) {
+            lagrangian.dfdx.noalias() += stateInputEqConstraints.dfdx.transpose() * nu;
+            lagrangian.dfdu.noalias() += stateInputEqConstraints.dfdu.transpose() * nu;
+        }
+        return lagrangian;
+    }
 
-ScalarFunctionQuadraticApproximation evaluateLagrangianTerminalNode(const vector_t& lmd, ScalarFunctionQuadraticApproximation&& cost) {
-  ScalarFunctionQuadraticApproximation lagrangian = std::move(cost);
-  lagrangian.dfdx.noalias() -= lmd;
-  return lagrangian;
-}
+    ScalarFunctionQuadraticApproximation evaluateLagrangianTerminalNode(
+        const vector_t &lmd, ScalarFunctionQuadraticApproximation &&cost) {
+        ScalarFunctionQuadraticApproximation lagrangian = std::move(cost);
+        lagrangian.dfdx.noalias() -= lmd;
+        return lagrangian;
+    }
 
-ScalarFunctionQuadraticApproximation evaluateLagrangianEventNode(const vector_t& lmd, const vector_t& lmd_next,
-                                                                 ScalarFunctionQuadraticApproximation&& cost,
-                                                                 const VectorFunctionLinearApproximation& dynamics) {
-  ScalarFunctionQuadraticApproximation lagrangian = std::move(cost);
-  lagrangian.dfdx.noalias() += dynamics.dfdx.transpose() * lmd_next;
-  lagrangian.dfdx.noalias() -= lmd;
-  return lagrangian;
-}
-
-}  // namespace multiple_shooting
-}  // namespace ocs2
+    ScalarFunctionQuadraticApproximation evaluateLagrangianEventNode(const vector_t &lmd, const vector_t &lmd_next,
+                                                                     ScalarFunctionQuadraticApproximation &&cost,
+                                                                     const VectorFunctionLinearApproximation &
+                                                                     dynamics) {
+        ScalarFunctionQuadraticApproximation lagrangian = std::move(cost);
+        lagrangian.dfdx.noalias() += dynamics.dfdx.transpose() * lmd_next;
+        lagrangian.dfdx.noalias() -= lmd;
+        return lagrangian;
+    }
+} // namespace ocs2::multiple_shooting

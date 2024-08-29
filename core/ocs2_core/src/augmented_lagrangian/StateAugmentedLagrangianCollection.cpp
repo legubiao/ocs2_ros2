@@ -30,112 +30,102 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_core/augmented_lagrangian/StateAugmentedLagrangianCollection.h"
 
 namespace ocs2 {
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-StateAugmentedLagrangianCollection* StateAugmentedLagrangianCollection::clone() const {
-  return new StateAugmentedLagrangianCollection(*this);
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-size_t StateAugmentedLagrangianCollection::getNumberOfActiveConstraints(scalar_t time) const {
-  size_t numConstraints = 0;
-  for (const auto& term : terms_) {
-    if (term->isActive(time)) {
-      numConstraints += term->getNumConstraints(time);
+    StateAugmentedLagrangianCollection *StateAugmentedLagrangianCollection::clone() const {
+        return new StateAugmentedLagrangianCollection(*this);
     }
-  }
-  return numConstraints;
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::vector<LagrangianMetrics> StateAugmentedLagrangianCollection::getValue(scalar_t time, const vector_t& state,
-                                                                            const std::vector<Multiplier>& termsMultiplier,
-                                                                            const PreComputation& preComp) const {
-  std::vector<LagrangianMetrics> termsConstraintPenalty;
-  termsConstraintPenalty.reserve(terms_.size());
-  for (size_t i = 0; i < terms_.size(); i++) {
-    if (terms_[i]->isActive(time)) {
-      termsConstraintPenalty.emplace_back(terms_[i]->getValue(time, state, termsMultiplier[i], preComp));
-    } else {
-      termsConstraintPenalty.emplace_back(0.0, vector_t());
+
+    size_t StateAugmentedLagrangianCollection::getNumberOfActiveConstraints(scalar_t time) const {
+        size_t numConstraints = 0;
+        for (const auto &term: terms_) {
+            if (term->isActive(time)) {
+                numConstraints += term->getNumConstraints(time);
+            }
+        }
+        return numConstraints;
     }
-  }
-  return termsConstraintPenalty;
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-ScalarFunctionQuadraticApproximation StateAugmentedLagrangianCollection::getQuadraticApproximation(
-    scalar_t time, const vector_t& state, const std::vector<Multiplier>& termsMultiplier, const PreComputation& preComp) const {
-  const auto firstActiveItr =
-      std::find_if(terms_.begin(), terms_.end(),
-                   [time](const std::unique_ptr<StateAugmentedLagrangianInterface>& costTerm) { return costTerm->isActive(time); });
 
-  // no active terms (or terms is empty).
-  if (firstActiveItr == terms_.end()) {
-    return ScalarFunctionQuadraticApproximation::Zero(state.size());
-  }
-
-  // initialize with first active term
-  const size_t firstActiveInd = std::distance(terms_.begin(), firstActiveItr);
-  auto penalty = (*firstActiveItr)->getQuadraticApproximation(time, state, termsMultiplier[firstActiveInd], preComp);
-
-  // accumulate terms
-  for (size_t i = firstActiveInd + 1; i < terms_.size(); i++) {
-    if (terms_[i]->isActive(time)) {
-      const auto termPenalty = terms_[i]->getQuadraticApproximation(time, state, termsMultiplier[i], preComp);
-      penalty.f += termPenalty.f;
-      penalty.dfdx += termPenalty.dfdx;
-      penalty.dfdxx += termPenalty.dfdxx;
+    std::vector<LagrangianMetrics> StateAugmentedLagrangianCollection::getValue(scalar_t time, const vector_t &state,
+        const std::vector<Multiplier> &termsMultiplier,
+        const PreComputation &preComp) const {
+        std::vector<LagrangianMetrics> termsConstraintPenalty;
+        termsConstraintPenalty.reserve(terms_.size());
+        for (size_t i = 0; i < terms_.size(); i++) {
+            if (terms_[i]->isActive(time)) {
+                termsConstraintPenalty.emplace_back(terms_[i]->getValue(time, state, termsMultiplier[i], preComp));
+            } else {
+                termsConstraintPenalty.emplace_back(0.0, vector_t());
+            }
+        }
+        return termsConstraintPenalty;
     }
-  }
 
-  // make sure that input derivatives are empty
-  penalty.dfdu = vector_t();
-  penalty.dfduu = matrix_t();
-  penalty.dfdux = matrix_t();
 
-  return penalty;
-}
+    ScalarFunctionQuadraticApproximation StateAugmentedLagrangianCollection::getQuadraticApproximation(
+        scalar_t time, const vector_t &state, const std::vector<Multiplier> &termsMultiplier,
+        const PreComputation &preComp) const {
+        const auto firstActiveItr =
+                std::find_if(terms_.begin(), terms_.end(),
+                             [time](const std::unique_ptr<StateAugmentedLagrangianInterface> &costTerm) {
+                                 return costTerm->isActive(time);
+                             });
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void StateAugmentedLagrangianCollection::updateLagrangian(scalar_t time, const vector_t& state,
-                                                          std::vector<LagrangianMetrics>& termsMetrics,
-                                                          std::vector<Multiplier>& termsMultiplier) const {
-  assert(termsMetrics.size() == termsMultiplier.size());
+        // no active terms (or terms is empty).
+        if (firstActiveItr == terms_.end()) {
+            return ScalarFunctionQuadraticApproximation::Zero(static_cast<int>(state.size()));
+        }
 
-  for (size_t i = 0; i < terms_.size(); i++) {
-    if (terms_[i]->isActive(time)) {
-      Multiplier updatedLagrangian;
-      std::tie(updatedLagrangian, termsMetrics[i].penalty) =
-          terms_[i]->updateLagrangian(time, state, termsMetrics[i].constraint, termsMultiplier[i]);
-      termsMultiplier[i] = std::move(updatedLagrangian);
+        // initialize with first active term
+        const size_t firstActiveInd = std::distance(terms_.begin(), firstActiveItr);
+        auto penalty = (*firstActiveItr)->getQuadraticApproximation(time, state, termsMultiplier[firstActiveInd],
+                                                                    preComp);
+
+        // accumulate terms
+        for (size_t i = firstActiveInd + 1; i < terms_.size(); i++) {
+            if (terms_[i]->isActive(time)) {
+                const auto termPenalty = terms_[i]->getQuadraticApproximation(time, state, termsMultiplier[i], preComp);
+                penalty.f += termPenalty.f;
+                penalty.dfdx += termPenalty.dfdx;
+                penalty.dfdxx += termPenalty.dfdxx;
+            }
+        }
+
+        // make sure that input derivatives are empty
+        penalty.dfdu = vector_t();
+        penalty.dfduu = matrix_t();
+        penalty.dfdux = matrix_t();
+
+        return penalty;
     }
-  }
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void StateAugmentedLagrangianCollection::initializeLagrangian(scalar_t time, std::vector<Multiplier>& termsMultiplier) const {
-  termsMultiplier.clear();
-  termsMultiplier.reserve(terms_.size());
-  for (const auto& term : terms_) {
-    if (term->isActive(time)) {
-      termsMultiplier.emplace_back(term->initializeLagrangian(time));
-    } else {
-      termsMultiplier.emplace_back(0.0, vector_t());
+
+    void StateAugmentedLagrangianCollection::updateLagrangian(const scalar_t time, const vector_t &state,
+                                                              std::vector<LagrangianMetrics> &termsMetrics,
+                                                              std::vector<Multiplier> &termsMultiplier) const {
+        assert(termsMetrics.size() == termsMultiplier.size());
+
+        for (size_t i = 0; i < terms_.size(); i++) {
+            if (terms_[i]->isActive(time)) {
+                Multiplier updatedLagrangian;
+                std::tie(updatedLagrangian, termsMetrics[i].penalty) =
+                        terms_[i]->updateLagrangian(time, state, termsMetrics[i].constraint, termsMultiplier[i]);
+                termsMultiplier[i] = std::move(updatedLagrangian);
+            }
+        }
     }
-  }
-}
 
-}  // namespace ocs2
+
+    void StateAugmentedLagrangianCollection::initializeLagrangian(scalar_t time,
+                                                                  std::vector<Multiplier> &termsMultiplier) const {
+        termsMultiplier.clear();
+        termsMultiplier.reserve(terms_.size());
+        for (const auto &term: terms_) {
+            if (term->isActive(time)) {
+                termsMultiplier.emplace_back(term->initializeLagrangian(time));
+            } else {
+                termsMultiplier.emplace_back(0.0, vector_t());
+            }
+        }
+    }
+} // namespace ocs2

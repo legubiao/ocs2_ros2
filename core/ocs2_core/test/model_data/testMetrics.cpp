@@ -87,7 +87,7 @@ inline Metrics interpolateNew(const LinearInterpolation::index_alpha_t& indexAlp
     areSameSize = areSameSize && (lhs_stateInputIneqLag.size() == rhs_stateInputIneqLag.size());
 
     if (areSameSize) {
-      const auto f = [alpha](const vector_t& lhs, const vector_t& rhs) -> vector_t { return alpha * lhs + (scalar_t(1.0) - alpha) * rhs; };
+      const auto f = [alpha](const vector_t& lhs, const vector_t& rhs) -> vector_t { return alpha * lhs + (static_cast<scalar_t>(1.0) - alpha) * rhs; };
       Metrics out;
       // cost
       out.cost = LinearInterpolation::interpolate(

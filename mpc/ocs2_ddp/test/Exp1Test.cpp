@@ -265,7 +265,7 @@ TEST_P(Exp1, ILQR) {
 INSTANTIATE_TEST_CASE_P(Exp1Case, Exp1,
                         testing::Combine(testing::ValuesIn({ocs2::search_strategy::Type::LINE_SEARCH,
                                                             ocs2::search_strategy::Type::LEVENBERG_MARQUARDT}),
-                                         testing::ValuesIn({size_t(1), size_t(3)})), /* num threads */
+                                         testing::ValuesIn({static_cast<size_t>(1), static_cast<size_t>(3)})), /* num threads */
                         [](const testing::TestParamInfo<Exp1::ParamType>& info) {
                           /* returns test name for gtest summary */
                           std::string name;

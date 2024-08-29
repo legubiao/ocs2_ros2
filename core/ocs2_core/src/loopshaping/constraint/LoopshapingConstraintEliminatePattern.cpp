@@ -32,9 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 VectorFunctionLinearApproximation LoopshapingConstraintEliminatePattern::getLinearApproximation(scalar_t t, const vector_t& x,
                                                                                                 const vector_t& u,
                                                                                                 const PreComputation& preComp) const {
@@ -78,9 +76,7 @@ VectorFunctionLinearApproximation LoopshapingConstraintEliminatePattern::getLine
   return g;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 VectorFunctionQuadraticApproximation LoopshapingConstraintEliminatePattern::getQuadraticApproximation(scalar_t t, const vector_t& x,
                                                                                                       const vector_t& u,
                                                                                                       const PreComputation& preComp) const {

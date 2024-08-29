@@ -36,9 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2 {
 namespace LinearInterpolation {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 /**
  * Helper comparison function for non-Eigen types.
  */
@@ -63,9 +61,7 @@ const Data& stdAccessFun(const std::vector<Data, Alloc>& vec, size_t ind) {
   return vec[ind];
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 inline index_alpha_t timeSegment(scalar_t enquiryTime, const std::vector<scalar_t>& timeArray) {
   // corner cases (no time set OR single time element)
   if (timeArray.size() <= 1) {
@@ -104,25 +100,19 @@ inline index_alpha_t timeSegment(scalar_t enquiryTime, const std::vector<scalar_
   }
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <typename Data, class Alloc>
 Data interpolate(index_alpha_t indexAlpha, const std::vector<Data, Alloc>& dataArray) {
   return interpolate(indexAlpha, dataArray, stdAccessFun<Data, Alloc>);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <typename Data, class Alloc>
 Data interpolate(scalar_t enquiryTime, const std::vector<scalar_t>& timeArray, const std::vector<Data, Alloc>& dataArray) {
   return interpolate(enquiryTime, timeArray, dataArray, stdAccessFun<Data, Alloc>);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <typename Data, class Alloc, class AccessFun>
 auto interpolate(index_alpha_t indexAlpha, const std::vector<Data, Alloc>& dataArray, AccessFun accessFun)
     -> remove_cvref_t<typename std::result_of<AccessFun(const std::vector<Data, Alloc>&, size_t)>::type> {
@@ -144,9 +134,7 @@ auto interpolate(index_alpha_t indexAlpha, const std::vector<Data, Alloc>& dataA
   }
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 template <typename Data, class Alloc, class AccessFun>
 auto interpolate(scalar_t enquiryTime, const std::vector<scalar_t>& timeArray, const std::vector<Data, Alloc>& dataArray,
                  AccessFun accessFun) -> remove_cvref_t<typename std::result_of<AccessFun(const std::vector<Data, Alloc>&, size_t)>::type> {

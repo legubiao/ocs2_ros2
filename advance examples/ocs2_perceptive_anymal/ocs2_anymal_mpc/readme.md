@@ -6,10 +6,12 @@ This package provide a mpc example for Anymal quadruped robot. Besides the basic
 
 * build command
 ```bash
-colcon build --packages-up-to ocs2_anymal_mpc --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cd ~/ocs2_ws/
+colcon build --packages-up-to ocs2_anymal_mpc
 ```
 
 * launch command
 ```bash
+source ~/ocs2_ws/install/setup.bash
 ros2 launch ocs2_anymal_mpc anymal_c.launch.py
 ```

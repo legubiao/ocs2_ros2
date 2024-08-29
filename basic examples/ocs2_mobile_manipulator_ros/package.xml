@@ -12,7 +12,6 @@
     <license>BSD3</license>
 
     <buildtool_depend>ament_cmake</buildtool_depend>
-    <build_depend>cmake_clang_tools</build_depend>
 
     <depend>tf2</depend>
     <depend>urdf</depend>

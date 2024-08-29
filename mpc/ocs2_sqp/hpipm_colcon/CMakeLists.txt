@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(hpipm_colcon)
 
+set(CMAKE_BUILD_TYPE Release)
+
 ## Find ament_cmake macros and libraries
 find_package(ament_cmake REQUIRED)
 find_package(blasfeo_colcon REQUIRED)

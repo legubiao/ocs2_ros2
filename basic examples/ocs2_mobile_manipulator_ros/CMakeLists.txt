@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_mobile_manipulator_ros)
 
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(dependencies
         tf2_ros
@@ -70,21 +72,6 @@ add_executable(mobile_manipulator_target src/MobileManipulatorTarget.cpp)
 target_link_libraries(mobile_manipulator_target ${PROJECT_NAME})
 ament_target_dependencies(mobile_manipulator_target ${dependencies})
 target_compile_options(mobile_manipulator_target PUBLIC ${FLAGS})
-
-####################
-## Clang tooling ###
-####################
-
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling")
-    add_clang_tooling(
-            TARGETS mobile_manipulator_mpc_node mobile_manipulator_dummy_mrt_node
-            SOURCE_DIRS src include
-            CT_HEADER_DIRS include
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
 
 #############
 ## Install ##

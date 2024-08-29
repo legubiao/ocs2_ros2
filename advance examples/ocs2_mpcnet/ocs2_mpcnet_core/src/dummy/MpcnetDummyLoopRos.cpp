@@ -135,9 +135,9 @@ namespace ocs2::mpcnet {
 
 
     void MpcnetDummyLoopRos::preSolverRun(scalar_t time, const vector_t &state) {
-        rosReferenceManagerPtr_->preSolverRun(time, time + scalar_t(1.0), state);
+        rosReferenceManagerPtr_->preSolverRun(time, time + static_cast<scalar_t>(1.0), state);
         for (auto &module: synchronizedModulePtrs_) {
-            module->preSolverRun(time, time + scalar_t(1.0), state, *rosReferenceManagerPtr_);
+            module->preSolverRun(time, time + static_cast<scalar_t>(1.0), state, *rosReferenceManagerPtr_);
         }
     }
 } // namespace ocs2::mpcnet

@@ -220,7 +220,7 @@ class Stepper {
   static scalar_t increaseStep(scalar_t dt, scalar_t error) {
     constexpr int STEPPER_ORDER = 5;
     if (error < 0.5) {
-      error = std::max(std::pow(scalar_t(5.0), -STEPPER_ORDER), error);
+      error = std::max(std::pow(static_cast<scalar_t>(5.0), -STEPPER_ORDER), error);
       dt *= 0.9 * std::pow(error, -1.0 / STEPPER_ORDER);
     }
     return dt;
@@ -232,9 +232,7 @@ class Stepper {
 
 }  // namespace
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void RungeKuttaDormandPrince5::runIntegrateConst(system_func_t system, observer_func_t observer, const vector_t& initialState,
                                                  scalar_t startTime, scalar_t finalTime, scalar_t dt) {
   // TODO(mspieler): This does one redundant system() evaluation at the end.
@@ -257,9 +255,7 @@ void RungeKuttaDormandPrince5::runIntegrateConst(system_func_t system, observer_
   observer(x, t);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void RungeKuttaDormandPrince5::runIntegrateAdaptive(system_func_t system, observer_func_t observer, const vector_t& initialState,
                                                     scalar_t startTime, scalar_t finalTime, scalar_t dtInitial, scalar_t absTol,
                                                     scalar_t relTol) {
@@ -288,9 +284,7 @@ void RungeKuttaDormandPrince5::runIntegrateAdaptive(system_func_t system, observ
   observer(x, t);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void RungeKuttaDormandPrince5::runIntegrateTimes(system_func_t system, observer_func_t observer, const vector_t& initialState,
                                                  typename scalar_array_t::const_iterator beginTimeItr,
                                                  typename scalar_array_t::const_iterator endTimeItr, scalar_t dtInitial, scalar_t absTol,
@@ -328,9 +322,7 @@ void RungeKuttaDormandPrince5::runIntegrateTimes(system_func_t system, observer_
   }    // end of while loop
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 constexpr size_t RungeKuttaDormandPrince5::maxNumStepsRetries_;
 
 }  // namespace ocs2

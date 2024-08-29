@@ -32,9 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2 {
 namespace LinearAlgebra {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void setTriangularMinimumEigenvalues(matrix_t& Lr, scalar_t minEigenValue) {
   for (Eigen::Index i = 0; i < Lr.rows(); ++i) {
     scalar_t& eigenValue = Lr(i, i);  // diagonal element is the eigenvalue
@@ -46,9 +44,7 @@ void setTriangularMinimumEigenvalues(matrix_t& Lr, scalar_t minEigenValue) {
   }
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void makePsdEigenvalue(matrix_t& squareMatrix, scalar_t minEigenvalue) {
   assert(squareMatrix.rows() == squareMatrix.cols());
 

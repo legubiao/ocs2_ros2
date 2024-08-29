@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_anymal_models)
 
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 ## Find ament_cmake macros and libraries
 find_package(ament_cmake REQUIRED)
 

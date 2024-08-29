@@ -31,9 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 vector_t toVector(const std::vector<Multiplier>& termsMultiplier) {
   size_t n = 0;
   std::for_each(termsMultiplier.begin(), termsMultiplier.end(), [&](const Multiplier& m) { n += (1 + m.lagrangian.size()); });
@@ -49,9 +47,7 @@ vector_t toVector(const std::vector<Multiplier>& termsMultiplier) {
   return vec;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::vector<Multiplier> toMultipliers(const size_array_t& termsSize, const vector_t& vec) {
   std::vector<Multiplier> multipliers;
   multipliers.reserve(termsSize.size());
@@ -65,9 +61,7 @@ std::vector<Multiplier> toMultipliers(const size_array_t& termsSize, const vecto
   return multipliers;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 size_array_t getSizes(const std::vector<Multiplier>& termsMultiplier) {
   size_array_t s(termsMultiplier.size());
   std::transform(termsMultiplier.begin(), termsMultiplier.end(), s.begin(),
@@ -80,9 +74,7 @@ size_array_t getSizes(const std::vector<Multiplier>& termsMultiplier) {
 namespace ocs2 {
 namespace LinearInterpolation {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 Multiplier interpolate(const index_alpha_t& indexAlpha, const std::vector<MultiplierConstRef>& dataArray) {
   const auto penalty = interpolate(
       indexAlpha, dataArray, [](const std::vector<MultiplierConstRef>& array, size_t t) -> const scalar_t& { return array[t].penalty; });
@@ -93,9 +85,7 @@ Multiplier interpolate(const index_alpha_t& indexAlpha, const std::vector<Multip
   return {penalty, lagrangian};
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 MultiplierCollection interpolate(const index_alpha_t& indexAlpha, const std::vector<MultiplierCollection>& dataArray) {
   // number of terms
   const auto ind = indexAlpha.second > 0.5 ? indexAlpha.first : indexAlpha.first + 1;

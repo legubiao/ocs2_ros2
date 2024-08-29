@@ -2,6 +2,8 @@
 
 This directory contains an example of an OCS2 simulation of the Anymal robot in the RaiSim physics engine.  
 
+Raisim provided education license for free, you can apply it from [here](https://www.raisim.com/education). After you get the license, you can follow the instructions to install the RaiSim and RaiSimUnity.
+
 
 ![Anymal In RaiSim](assets/raisim.png)
 
@@ -19,7 +21,7 @@ set(CMAKE_PREFIX_PATH "~/raisimLib/raisim/linux" ${CMAKE_PREFIX_PATH})
 * build the package
 ```bash
 cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_legged_robot_raisim --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --packages-up-to ocs2_legged_robot_raisim
 ```
 
 * launch the simulation

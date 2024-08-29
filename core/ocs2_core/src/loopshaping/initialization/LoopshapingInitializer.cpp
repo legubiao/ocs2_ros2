@@ -33,28 +33,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 LoopshapingInitializer::LoopshapingInitializer(const Initializer& systembase, std::shared_ptr<LoopshapingDefinition> loopshapingDefinition)
     : systembase_(systembase.clone()), loopshapingDefinition_(std::move(loopshapingDefinition)) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 LoopshapingInitializer::LoopshapingInitializer(const LoopshapingInitializer& other)
     : Initializer(other), systembase_(other.systembase_->clone()), loopshapingDefinition_(other.loopshapingDefinition_) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 LoopshapingInitializer* LoopshapingInitializer::clone() const {
   return new LoopshapingInitializer(*this);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void LoopshapingInitializer::compute(scalar_t time, const vector_t& state, scalar_t nextTime, vector_t& input, vector_t& nextState) {
   // system state-input initializer
   vector_t systemInput, systemNextState;

@@ -31,18 +31,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 vector_t eulerDiscretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x, const vector_t& u, scalar_t dt) {
   vector_t tmp = system.computeFlowMap(t, x, u);
   tmp = x + dt * tmp;
   return tmp;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 VectorFunctionLinearApproximation eulerSensitivityDiscretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x,
                                                                  const vector_t& u, scalar_t dt) {
   // x_{k+1} = A_{k} * dx_{k} + B_{k} * du_{k} + b_{k}
@@ -57,9 +53,7 @@ VectorFunctionLinearApproximation eulerSensitivityDiscretization(SystemDynamicsB
   return continuousApproximation;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 vector_t rk2Discretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x, const vector_t& u, scalar_t dt) {
   const scalar_t dt_halve = dt / 2.0;
 
@@ -73,9 +67,7 @@ vector_t rk2Discretization(SystemDynamicsBase& system, scalar_t t, const vector_
   return tmp;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 VectorFunctionLinearApproximation rk2SensitivityDiscretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x, const vector_t& u,
                                                                scalar_t dt) {
   const scalar_t dt_halve = dt / 2.0;
@@ -103,9 +95,7 @@ VectorFunctionLinearApproximation rk2SensitivityDiscretization(SystemDynamicsBas
   return k1;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 vector_t rk4Discretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x, const vector_t& u, scalar_t dt) {
   const scalar_t dt_halve = dt / 2.0;
   const scalar_t dt_sixth = dt / 6.0;
@@ -124,9 +114,7 @@ vector_t rk4Discretization(SystemDynamicsBase& system, scalar_t t, const vector_
   return tmp;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 VectorFunctionLinearApproximation rk4SensitivityDiscretization(SystemDynamicsBase& system, scalar_t t, const vector_t& x, const vector_t& u,
                                                                scalar_t dt) {
   const scalar_t dt_halve = dt / 2.0;

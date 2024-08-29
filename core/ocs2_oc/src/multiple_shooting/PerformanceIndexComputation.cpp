@@ -34,76 +34,79 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_oc/approximate_model/LinearQuadraticApproximator.h"
 #include "ocs2_oc/multiple_shooting/MetricsComputation.h"
 
-namespace ocs2 {
-namespace multiple_shooting {
 
-PerformanceIndex computePerformanceIndex(const Transcription& transcription, scalar_t dt) {
-  PerformanceIndex performance;
+namespace ocs2::multiple_shooting {
+    PerformanceIndex computePerformanceIndex(const Transcription &transcription, scalar_t dt) {
+        PerformanceIndex performance;
 
-  // Dynamics
-  performance.dynamicsViolationSSE = dt * transcription.dynamics.f.squaredNorm();
+        // Dynamics
+        performance.dynamicsViolationSSE = dt * transcription.dynamics.f.squaredNorm();
 
-  // Costs
-  performance.cost = transcription.cost.f;
+        // Costs
+        performance.cost = transcription.cost.f;
 
-  // State-input equality constraints
-  performance.equalityConstraintsSSE =
-      dt * (getEqConstraintsSSE(transcription.stateEqConstraints.f) + getEqConstraintsSSE(transcription.stateInputEqConstraints.f));
+        // State-input equality constraints
+        performance.equalityConstraintsSSE =
+                dt * (getEqConstraintsSSE(transcription.stateEqConstraints.f) + getEqConstraintsSSE(
+                          transcription.stateInputEqConstraints.f));
 
-  // Inequality constraints.
-  performance.inequalityConstraintsSSE =
-      dt * (getIneqConstraintsSSE(transcription.stateIneqConstraints.f) + getIneqConstraintsSSE(transcription.stateInputIneqConstraints.f));
+        // Inequality constraints.
+        performance.inequalityConstraintsSSE =
+                dt * (getIneqConstraintsSSE(transcription.stateIneqConstraints.f) + getIneqConstraintsSSE(
+                          transcription.stateInputIneqConstraints.f));
 
-  return performance;
-}
+        return performance;
+    }
 
-PerformanceIndex computePerformanceIndex(const EventTranscription& transcription) {
-  PerformanceIndex performance;
+    PerformanceIndex computePerformanceIndex(const EventTranscription &transcription) {
+        PerformanceIndex performance;
 
-  // Dynamics
-  performance.dynamicsViolationSSE = transcription.dynamics.f.squaredNorm();
+        // Dynamics
+        performance.dynamicsViolationSSE = transcription.dynamics.f.squaredNorm();
 
-  performance.cost = transcription.cost.f;
+        performance.cost = transcription.cost.f;
 
-  // Equality constraints
-  performance.equalityConstraintsSSE = getEqConstraintsSSE(transcription.eqConstraints.f);
+        // Equality constraints
+        performance.equalityConstraintsSSE = getEqConstraintsSSE(transcription.eqConstraints.f);
 
-  // State inequality constraints.
-  performance.inequalityConstraintsSSE = getIneqConstraintsSSE(transcription.ineqConstraints.f);
+        // State inequality constraints.
+        performance.inequalityConstraintsSSE = getIneqConstraintsSSE(transcription.ineqConstraints.f);
 
-  return performance;
-}
+        return performance;
+    }
 
-PerformanceIndex computePerformanceIndex(const TerminalTranscription& transcription) {
-  PerformanceIndex performance;
+    PerformanceIndex computePerformanceIndex(const TerminalTranscription &transcription) {
+        PerformanceIndex performance;
 
-  performance.cost = transcription.cost.f;
+        performance.cost = transcription.cost.f;
 
-  // Equality constraints
-  performance.equalityConstraintsSSE = getEqConstraintsSSE(transcription.eqConstraints.f);
+        // Equality constraints
+        performance.equalityConstraintsSSE = getEqConstraintsSSE(transcription.eqConstraints.f);
 
-  // State inequality constraints.
-  performance.inequalityConstraintsSSE = getIneqConstraintsSSE(transcription.ineqConstraints.f);
+        // State inequality constraints.
+        performance.inequalityConstraintsSSE = getIneqConstraintsSSE(transcription.ineqConstraints.f);
 
-  return performance;
-}
+        return performance;
+    }
 
-PerformanceIndex computeIntermediatePerformance(OptimalControlProblem& optimalControlProblem, DynamicsDiscretizer& discretizer, scalar_t t,
-                                                scalar_t dt, const vector_t& x, const vector_t& x_next, const vector_t& u) {
-  const auto metrics = computeIntermediateMetrics(optimalControlProblem, discretizer, t, dt, x, x_next, u);
-  return toPerformanceIndex(metrics, dt);
-}
+    PerformanceIndex computeIntermediatePerformance(OptimalControlProblem &optimalControlProblem,
+                                                    DynamicsDiscretizer &discretizer, scalar_t t,
+                                                    scalar_t dt, const vector_t &x, const vector_t &x_next,
+                                                    const vector_t &u) {
+        const auto metrics = computeIntermediateMetrics(optimalControlProblem, discretizer, t, dt, x, x_next, u);
+        return toPerformanceIndex(metrics, dt);
+    }
 
-PerformanceIndex computeEventPerformance(OptimalControlProblem& optimalControlProblem, scalar_t t, const vector_t& x,
-                                         const vector_t& x_next) {
-  const auto metrics = computeEventMetrics(optimalControlProblem, t, x, x_next);
-  return toPerformanceIndex(metrics);
-}
+    PerformanceIndex computeEventPerformance(OptimalControlProblem &optimalControlProblem, scalar_t t,
+                                             const vector_t &x,
+                                             const vector_t &x_next) {
+        const auto metrics = computeEventMetrics(optimalControlProblem, t, x, x_next);
+        return toPerformanceIndex(metrics);
+    }
 
-PerformanceIndex computeTerminalPerformance(OptimalControlProblem& optimalControlProblem, scalar_t t, const vector_t& x) {
-  const auto metrics = computeTerminalMetrics(optimalControlProblem, t, x);
-  return toPerformanceIndex(metrics);
-}
-
-}  // namespace multiple_shooting
-}  // namespace ocs2
+    PerformanceIndex computeTerminalPerformance(OptimalControlProblem &optimalControlProblem, scalar_t t,
+                                                const vector_t &x) {
+        const auto metrics = computeTerminalMetrics(optimalControlProblem, t, x);
+        return toPerformanceIndex(metrics);
+    }
+} // namespace ocs2::multiple_shooting

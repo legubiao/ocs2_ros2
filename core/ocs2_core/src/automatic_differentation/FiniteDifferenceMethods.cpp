@@ -32,67 +32,60 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/automatic_differentiation/FiniteDifferenceMethods.h>
 
 namespace ocs2 {
+    matrix_t finiteDifferenceDerivative(std::function<vector_t(const vector_t &)> f, const vector_t &x0, scalar_t eps,
+                                        const bool doubleSidedDerivative) {
+        const vector_t f0 = f(x0);
+        const size_t varDim = x0.rows();
+        const size_t stateDim = f0.rows();
+        matrix_t jacobian(stateDim, varDim);
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-matrix_t finiteDifferenceDerivative(std::function<vector_t(const vector_t&)> f, const vector_t& x0, scalar_t eps,
-                                    bool doubleSidedDerivative) {
-  const vector_t f0 = f(x0);
-  const size_t varDim = x0.rows();
-  const size_t stateDim = f0.rows();
-  matrix_t jacobian(stateDim, varDim);
+        for (long i = 0; i < varDim; i++) {
+            // inspired from: http://en.wikipedia.org/wiki/Numerical_differentiation#Practical_considerations_using_floating_point_arithmetic
+            scalar_t h = eps * std::max(fabs(x0(i)), 1.0);
 
-  for (size_t i = 0; i < varDim; i++) {
-    // inspired from: http://en.wikipedia.org/wiki/Numerical_differentiation#Practical_considerations_using_floating_point_arithmetic
-    scalar_t h = eps * std::max(fabs(x0(i)), 1.0);
+            vector_t xPlus = x0;
+            xPlus(i) += h;
 
-    vector_t xPlus = x0;
-    xPlus(i) += h;
+            if (doubleSidedDerivative) {
+                vector_t xMinus = x0;
+                xMinus(i) -= h;
+                jacobian.col(i) = (f(xPlus) - f(xMinus)) / (2.0 * h);
+            } else {
+                jacobian.col(i) = (f(xPlus) - f0) / h;
+            }
+        }
 
-    if (doubleSidedDerivative) {
-      vector_t xMinus = x0;
-      xMinus(i) -= h;
-      jacobian.col(i) = (f(xPlus) - f(xMinus)) / (2.0 * h);
-    } else {
-      jacobian.col(i) = (f(xPlus) - f0) / h;
+        return jacobian;
     }
-  }
 
-  return jacobian;
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-matrix_t finiteDifferenceDerivativeState(ControlledSystemBase& system, scalar_t t, const vector_t& x, const vector_t& u, scalar_t eps,
-                                         bool doubleSidedDerivative, bool isSecondOrderSystem) {
-  auto f = [&](const vector_t& var) -> vector_t { return system.computeFlowMap(t, var, u); };
+    matrix_t finiteDifferenceDerivativeState(ControlledSystemBase &system, scalar_t t, const vector_t &x,
+                                             const vector_t &u, scalar_t eps,
+                                             bool doubleSidedDerivative, bool isSecondOrderSystem) {
+        auto f = [&](const vector_t &var) -> vector_t { return system.computeFlowMap(t, var, u); };
 
-  matrix_t A = finiteDifferenceDerivative(f, x, eps, doubleSidedDerivative);
+        matrix_t A = finiteDifferenceDerivative(f, x, eps, doubleSidedDerivative);
 
-  if (isSecondOrderSystem) {
-    // Assumes state vector = [x, x_dot]
-    A.topLeftCorner(x.rows() / 2, x.rows() / 2).setZero();
-    A.topRightCorner(x.rows() / 2, x.rows() / 2).setIdentity();
-  }
-  return A;
-}
+        if (isSecondOrderSystem) {
+            // Assumes state vector = [x, x_dot]
+            A.topLeftCorner(x.rows() / 2, x.rows() / 2).setZero();
+            A.topRightCorner(x.rows() / 2, x.rows() / 2).setIdentity();
+        }
+        return A;
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-matrix_t finiteDifferenceDerivativeInput(ControlledSystemBase& system, scalar_t t, const vector_t& x, const vector_t& u, scalar_t eps,
-                                         bool doubleSidedDerivative, bool isSecondOrderSystem) {
-  auto f = [&](const vector_t& var) -> vector_t { return system.computeFlowMap(t, x, var); };
 
-  matrix_t B = finiteDifferenceDerivative(f, u, eps, doubleSidedDerivative);
+    matrix_t finiteDifferenceDerivativeInput(ControlledSystemBase &system, scalar_t t, const vector_t &x,
+                                             const vector_t &u, scalar_t eps,
+                                             bool doubleSidedDerivative, bool isSecondOrderSystem) {
+        auto f = [&](const vector_t &var) -> vector_t { return system.computeFlowMap(t, x, var); };
 
-  if (isSecondOrderSystem) {
-    // Assumes state vector = [x, x_dot]
-    B.topRows(x.rows() / 2).setZero();
-  }
-  return B;
-}
+        matrix_t B = finiteDifferenceDerivative(f, u, eps, doubleSidedDerivative);
 
-}  // namespace ocs2
+        if (isSecondOrderSystem) {
+            // Assumes state vector = [x, x_dot]
+            B.topRows(x.rows() / 2).setZero();
+        }
+        return B;
+    }
+} // namespace ocs2

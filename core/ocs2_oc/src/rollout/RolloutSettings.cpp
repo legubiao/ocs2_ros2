@@ -34,45 +34,47 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/misc/LoadData.h>
 
-namespace ocs2 {
-namespace rollout {
 
-Settings loadSettings(const std::string& filename, const std::string& fieldName, bool verbose) {
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_info(filename, pt);
+namespace ocs2::rollout {
+    Settings loadSettings(const std::string &filename, const std::string &fieldName, bool verbose) {
+        boost::property_tree::ptree pt;
+        read_info(filename, pt);
 
-  Settings settings;
+        Settings settings;
 
-  if (verbose) {
-    std::cerr << "\n #### Rollout Settings: ";
-    std::cerr << "\n #### =============================================================================\n";
-  }
+        if (verbose) {
+            std::cerr << "\n #### Rollout Settings: ";
+            std::cerr << "\n #### =============================================================================\n";
+        }
 
-  loadData::loadPtreeValue(pt, settings.absTolODE, fieldName + ".AbsTolODE", verbose);
-  loadData::loadPtreeValue(pt, settings.relTolODE, fieldName + ".RelTolODE", verbose);
-  loadData::loadPtreeValue(pt, settings.maxNumStepsPerSecond, fieldName + ".maxNumStepsPerSecond", verbose);
-  loadData::loadPtreeValue(pt, settings.timeStep, fieldName + ".timeStep", verbose);
+        loadData::loadPtreeValue(pt, settings.absTolODE, fieldName + ".AbsTolODE", verbose);
+        loadData::loadPtreeValue(pt, settings.relTolODE, fieldName + ".RelTolODE", verbose);
+        loadData::loadPtreeValue(pt, settings.maxNumStepsPerSecond, fieldName + ".maxNumStepsPerSecond", verbose);
+        loadData::loadPtreeValue(pt, settings.timeStep, fieldName + ".timeStep", verbose);
 
-  auto integratorName = integrator_type::toString(settings.integratorType);  // keep default
-  loadData::loadPtreeValue(pt, integratorName, fieldName + ".integratorType", verbose);
-  settings.integratorType = integrator_type::fromString(integratorName);
+        auto integratorName = integrator_type::toString(settings.integratorType); // keep default
+        loadData::loadPtreeValue(pt, integratorName, fieldName + ".integratorType", verbose);
+        settings.integratorType = integrator_type::fromString(integratorName);
 
-  loadData::loadPtreeValue(pt, settings.checkNumericalStability, fieldName + ".checkNumericalStability", verbose);
-  loadData::loadPtreeValue(pt, settings.reconstructInputTrajectory, fieldName + ".reconstructInputTrajectory", verbose);
+        loadData::loadPtreeValue(pt, settings.checkNumericalStability, fieldName + ".checkNumericalStability",
+                                 verbose);
+        loadData::loadPtreeValue(pt, settings.reconstructInputTrajectory, fieldName + ".reconstructInputTrajectory",
+                                 verbose);
 
-  auto rootFindingAlgorithmName = static_cast<int>(settings.rootFindingAlgorithm);  // keep default
-  loadData::loadPtreeValue(pt, rootFindingAlgorithmName, fieldName + ".rootFindingAlgorithm", verbose);
-  settings.rootFindingAlgorithm = static_cast<RootFinderType>(rootFindingAlgorithmName);
+        auto rootFindingAlgorithmName = static_cast<int>(settings.rootFindingAlgorithm); // keep default
+        loadData::loadPtreeValue(pt, rootFindingAlgorithmName, fieldName + ".rootFindingAlgorithm", verbose);
+        settings.rootFindingAlgorithm = static_cast<RootFinderType>(rootFindingAlgorithmName);
 
-  loadData::loadPtreeValue(pt, settings.maxSingleEventIterations, fieldName + ".maxSingleEventIterations", verbose);
-  loadData::loadPtreeValue(pt, settings.useTrajectorySpreadingController, fieldName + ".useTrajectorySpreadingController", verbose);
+        loadData::loadPtreeValue(pt, settings.maxSingleEventIterations, fieldName + ".maxSingleEventIterations",
+                                 verbose);
+        loadData::loadPtreeValue(pt, settings.useTrajectorySpreadingController,
+                                 fieldName + ".useTrajectorySpreadingController", verbose);
 
-  if (verbose) {
-    std::cerr << " #### =============================================================================" << std::endl;
-  }
+        if (verbose) {
+            std::cerr << " #### =============================================================================" <<
+                    std::endl;
+        }
 
-  return settings;
-}
-
-}  // namespace rollout
-}  // namespace ocs2
+        return settings;
+    }
+} // namespace ocs2::rollout

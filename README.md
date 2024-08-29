@@ -59,15 +59,8 @@ Check [here](basic%20examples/) for more detailed instructions.
 
 ### 3.1 Perceptive Locomotion
 
-Before tried this example, you need to clone the [Plane Segmentation ROS2](https://github.com/legubiao/plane_segmentation_ros2) into your workspace src folder, and use rosdep to initialize the dependencies.
-```bash
-git clone https://github.com/legubiao/plane_segmentation_ros2
-```
-For detailed instructions, please refer to the following link:
-* [OCS2_Anymal_Models](advance%20examples/ocs2_perceptive_anymal/ocs2_anymal_models/)
-* [OCS2_Anymal_MPC](advance%20examples/ocs2_perceptive_anymal/ocs2_anymal_mpc/)
-* [OCS2_Anymal_Loopshaping_MPC](advance%20examples/ocs2_perceptive_anymal/ocs2_anymal_loopshaping_mpc/)
+[OCS2_Perceptive Anymal](advance%20examples/ocs2_perceptive_anymal/)
 
 ### 3.2 RaiSim Simulation
-Raisim provided education license for free, you can apply it from [here](https://www.raisim.com/education). After you get the license, you can follow the instructions to install the RaiSim and RaiSimUnity. 
-* [OCS2_RaiSim](advance%20examples/ocs2_raisim/)
+
+[OCS2_RaiSim](advance%20examples/ocs2_raisim/)

@@ -31,9 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 LinearSystemDynamics::LinearSystemDynamics(matrix_t A, matrix_t B, matrix_t G /*= matrix_t()*/)
     : A_(std::move(A)), B_(std::move(B)), G_(std::move(G)) {
   if (G_.size() == 0) {
@@ -41,9 +39,7 @@ LinearSystemDynamics::LinearSystemDynamics(matrix_t A, matrix_t B, matrix_t G /*
   }
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 LinearSystemDynamics* LinearSystemDynamics::clone() const {
   return new LinearSystemDynamics(*this);
 }

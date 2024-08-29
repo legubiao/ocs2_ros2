@@ -170,7 +170,7 @@ feet_array_t<LegPhase> getSwingPhasePerLeg(scalar_t time, const ocs2::ModeSchedu
                              [time](SwingTiming timing) { return (timing.start <= time) && (time <= timing.end); });
       if (it == swingTimingsPerLeg[leg].end()) {
         // Leg is not swinging for current time
-        swingPhasePerLeg[leg].phase = scalar_t(-1.0);
+        swingPhasePerLeg[leg].phase = static_cast<scalar_t>(-1.0);
         swingPhasePerLeg[leg].duration = std::numeric_limits<scalar_t>::quiet_NaN();
       } else {
         // Leg is swinging for current time

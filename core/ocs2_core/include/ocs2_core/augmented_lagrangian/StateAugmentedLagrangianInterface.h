@@ -31,42 +31,43 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/PreComputation.h>
 #include <ocs2_core/Types.h>
-#include <ocs2_core/constraint/StateConstraint.h>
 #include <ocs2_core/model_data/Metrics.h>
 #include <ocs2_core/model_data/Multiplier.h>
 
 namespace ocs2 {
+    /** The base class for Augmented Lagrangian penalty of state constraint. */
+    class StateAugmentedLagrangianInterface {
+    public:
+        StateAugmentedLagrangianInterface() = default;
 
-/** The base class for Augmented Lagrangian penalty of state constraint. */
-class StateAugmentedLagrangianInterface {
- public:
-  StateAugmentedLagrangianInterface() = default;
-  virtual ~StateAugmentedLagrangianInterface() = default;
-  virtual StateAugmentedLagrangianInterface* clone() const = 0;
+        virtual ~StateAugmentedLagrangianInterface() = default;
 
-  /** Check penalty's activity */
-  virtual bool isActive(scalar_t time) const = 0;
+        [[nodiscard]] virtual StateAugmentedLagrangianInterface *clone() const = 0;
 
-  /** Get the size of the constraint vector at given time */
-  virtual size_t getNumConstraints(scalar_t time) const = 0;
+        /** Check penalty's activity */
+        [[nodiscard]] virtual bool isActive(scalar_t time) const = 0;
 
-  /** Get the constraint and its penalty value */
-  virtual LagrangianMetrics getValue(scalar_t time, const vector_t& state, const Multiplier& multiplier,
-                                     const PreComputation& preComp) const = 0;
+        /** Get the size of the constraint vector at given time */
+        [[nodiscard]] virtual size_t getNumConstraints(scalar_t time) const = 0;
 
-  /** Get the constraint's penalty quadratic approximation */
-  virtual ScalarFunctionQuadraticApproximation getQuadraticApproximation(scalar_t time, const vector_t& state, const Multiplier& multiplier,
-                                                                         const PreComputation& preComp) const = 0;
+        /** Get the constraint and its penalty value */
+        [[nodiscard]] virtual LagrangianMetrics getValue(scalar_t time, const vector_t &state, const Multiplier &multiplier,
+                                           const PreComputation &preComp) const = 0;
 
-  /** Update Lagrange/penalty multipliers and the penalty function value. */
-  virtual std::pair<Multiplier, scalar_t> updateLagrangian(scalar_t time, const vector_t& state, const vector_t& constraint,
-                                                           const Multiplier& multiplier) const = 0;
+        /** Get the constraint's penalty quadratic approximation */
+        [[nodiscard]] virtual ScalarFunctionQuadraticApproximation getQuadraticApproximation(
+            scalar_t time, const vector_t &state, const Multiplier &multiplier,
+            const PreComputation &preComp) const = 0;
 
-  /** Initialize Lagrange/penalty multipliers. */
-  virtual Multiplier initializeLagrangian(scalar_t time) const = 0;
+        /** Update Lagrange/penalty multipliers and the penalty function value. */
+        [[nodiscard]] virtual std::pair<Multiplier, scalar_t> updateLagrangian(scalar_t time, const vector_t &state,
+                                                                 const vector_t &constraint,
+                                                                 const Multiplier &multiplier) const = 0;
 
- protected:
-  StateAugmentedLagrangianInterface(const StateAugmentedLagrangianInterface& rhs) = default;
-};
+        /** Initialize Lagrange/penalty multipliers. */
+        [[nodiscard]] virtual Multiplier initializeLagrangian(scalar_t time) const = 0;
 
-}  // namespace ocs2
+    protected:
+        StateAugmentedLagrangianInterface(const StateAugmentedLagrangianInterface &rhs) = default;
+    };
+} // namespace ocs2

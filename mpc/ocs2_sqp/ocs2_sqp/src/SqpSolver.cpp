@@ -58,7 +58,7 @@ namespace ocs2 {
                          const Initializer &initializer)
         : settings_(rectifySettings(optimalControlProblem, std::move(settings))),
           hpipmInterface_(OcpSize(), settings_.hpipmSettings),
-          threadPool_(std::max(settings_.nThreads, size_t(1)) - 1, settings_.threadPriority),
+          threadPool_(std::max(settings_.nThreads, static_cast<size_t>(1)) - 1, settings_.threadPriority),
           logger_(settings_.logSize) {
         Eigen::setNbThreads(1); // No multithreading within Eigen.
         Eigen::initParallel();

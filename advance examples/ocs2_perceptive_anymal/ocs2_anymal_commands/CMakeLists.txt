@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_anymal_commands)
 
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(dependencies
         ocs2_switched_model_interface
         grid_map_filters_rsl
@@ -38,17 +41,14 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 add_executable(target_command_node
         src/AnymalPoseCommandNode.cpp
 )
-ament_target_dependencies(target_command_node ${dependencies})
 target_link_libraries(target_command_node ${PROJECT_NAME})
 target_compile_options(target_command_node PRIVATE ${OCS2_CXX_FLAGS})
 
 add_executable(gait_command_node src/AnymalGaitNode.cpp)
-ament_target_dependencies(gait_command_node ${dependencies})
 target_link_libraries(gait_command_node ${PROJECT_NAME})
 target_compile_options(gait_command_node PRIVATE ${OCS2_CXX_FLAGS})
 
 add_executable(motion_command_node src/AnymalMotionCommandNode.cpp)
-ament_target_dependencies(motion_command_node ${dependencies})
 target_link_libraries(motion_command_node ${PROJECT_NAME})
 target_compile_options(motion_command_node PRIVATE ${OCS2_CXX_FLAGS})
 

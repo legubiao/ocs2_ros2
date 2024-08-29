@@ -60,27 +60,21 @@ static std::shared_ptr<file_sink_t> fileSink_;
 
 BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", SeverityLevel);
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 const std::string& toString(const SeverityLevel lvl) {
   static const std::unordered_map<SeverityLevel, std::string> severityMap = {
       {SeverityLevel::DEBUG, "DEBUG"}, {SeverityLevel::INFO, "INFO"}, {SeverityLevel::WARNING, "WARNING"}, {SeverityLevel::ERROR, "ERROR"}};
   return severityMap.at(lvl);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 SeverityLevel fromString(const std::string& severity) {
   static const std::unordered_map<std::string, SeverityLevel> severityMap = {
       {"DEBUG", SeverityLevel::DEBUG}, {"INFO", SeverityLevel::INFO}, {"WARNING", SeverityLevel::WARNING}, {"ERROR", SeverityLevel::ERROR}};
   return severityMap.at(severity);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 Settings loadSettings(const std::string& fileName, const std::string& fieldName) {
   Settings settings;
   boost::property_tree::ptree pt;

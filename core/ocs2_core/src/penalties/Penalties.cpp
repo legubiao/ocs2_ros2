@@ -34,100 +34,97 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-namespace ocs2 {
-namespace loadData {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-template <>
-void loadPenaltyConfig<augmented::SmoothAbsolutePenalty::Config>(const std::string& fileName, const std::string& fieldName,
-                                                                 augmented::SmoothAbsolutePenalty::Config& config, bool verbose) {
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_info(fileName, pt);
+namespace ocs2::loadData {
+    template<>
+    void loadPenaltyConfig<augmented::SmoothAbsolutePenalty::Config>(
+        const std::string &fileName, const std::string &fieldName,
+        augmented::SmoothAbsolutePenalty::Config &config, bool verbose) {
+        boost::property_tree::ptree pt;
+        read_info(fileName, pt);
 
-  if (verbose) {
-    std::cerr << "\n #### " << fieldName;
-    std::cerr << "\n #### =============================================================================\n";
-  }
+        if (verbose) {
+            std::cerr << "\n #### " << fieldName;
+            std::cerr << "\n #### =============================================================================\n";
+        }
 
-  loadData::loadPtreeValue(pt, config.scale, fieldName + ".scale", verbose);
-  loadData::loadPtreeValue(pt, config.relaxation, fieldName + ".relaxation", verbose);
-  loadData::loadPtreeValue(pt, config.stepSize, fieldName + ".stepSize", verbose);
+        loadPtreeValue(pt, config.scale, fieldName + ".scale", verbose);
+        loadPtreeValue(pt, config.relaxation, fieldName + ".relaxation", verbose);
+        loadPtreeValue(pt, config.stepSize, fieldName + ".stepSize", verbose);
 
-  if (verbose) {
-    std::cerr << " #### =============================================================================\n" << std::endl;
-  }
-}
+        if (verbose) {
+            std::cerr << " #### =============================================================================\n" <<
+                    std::endl;
+        }
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-template <>
-void loadPenaltyConfig<augmented::QuadraticPenalty::Config>(const std::string& fileName, const std::string& fieldName,
-                                                            augmented::QuadraticPenalty::Config& config, bool verbose) {
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_info(fileName, pt);
 
-  if (verbose) {
-    std::cerr << "\n #### " << fieldName;
-    std::cerr << "\n #### =============================================================================\n";
-  }
+    template<>
+    void loadPenaltyConfig<augmented::QuadraticPenalty::Config>(const std::string &fileName,
+                                                                const std::string &fieldName,
+                                                                augmented::QuadraticPenalty::Config &config,
+                                                                bool verbose) {
+        boost::property_tree::ptree pt;
+        read_info(fileName, pt);
 
-  loadData::loadPtreeValue(pt, config.scale, fieldName + ".scale", verbose);
-  loadData::loadPtreeValue(pt, config.stepSize, fieldName + ".stepSize", verbose);
+        if (verbose) {
+            std::cerr << "\n #### " << fieldName;
+            std::cerr << "\n #### =============================================================================\n";
+        }
 
-  if (verbose) {
-    std::cerr << " #### =============================================================================\n" << std::endl;
-  }
-}
+        loadPtreeValue(pt, config.scale, fieldName + ".scale", verbose);
+        loadPtreeValue(pt, config.stepSize, fieldName + ".stepSize", verbose);
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-template <>
-void loadPenaltyConfig<augmented::ModifiedRelaxedBarrierPenalty::Config>(const std::string& fileName, const std::string& fieldName,
-                                                                         augmented::ModifiedRelaxedBarrierPenalty::Config& config,
-                                                                         bool verbose) {
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_info(fileName, pt);
+        if (verbose) {
+            std::cerr << " #### =============================================================================\n" <<
+                    std::endl;
+        }
+    }
 
-  if (verbose) {
-    std::cerr << "\n #### " << fieldName;
-    std::cerr << "\n #### =============================================================================\n";
-  }
 
-  loadData::loadPtreeValue(pt, config.scale, fieldName + ".scale", verbose);
-  loadData::loadPtreeValue(pt, config.relaxation, fieldName + ".relaxation", verbose);
-  loadData::loadPtreeValue(pt, config.stepSize, fieldName + ".stepSize", verbose);
+    template<>
+    void loadPenaltyConfig<augmented::ModifiedRelaxedBarrierPenalty::Config>(
+        const std::string &fileName, const std::string &fieldName,
+        augmented::ModifiedRelaxedBarrierPenalty::Config &config,
+        bool verbose) {
+        boost::property_tree::ptree pt;
+        read_info(fileName, pt);
 
-  if (verbose) {
-    std::cerr << " #### =============================================================================\n" << std::endl;
-  }
-}
+        if (verbose) {
+            std::cerr << "\n #### " << fieldName;
+            std::cerr << "\n #### =============================================================================\n";
+        }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-template <>
-void loadPenaltyConfig<augmented::SlacknessSquaredHingePenalty::Config>(const std::string& fileName, const std::string& fieldName,
-                                                                        augmented::SlacknessSquaredHingePenalty::Config& config,
-                                                                        bool verbose) {
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_info(fileName, pt);
+        loadPtreeValue(pt, config.scale, fieldName + ".scale", verbose);
+        loadPtreeValue(pt, config.relaxation, fieldName + ".relaxation", verbose);
+        loadPtreeValue(pt, config.stepSize, fieldName + ".stepSize", verbose);
 
-  if (verbose) {
-    std::cerr << "\n #### " << fieldName;
-    std::cerr << "\n #### =============================================================================\n";
-  }
+        if (verbose) {
+            std::cerr << " #### =============================================================================\n" <<
+                    std::endl;
+        }
+    }
 
-  loadData::loadPtreeValue(pt, config.scale, fieldName + ".scale", verbose);
-  loadData::loadPtreeValue(pt, config.stepSize, fieldName + ".stepSize", verbose);
 
-  if (verbose) {
-    std::cerr << " #### =============================================================================\n" << std::endl;
-  }
-}
+    template<>
+    void loadPenaltyConfig<augmented::SlacknessSquaredHingePenalty::Config>(
+        const std::string &fileName, const std::string &fieldName,
+        augmented::SlacknessSquaredHingePenalty::Config &config,
+        bool verbose) {
+        boost::property_tree::ptree pt;
+        read_info(fileName, pt);
 
-}  // namespace loadData
-}  // namespace ocs2
+        if (verbose) {
+            std::cerr << "\n #### " << fieldName;
+            std::cerr << "\n #### =============================================================================\n";
+        }
+
+        loadPtreeValue(pt, config.scale, fieldName + ".scale", verbose);
+        loadPtreeValue(pt, config.stepSize, fieldName + ".stepSize", verbose);
+
+        if (verbose) {
+            std::cerr << " #### =============================================================================\n" <<
+                    std::endl;
+        }
+    }
+} // namespace ocs2::loadData

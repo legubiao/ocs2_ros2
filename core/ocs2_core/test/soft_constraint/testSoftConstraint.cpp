@@ -33,9 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/soft_constraint/StateInputSoftConstraint.h>
 #include <ocs2_core/soft_constraint/StateSoftConstraint.h>
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 class TestStateConstraint final : public ocs2::StateConstraint {
  public:
   TestStateConstraint(ocs2::ConstraintOrder constraintOrder, size_t numConstraints)
@@ -60,9 +58,7 @@ class TestStateConstraint final : public ocs2::StateConstraint {
   size_t numConstraints_;
 };
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 class TestStateInputConstraint : public ocs2::StateInputConstraint {
  public:
   TestStateInputConstraint(ocs2::ConstraintOrder constraintOrder, size_t numConstraints)

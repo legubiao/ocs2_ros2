@@ -35,9 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 vector_array_t LoopshapingStateConstraint::getValue(scalar_t t, const vector_t& x, const PreComputation& preComp) const {
   if (this->empty()) {
     return vector_array_t();
@@ -50,9 +48,7 @@ vector_array_t LoopshapingStateConstraint::getValue(scalar_t t, const vector_t& 
   return StateConstraintCollection::getValue(t, x_system, preComp_system);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 VectorFunctionLinearApproximation LoopshapingStateConstraint::getLinearApproximation(scalar_t t, const vector_t& x,
                                                                                      const PreComputation& preComp) const {
   if (this->empty()) {
@@ -81,9 +77,7 @@ VectorFunctionLinearApproximation LoopshapingStateConstraint::getLinearApproxima
   return c;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 VectorFunctionQuadraticApproximation LoopshapingStateConstraint::getQuadraticApproximation(scalar_t t, const vector_t& x,
                                                                                            const PreComputation& preComp) const {
   if (this->empty()) {

@@ -36,9 +36,7 @@ namespace ocs2 {
 
 namespace integrator_type {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::string toString(IntegratorType integratorType) {
   static const std::unordered_map<IntegratorType, std::string> integratorMap = {
       {IntegratorType::EULER, "EULER"},
@@ -54,9 +52,7 @@ std::string toString(IntegratorType integratorType) {
   return integratorMap.at(integratorType);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 IntegratorType fromString(const std::string& name) {
   static const std::unordered_map<std::string, IntegratorType> integratorMap = {
       {"EULER", IntegratorType::EULER},
@@ -74,9 +70,7 @@ IntegratorType fromString(const std::string& name) {
 
 }  // namespace integrator_type
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::unique_ptr<IntegratorBase> newIntegrator(IntegratorType integratorType, const std::shared_ptr<SystemEventHandler>& eventHandlerPtr) {
   switch (integratorType) {
     case (IntegratorType::EULER):

@@ -30,20 +30,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_oc/synchronized_module/ReferenceManager.h"
 
 namespace ocs2 {
+    ReferenceManager::ReferenceManager(TargetTrajectories initialTargetTrajectories, ModeSchedule initialModeSchedule)
+        : modeSchedule_(std::move(initialModeSchedule)), targetTrajectories_(std::move(initialTargetTrajectories)) {
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-ReferenceManager::ReferenceManager(TargetTrajectories initialTargetTrajectories, ModeSchedule initialModeSchedule)
-    : targetTrajectories_(std::move(initialTargetTrajectories)), modeSchedule_(std::move(initialModeSchedule)) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void ReferenceManager::preSolverRun(scalar_t initTime, scalar_t finalTime, const vector_t& initState) {
-  targetTrajectories_.updateFromBuffer();
-  modeSchedule_.updateFromBuffer();
-  modifyReferences(initTime, finalTime, initState, targetTrajectories_.get(), modeSchedule_.get());
-}
-
-}  // namespace ocs2
+    void ReferenceManager::preSolverRun(const scalar_t initTime, const scalar_t finalTime, const vector_t &initState) {
+        targetTrajectories_.updateFromBuffer();
+        modeSchedule_.updateFromBuffer();
+        modifyReferences(initTime, finalTime, initState, targetTrajectories_.get(), modeSchedule_.get());
+    }
+} // namespace ocs2

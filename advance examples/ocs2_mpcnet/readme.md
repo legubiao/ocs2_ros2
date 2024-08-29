@@ -49,7 +49,7 @@ ONNX Runtime is an inferencing and training accelerator. Here, it is used for de
 ### 2.1 Ballbot
 ```bash
 cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_ballbot_mpcnet --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --packages-up-to ocs2_ballbot_mpcnet
 ```
 
 ```bash
@@ -58,10 +58,17 @@ ros2 launch ocs2_ballbot_mpcnet ballbot_mpcnet.launch.py
 ```
 
 ### 2.2 Legged Robot
+* build the package
 ```bash
 cd ~/ocs2_ws
-colcon build --packages-up-to ocs2_legged_robot_mpcnet --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build --packages-up-to ocs2_legged_robot_mpcnet
 ```
+* launch the simulation without raisim
+```bash
+source ~/ocs2_ws/install/setup.bash
+ros2 launch ocs2_legged_robot_mpcnet default.launch.py
+```
+
 
 ## 3. Train MPC-Net
 ### 3.1 Create Python Venv

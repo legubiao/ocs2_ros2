@@ -31,17 +31,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 StateTriggeredEventHandler::StateTriggeredEventHandler(scalar_t minEventTimeDifference)
     : SystemEventHandler(), minEventTimeDifference_(minEventTimeDifference) {
   reset();
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::pair<bool, size_t> StateTriggeredEventHandler::checkEvent(OdeBase& system, scalar_t time, const vector_t& state) {
   // state-triggered event
   guardSurfacesValuesCurrent_ = system.computeGuardSurfaces(time, state);
@@ -65,31 +61,23 @@ std::pair<bool, size_t> StateTriggeredEventHandler::checkEvent(OdeBase& system, 
   return {eventTriggered, eventID};
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void StateTriggeredEventHandler::setLastEvent(scalar_t lastEventTriggeredTime, const vector_t& lastGuardSurfacesValues) {
   lastEventTriggeredTime_ = lastEventTriggeredTime;
   guardSurfacesValuesPrevious_ = lastGuardSurfacesValues;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 const vector_t& StateTriggeredEventHandler::getGuardSurfacesValues() const {
   return guardSurfacesValuesPrevious_;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 scalar_t StateTriggeredEventHandler::getminEventTimeDifference() const {
   return minEventTimeDifference_;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 void StateTriggeredEventHandler::reset() {
   SystemEventHandler::reset();
   lastEventTriggeredTime_ = std::numeric_limits<scalar_t>::lowest();

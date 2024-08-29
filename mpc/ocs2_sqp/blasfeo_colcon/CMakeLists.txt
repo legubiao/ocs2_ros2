@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(blasfeo_colcon)
 
+set(CMAKE_BUILD_TYPE Release)
+
 find_package(ament_cmake REQUIRED)
 include(FetchContent)
 

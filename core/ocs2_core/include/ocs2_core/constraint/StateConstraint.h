@@ -36,55 +36,59 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/constraint/ConstraintOrder.h>
 
 namespace ocs2 {
+    /** State-only constraint function base class */
+    class StateConstraint {
+    public:
+        explicit StateConstraint(ConstraintOrder order) : order_(order) {
+        }
 
-/** State-only constraint function base class */
-class StateConstraint {
- public:
-  explicit StateConstraint(ConstraintOrder order) : order_(order) {}
-  virtual ~StateConstraint() = default;
-  virtual StateConstraint* clone() const = 0;
+        virtual ~StateConstraint() = default;
 
-  /** Get the constraint order (Linear or Quadratic) */
-  constexpr ConstraintOrder getOrder() const { return order_; };
+        [[nodiscard]] virtual StateConstraint *clone() const = 0;
 
-  /** Check constraint activity */
-  virtual bool isActive(scalar_t time) const { return true; }
+        /** Get the constraint order (Linear or Quadratic) */
+        [[nodiscard]] constexpr ConstraintOrder getOrder() const { return order_; };
 
-  /** Get the size of the constraint vector at given time */
-  virtual size_t getNumConstraints(scalar_t time) const = 0;
+        /** Check constraint activity */
+        [[nodiscard]] virtual bool isActive(scalar_t time) const { return true; }
 
-  /** Get the constraint vector value */
-  virtual vector_t getValue(scalar_t time, const vector_t& state, const PreComputation& preComp) const = 0;
+        /** Get the size of the constraint vector at given time */
+        [[nodiscard]] virtual size_t getNumConstraints(scalar_t time) const = 0;
 
-  /** Get the constraint linear approximation */
-  virtual VectorFunctionLinearApproximation getLinearApproximation(scalar_t time, const vector_t& state,
-                                                                   const PreComputation& preComp) const {
-    if (order_ == ConstraintOrder::Linear) {
-      throw std::runtime_error("[StateConstraint] Linear approximation not implemented!");
-    } else {
-      throw std::runtime_error("[StateConstraint] The class only provides Quadratic approximation! call getQuadraticApproximation()");
-    }
-  }
+        /** Get the constraint vector value */
+        [[nodiscard]] virtual vector_t getValue(scalar_t time, const vector_t &state,
+                                                const PreComputation &preComp) const = 0;
 
-  /** Get the constraint quadratic approximation */
-  virtual VectorFunctionQuadraticApproximation getQuadraticApproximation(scalar_t time, const vector_t& state,
-                                                                         const PreComputation& preComp) const {
-    if (order_ == ConstraintOrder::Quadratic) {
-      throw std::runtime_error("[StateConstraint] Quadratic approximation not implemented!");
-    } else {
-      throw std::runtime_error("[StateConstraint] The class only provides Linear approximation! call getLinearApproximation()");
-    }
-  }
+        /** Get the constraint linear approximation */
+        [[nodiscard]] virtual VectorFunctionLinearApproximation getLinearApproximation(
+            scalar_t time, const vector_t &state,
+            const PreComputation &preComp) const {
+            if (order_ == ConstraintOrder::Linear) {
+                throw std::runtime_error("[StateConstraint] Linear approximation not implemented!");
+            }
+            throw std::runtime_error(
+                "[StateConstraint] The class only provides Quadratic approximation! call getQuadraticApproximation()");
+        }
 
- protected:
-  StateConstraint(const StateConstraint& rhs) = default;
+        /** Get the constraint quadratic approximation */
+        [[nodiscard]] virtual VectorFunctionQuadraticApproximation getQuadraticApproximation(
+            scalar_t time, const vector_t &state,
+            const PreComputation &preComp) const {
+            if (order_ == ConstraintOrder::Quadratic) {
+                throw std::runtime_error("[StateConstraint] Quadratic approximation not implemented!");
+            }
+            throw std::runtime_error(
+                "[StateConstraint] The class only provides Linear approximation! call getLinearApproximation()");
+        }
 
- private:
-  ConstraintOrder order_;
-};
+    protected:
+        StateConstraint(const StateConstraint &rhs) = default;
 
-// Template for conditional compilation using SFINAE
-template <typename T>
-using EnableIfStateConstraint_t = typename std::enable_if<std::is_same<T, StateConstraint>::value, bool>::type;
+    private:
+        ConstraintOrder order_;
+    };
 
-}  // namespace ocs2
+    // Template for conditional compilation using SFINAE
+    template<typename T>
+    using EnableIfStateConstraint_t = std::enable_if_t<std::is_same_v<T, StateConstraint>, bool>;
+} // namespace ocs2

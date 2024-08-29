@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.14)
 set(CMAKE_CXX_STANDARD 17)
 project(ocs2_ballbot_ros)
 
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(dependencies
         tf2
         urdf
@@ -104,35 +107,15 @@ install(DIRECTORY launch rviz
 ament_export_dependencies(${dependencies})
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
-#########################
-###   CLANG TOOLING   ###
-#########################
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling for target ocs2_ballbot")
-    add_clang_tooling(
-            TARGETS
-            ${PROJECT_NAME}
-            ballbot_ddp
-            ballbot_sqp
-            ballbot_dummy_test
-            ballbot_target
-            ballbot_slp
-            ballbot_mpc_mrt
-            SOURCE_DIRS src include
-            CT_HEADER_DIRS include
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
-
 
 #############
 ## Testing ##
 #############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
 
 if (BUILD_TESTING)
+
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
 
     find_package(ament_lint_auto REQUIRED)
     ament_lint_auto_find_test_dependencies()

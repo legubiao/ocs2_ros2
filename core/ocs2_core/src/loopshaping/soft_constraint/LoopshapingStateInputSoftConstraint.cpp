@@ -31,18 +31,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/loopshaping/soft_constraint/LoopshapingStateInputSoftConstraint.h>
 
 namespace ocs2 {
+    scalar_t LoopshapingStateInputSoftConstraint::getValue(scalar_t t, const vector_t &x, const vector_t &u,
+                                                           const TargetTrajectories &targetTrajectories,
+                                                           const PreComputation &preComp) const {
+        if (this->empty()) {
+            return 0.0;
+        }
 
-scalar_t LoopshapingStateInputSoftConstraint::getValue(scalar_t t, const vector_t& x, const vector_t& u,
-                                                       const TargetTrajectories& targetTrajectories, const PreComputation& preComp) const {
-  if (this->empty()) {
-    return 0.0;
-  }
+        const auto &preCompLS = cast<LoopshapingPreComputation>(preComp);
+        const auto &x_system = preCompLS.getSystemState();
+        const auto &u_system = preCompLS.getSystemInput();
 
-  const LoopshapingPreComputation& preCompLS = cast<LoopshapingPreComputation>(preComp);
-  const auto& x_system = preCompLS.getSystemState();
-  const auto& u_system = preCompLS.getSystemInput();
-
-  return StateInputCostCollection::getValue(t, x_system, u_system, targetTrajectories, preCompLS.getSystemPreComputation());
-}
-
-}  // namespace ocs2
+        return StateInputCostCollection::getValue(t, x_system, u_system, targetTrajectories,
+                                                  preCompLS.getSystemPreComputation());
+    }
+} // namespace ocs2

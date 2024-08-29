@@ -79,7 +79,6 @@ namespace ocs2 {
         const auto &timeTrajectory = primalData.primalSolution.timeTrajectory_;
         const auto &stateTrajectory = primalData.primalSolution.stateTrajectory_;
         const auto &inputTrajectory = primalData.primalSolution.inputTrajectory_;
-        const auto &postEventIndices = primalData.primalSolution.postEventIndices_;
         const auto &multiplierTrajectory = dualSolution.intermediates;
         auto &modelDataTrajectory = primalData.modelDataTrajectory;
 
@@ -286,8 +285,8 @@ namespace ocs2 {
         allSsTrajectory.clear();
         allSsTrajectory.reserve(nominalTimeSize);
         for (int i = 0; i <= numEvents; i++) {
-            iterator_t beginTimeItr = SsNormalizedSwitchingTimesIndices[i].first;
-            iterator_t endTimeItr = SsNormalizedSwitchingTimesIndices[i].second;
+            auto beginTimeItr = SsNormalizedSwitchingTimesIndices[i].first;
+            auto endTimeItr = SsNormalizedSwitchingTimesIndices[i].second;
 
             // solve Riccati equations
             Observer observer(&allSsTrajectory);

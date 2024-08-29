@@ -33,16 +33,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 ScalarFunctionLinearApproximation::ScalarFunctionLinearApproximation(int nx, int nu) {
   resize(nx, nu);
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 ScalarFunctionLinearApproximation& ScalarFunctionLinearApproximation::operator+=(const ScalarFunctionLinearApproximation& rhs) {
   f += rhs.f;
   dfdx += rhs.dfdx;
@@ -50,9 +46,7 @@ ScalarFunctionLinearApproximation& ScalarFunctionLinearApproximation::operator+=
   return *this;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 ScalarFunctionLinearApproximation& ScalarFunctionLinearApproximation::operator*=(scalar_t scalar) {
   f *= scalar;
   dfdx *= scalar;

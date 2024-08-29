@@ -36,17 +36,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2 {
 namespace LoopshapingAugmentedLagrangian {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::unique_ptr<StateAugmentedLagrangianCollection> create(const StateAugmentedLagrangianCollection& systemAugmentedLagrangian,
                                                            std::shared_ptr<LoopshapingDefinition> loopshapingDefinition) {
   return std::make_unique<LoopshapingStateAugmentedLagrangian>(systemAugmentedLagrangian, std::move(loopshapingDefinition));
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::unique_ptr<StateInputAugmentedLagrangianCollection> create(const StateInputAugmentedLagrangianCollection& systemAugmentedLagrangian,
                                                                 std::shared_ptr<LoopshapingDefinition> loopshapingDefinition) {
   switch (loopshapingDefinition->getType()) {

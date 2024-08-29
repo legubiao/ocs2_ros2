@@ -36,17 +36,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2 {
 namespace LoopshapingConstraint {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::unique_ptr<StateConstraintCollection> create(const StateConstraintCollection& systemConstraint,
                                                   std::shared_ptr<LoopshapingDefinition> loopshapingDefinition) {
   return std::make_unique<LoopshapingStateConstraint>(systemConstraint, std::move(loopshapingDefinition));
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 std::unique_ptr<StateInputConstraintCollection> create(const StateInputConstraintCollection& systemConstraint,
                                                        std::shared_ptr<LoopshapingDefinition> loopshapingDefinition) {
   switch (loopshapingDefinition->getType()) {
