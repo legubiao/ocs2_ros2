@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(ocs2_ros_interfaces)
 
+set(default_build_type "Release")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 ## Find ament_cmake macros and libraries
 find_package(ament_cmake REQUIRED)
 

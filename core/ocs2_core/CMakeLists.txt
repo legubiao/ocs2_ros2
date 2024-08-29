@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(ocs2_core)
 
+set(default_build_type "Release")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_thirdparty REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)

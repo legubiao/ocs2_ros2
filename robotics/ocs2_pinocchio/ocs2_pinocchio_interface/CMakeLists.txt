@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(ocs2_pinocchio_interface)
 
+set(default_build_type "Release")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(dependencies
         ocs2_robotic_tools
