@@ -27,114 +27,108 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_legged_robot/gait/GaitSchedule.h"
+#include <ocs2_legged_robot/gait/GaitSchedule.h>
 
-namespace ocs2 {
-namespace legged_robot {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-GaitSchedule::GaitSchedule(ModeSchedule initModeSchedule, ModeSequenceTemplate initModeSequenceTemplate, scalar_t phaseTransitionStanceTime)
-    : modeSchedule_(std::move(initModeSchedule)),
-      modeSequenceTemplate_(std::move(initModeSequenceTemplate)),
-      phaseTransitionStanceTime_(phaseTransitionStanceTime) {}
+namespace ocs2::legged_robot {
+    GaitSchedule::GaitSchedule(ModeSchedule initModeSchedule, ModeSequenceTemplate initModeSequenceTemplate,
+                               scalar_t phaseTransitionStanceTime)
+        : modeSchedule_(std::move(initModeSchedule)),
+          modeSequenceTemplate_(std::move(initModeSequenceTemplate)),
+          phaseTransitionStanceTime_(phaseTransitionStanceTime) {
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void GaitSchedule::insertModeSequenceTemplate(const ModeSequenceTemplate& modeSequenceTemplate, scalar_t startTime, scalar_t finalTime) {
-  modeSequenceTemplate_ = modeSequenceTemplate;
-  auto& eventTimes = modeSchedule_.eventTimes;
-  auto& modeSequence = modeSchedule_.modeSequence;
 
-  // find the index on which the new gait should be added
-  const size_t index = std::lower_bound(eventTimes.begin(), eventTimes.end(), startTime) - eventTimes.begin();
+    void GaitSchedule::insertModeSequenceTemplate(const ModeSequenceTemplate &modeSequenceTemplate,
+                                                  scalar_t startTime, scalar_t finalTime) {
+        modeSequenceTemplate_ = modeSequenceTemplate;
+        auto &eventTimes = modeSchedule_.eventTimes;
+        auto &modeSequence = modeSchedule_.modeSequence;
 
-  // delete the old logic from the index
-  if (index < eventTimes.size()) {
-    eventTimes.erase(eventTimes.begin() + index, eventTimes.end());
-    modeSequence.erase(modeSequence.begin() + index + 1, modeSequence.end());
-  }
+        // find the index on which the new gait should be added
+        const size_t index = std::lower_bound(eventTimes.begin(), eventTimes.end(), startTime) - eventTimes.begin();
 
-  // add an intermediate stance phase
-  scalar_t phaseTransitionStanceTime = phaseTransitionStanceTime_;
-  if (!modeSequence.empty() && modeSequence.back() == ModeNumber::STANCE) {
-    phaseTransitionStanceTime = 0.0;
-  }
+        // delete the old logic from the index
+        if (index < eventTimes.size()) {
+            eventTimes.erase(eventTimes.begin() + index, eventTimes.end());
+            modeSequence.erase(modeSequence.begin() + index + 1, modeSequence.end());
+        }
 
-  if (phaseTransitionStanceTime > 0.0) {
-    eventTimes.push_back(startTime);
-    modeSequence.push_back(ModeNumber::STANCE);
-  }
+        // add an intermediate stance phase
+        scalar_t phaseTransitionStanceTime = phaseTransitionStanceTime_;
+        if (!modeSequence.empty() && modeSequence.back() == ModeNumber::STANCE) {
+            phaseTransitionStanceTime = 0.0;
+        }
 
-  // tile the mode sequence template from startTime+phaseTransitionStanceTime to finalTime.
-  tileModeSequenceTemplate(startTime + phaseTransitionStanceTime, finalTime);
-}
+        if (phaseTransitionStanceTime > 0.0) {
+            eventTimes.push_back(startTime);
+            modeSequence.push_back(ModeNumber::STANCE);
+        }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-ModeSchedule GaitSchedule::getModeSchedule(scalar_t lowerBoundTime, scalar_t upperBoundTime) {
-  auto& eventTimes = modeSchedule_.eventTimes;
-  auto& modeSequence = modeSchedule_.modeSequence;
-  const size_t index = std::lower_bound(eventTimes.begin(), eventTimes.end(), lowerBoundTime) - eventTimes.begin();
+        // tile the mode sequence template from startTime+phaseTransitionStanceTime to finalTime.
+        tileModeSequenceTemplate(startTime + phaseTransitionStanceTime, finalTime);
+    }
 
-  if (index > 0) {
-    // delete the old logic from index and set the default start phase to stance
-    eventTimes.erase(eventTimes.begin(), eventTimes.begin() + index - 1);  // keep the one before the last to make it stance
-    modeSequence.erase(modeSequence.begin(), modeSequence.begin() + index - 1);
 
-    // set the default initial phase
-    modeSequence.front() = ModeNumber::STANCE;
-  }
+    ModeSchedule GaitSchedule::getModeSchedule(scalar_t lowerBoundTime, scalar_t upperBoundTime) {
+        auto &eventTimes = modeSchedule_.eventTimes;
+        auto &modeSequence = modeSchedule_.modeSequence;
+        const size_t index = std::lower_bound(eventTimes.begin(), eventTimes.end(), lowerBoundTime) - eventTimes.
+                             begin();
 
-  // Start tiling at time
-  const auto tilingStartTime = eventTimes.empty() ? upperBoundTime : eventTimes.back();
+        if (index > 0) {
+            // delete the old logic from index and set the default start phase to stance
+            eventTimes.erase(eventTimes.begin(), eventTimes.begin() + index - 1);
+            // keep the one before the last to make it stance
+            modeSequence.erase(modeSequence.begin(), modeSequence.begin() + index - 1);
 
-  // delete the last default stance phase
-  eventTimes.erase(eventTimes.end() - 1, eventTimes.end());
-  modeSequence.erase(modeSequence.end() - 1, modeSequence.end());
+            // set the default initial phase
+            modeSequence.front() = ModeNumber::STANCE;
+        }
 
-  // tile the template logic
-  tileModeSequenceTemplate(tilingStartTime, upperBoundTime);
-  return modeSchedule_;
-}
+        // Start tiling at time
+        const auto tilingStartTime = eventTimes.empty() ? upperBoundTime : eventTimes.back();
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void GaitSchedule::tileModeSequenceTemplate(scalar_t startTime, scalar_t finalTime) {
-  auto& eventTimes = modeSchedule_.eventTimes;
-  auto& modeSequence = modeSchedule_.modeSequence;
-  const auto& templateTimes = modeSequenceTemplate_.switchingTimes;
-  const auto& templateModeSequence = modeSequenceTemplate_.modeSequence;
-  const size_t numTemplateSubsystems = modeSequenceTemplate_.modeSequence.size();
+        // delete the last default stance phase
+        eventTimes.erase(eventTimes.end() - 1, eventTimes.end());
+        modeSequence.erase(modeSequence.end() - 1, modeSequence.end());
 
-  // If no template subsystem is defined, the last subsystem should continue for ever
-  if (numTemplateSubsystems == 0) {
-    return;
-  }
+        // tile the template logic
+        tileModeSequenceTemplate(tilingStartTime, upperBoundTime);
+        return modeSchedule_;
+    }
 
-  if (!eventTimes.empty() && startTime <= eventTimes.back()) {
-    throw std::runtime_error("The initial time for template-tiling is not greater than the last event time.");
-  }
 
-  // add a initial time
-  eventTimes.push_back(startTime);
+    void GaitSchedule::tileModeSequenceTemplate(scalar_t startTime, scalar_t finalTime) {
+        auto &eventTimes = modeSchedule_.eventTimes;
+        auto &modeSequence = modeSchedule_.modeSequence;
+        const auto &templateTimes = modeSequenceTemplate_.switchingTimes;
+        const auto &templateModeSequence = modeSequenceTemplate_.modeSequence;
+        const size_t numTemplateSubsystems = modeSequenceTemplate_.modeSequence.size();
 
-  // concatenate from index
-  while (eventTimes.back() < finalTime) {
-    for (size_t i = 0; i < templateModeSequence.size(); i++) {
-      modeSequence.push_back(templateModeSequence[i]);
-      scalar_t deltaTime = templateTimes[i + 1] - templateTimes[i];
-      eventTimes.push_back(eventTimes.back() + deltaTime);
-    }  // end of i loop
-  }    // end of while loop
+        // If no template subsystem is defined, the last subsystem should continue for ever
+        if (numTemplateSubsystems == 0) {
+            return;
+        }
 
-  // default final phase
-  modeSequence.push_back(ModeNumber::STANCE);
-}
+        if (!eventTimes.empty() && startTime <= eventTimes.back()) {
+            throw std::runtime_error(
+                "The initial time for template-tiling is not greater than the last event time.");
+        }
 
-}  // namespace legged_robot
-}  // namespace ocs2
+        // add a initial time
+        eventTimes.push_back(startTime);
+
+        // concatenate from index
+        while (eventTimes.back() < finalTime) {
+            for (size_t i = 0; i < templateModeSequence.size(); i++) {
+                modeSequence.push_back(templateModeSequence[i]);
+                scalar_t deltaTime = templateTimes[i + 1] - templateTimes[i];
+                eventTimes.push_back(eventTimes.back() + deltaTime);
+            } // end of i loop
+        } // end of while loop
+
+        // default final phase
+        modeSequence.push_back(ModeNumber::STANCE);
+    }
+} // namespace ocs2::legged_robot

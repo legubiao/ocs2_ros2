@@ -62,60 +62,68 @@ namespace ocs2::legged_robot {
         std::vector<std::unique_ptr<RolloutBase> > rolloutPtrs;
         std::vector<std::shared_ptr<mpcnet::MpcnetDefinitionBase> > mpcnetDefinitionPtrs;
         std::vector<std::shared_ptr<ReferenceManagerInterface> > referenceManagerPtrs;
+
         mpcPtrs.reserve(nDataGenerationThreads + nPolicyEvaluationThreads);
         mpcnetPtrs.reserve(nDataGenerationThreads + nPolicyEvaluationThreads);
         rolloutPtrs.reserve(nDataGenerationThreads + nPolicyEvaluationThreads);
         mpcnetDefinitionPtrs.reserve(nDataGenerationThreads + nPolicyEvaluationThreads);
         referenceManagerPtrs.reserve(nDataGenerationThreads + nPolicyEvaluationThreads);
+
         for (int i = 0; i < (nDataGenerationThreads + nPolicyEvaluationThreads); i++) {
-            leggedRobotInterfacePtrs_.push_back(
+            interfaces_.push_back(
                 std::make_unique<LeggedRobotInterface>(taskFile, urdfFile, referenceFile));
-            auto mpcnetDefinitionPtr = std::make_shared<LeggedRobotMpcnetDefinition>(*leggedRobotInterfacePtrs_[i]);
-            mpcPtrs.push_back(getMpc(*leggedRobotInterfacePtrs_[i]));
+
+            auto definition = std::make_shared<LeggedRobotMpcnetDefinition>(*interfaces_[i]);
+            mpcPtrs.push_back(getMpc(*interfaces_[i]));
             mpcnetPtrs.push_back(std::make_unique<mpcnet::MpcnetOnnxController>(
-                mpcnetDefinitionPtr, leggedRobotInterfacePtrs_[i]->getReferenceManagerPtr(),
+                definition, interfaces_[i]->getReferenceManagerPtr(),
                 onnxEnvironmentPtr));
+
             if (raisim) {
-                RaisimRolloutSettings raisimRolloutSettings(raisimFile, "rollout");
-                raisimRolloutSettings.portNumber_ += i;
-                leggedRobotRaisimConversionsPtrs_.push_back(std::make_unique<LeggedRobotRaisimConversions>(
-                    leggedRobotInterfacePtrs_[i]->getPinocchioInterface(),
-                    leggedRobotInterfacePtrs_[i]->getCentroidalModelInfo(),
-                    leggedRobotInterfacePtrs_[i]->getInitialState()));
-                leggedRobotRaisimConversionsPtrs_[i]->loadSettings(raisimFile, "rollout", true);
+                RaisimRolloutSettings rollout_settings(raisimFile, "rollout");
+                rollout_settings.portNumber_ += i;
+
+                conversions_ptrs.push_back(std::make_unique<LeggedRobotRaisimConversions>(
+                    interfaces_[i]->getPinocchioInterface(),
+                    interfaces_[i]->getCentroidalModelInfo(),
+                    interfaces_[i]->getInitialState()));
+
+                conversions_ptrs[i]->loadSettings(raisimFile, "rollout", true);
                 rolloutPtrs.push_back(std::make_unique<RaisimRollout>(
                     urdfFile, resourcePath,
                     [&, i](const vector_t &state, const vector_t &input) {
-                        return leggedRobotRaisimConversionsPtrs_[i]->stateToRaisimGenCoordGenVel(state, input);
+                        return conversions_ptrs[i]->stateToRaisimGenCoordGenVel(state, input);
                     },
                     [&, i](const Eigen::VectorXd &q, const Eigen::VectorXd &dq) {
-                        return leggedRobotRaisimConversionsPtrs_[i]->raisimGenCoordGenVelToState(q, dq);
+                        return conversions_ptrs[i]->raisimGenCoordGenVelToState(q, dq);
                     },
                     [&, i](double time, const vector_t &input, const vector_t &state, const Eigen::VectorXd &q,
                            const Eigen::VectorXd &dq) {
-                        return leggedRobotRaisimConversionsPtrs_[i]->inputToRaisimGeneralizedForce(
+                        return conversions_ptrs[i]->inputToRaisimGeneralizedForce(
                             time, input, state, q, dq);
                     },
-                    nullptr, raisimRolloutSettings,
+                    nullptr, rollout_settings,
                     [&, i](double time, const vector_t &input, const vector_t &state, const Eigen::VectorXd &q,
                            const Eigen::VectorXd &dq) {
-                        return leggedRobotRaisimConversionsPtrs_[i]->inputToRaisimPdTargets(
+                        return conversions_ptrs[i]->inputToRaisimPdTargets(
                             time, input, state, q, dq);
                     }));
-                if (raisimRolloutSettings.generateTerrain_) {
-                    raisim::TerrainProperties terrainProperties;
-                    terrainProperties.zScale = raisimRolloutSettings.terrainRoughness_;
-                    terrainProperties.seed = raisimRolloutSettings.terrainSeed_ + i;
+
+                if (rollout_settings.generateTerrain_) {
+                    raisim::TerrainProperties properties;
+                    properties.zScale = rollout_settings.terrainRoughness_;
+                    properties.seed = rollout_settings.terrainSeed_ + i;
+                    properties.heightOffset = -0.4;
                     auto terrainPtr = dynamic_cast<RaisimRollout *>(rolloutPtrs[i].get())->generateTerrain(
-                        terrainProperties);
-                    leggedRobotRaisimConversionsPtrs_[i]->setTerrain(*terrainPtr);
+                        properties);
+                    conversions_ptrs[i]->setTerrain(*terrainPtr);
                 }
             } else {
                 rolloutPtrs.push_back(
-                    std::unique_ptr<RolloutBase>(leggedRobotInterfacePtrs_[i]->getRollout().clone()));
+                    std::unique_ptr<RolloutBase>(interfaces_[i]->getRollout().clone()));
             }
-            mpcnetDefinitionPtrs.push_back(mpcnetDefinitionPtr);
-            referenceManagerPtrs.push_back(leggedRobotInterfacePtrs_[i]->getReferenceManagerPtr());
+            mpcnetDefinitionPtrs.push_back(definition);
+            referenceManagerPtrs.push_back(interfaces_[i]->getReferenceManagerPtr());
         }
         mpcnetRolloutManagerPtr_ = std::make_unique<mpcnet::MpcnetRolloutManager>(
             nDataGenerationThreads, nPolicyEvaluationThreads,
@@ -126,13 +134,13 @@ namespace ocs2::legged_robot {
 
     std::unique_ptr<MPC_BASE> LeggedRobotMpcnetInterface::getMpc(const LeggedRobotInterface &leggedRobotInterface) {
         // ensure MPC and DDP settings are as needed for MPC-Net
-        const auto mpcSettings = [&]() {
+        const auto mpcSettings = [&] {
             auto settings = leggedRobotInterface.mpcSettings();
             settings.debugPrint_ = false;
             settings.coldStart_ = false;
             return settings;
         }();
-        const auto ddpSettings = [&]() {
+        const auto ddpSettings = [&] {
             auto settings = leggedRobotInterface.ddpSettings();
             settings.algorithm_ = ddp::Algorithm::SLQ;
             settings.nThreads_ = 1;

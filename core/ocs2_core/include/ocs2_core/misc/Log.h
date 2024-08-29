@@ -35,88 +35,85 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 
-namespace ocs2 {
-namespace log {
+namespace ocs2::log {
+    /** Log severity level enum */
+    enum class SeverityLevel : size_t { DEBUG, INFO, WARNING, ERROR };
 
-/** Log severity level enum */
-enum class SeverityLevel : size_t { DEBUG, INFO, WARNING, ERROR };
+    /* OCS2 multithreaded severity logger type */
+    using logger_t = boost::log::sources::severity_logger_mt<SeverityLevel>;
 
-/* OCS2 multithreaded severity logger type */
-using logger_t = boost::log::sources::severity_logger_mt<SeverityLevel>;
+    /**
+         * Get string name of severity level
+         * @param [in] lvl: severity level enum
+         * @return name
+         */
+    const std::string &toString(const SeverityLevel lvl);
 
-/**
- * Get string name of severity level
- * @param [in] lvl: severity level enum
- * @return name
- */
-const std::string& toString(const SeverityLevel lvl);
+    /**
+         * Get severity level from string severity
+         * @param [in] severity: severity name
+         * @return severity level
+         */
+    SeverityLevel fromString(const std::string &severity);
 
-/**
- * Get severity level from string severity
- * @param [in] severity: severity name
- * @return severity level
- */
-SeverityLevel fromString(const std::string& severity);
+    /** Write severity level to stream. */
+    template<typename CharT, typename TraitsT>
+    inline std::basic_ostream<CharT, TraitsT> &operator<<(std::basic_ostream<CharT, TraitsT> &strm,
+                                                          SeverityLevel lvl) {
+        strm << ocs2::log::toString(lvl);
+        return strm;
+    }
 
-/** Write severity level to stream. */
-template <typename CharT, typename TraitsT>
-inline std::basic_ostream<CharT, TraitsT>& operator<<(std::basic_ostream<CharT, TraitsT>& strm, SeverityLevel lvl) {
-  strm << ocs2::log::toString(lvl);
-  return strm;
-}
+    /** Log settings struct */
+    struct Settings {
+        /** Enable pringing log to console stream */
+        bool useConsole = true;
+        /** Log console severity level */
+        SeverityLevel consoleSeverity = SeverityLevel::DEBUG;
+        /** Enable writing log to file */
+        bool useLogFile = false;
+        /** Log file severity level */
+        SeverityLevel logFileSeverity = SeverityLevel::INFO;
+        /** File name, supports boost log file name pattern including date and time. */
+        std::string logFileName = "ocs2_%Y%m%d_%H%M%S.log";
+    };
 
-/** Log settings struct */
-struct Settings {
-  /** Enable pringing log to console stream */
-  bool useConsole = true;
-  /** Log console severity level */
-  SeverityLevel consoleSeverity = SeverityLevel::DEBUG;
-  /** Enable writing log to file */
-  bool useLogFile = false;
-  /** Log file severity level */
-  SeverityLevel logFileSeverity = SeverityLevel::INFO;
-  /** File name, supports boost log file name pattern including date and time. */
-  std::string logFileName = "ocs2_%Y%m%d_%H%M%S.log";
-};
+    /**
+         * Load log settings from file
+         * @param [in] fileName: settings file name
+         * @param [in] fieldName: log settings field name
+         * @return Log settings
+         */
+    Settings loadSettings(const std::string &fileName, const std::string &fieldName);
 
-/**
- * Load log settings from file
- * @param [in] fileName: settings file name
- * @param [in] fieldName: log settings field name
- * @return Log settings
- */
-Settings loadSettings(const std::string& fileName, const std::string& fieldName);
+    /** Write log settings to stream. */
+    std::ostream &operator<<(std::ostream &stream, const Settings &settings);
 
-/** Write log settings to stream. */
-std::ostream& operator<<(std::ostream& stream, const Settings& settings);
+    /** Init OCS2 logger with settings */
+    void init(const Settings &settings, std::ostream *console_stream = &std::clog);
 
-/** Init OCS2 logger with settings */
-void init(const Settings& settings, std::ostream* console_stream = &std::clog);
+    /** Reset OCS2 logger sinks */
+    void reset();
 
-/** Reset OCS2 logger sinks */
-void reset();
+    /**
+         * Get global OCS2 logger
+         * @return global logger reference
+         */
+    logger_t &getLogger();
 
-/**
- * Get global OCS2 logger
- * @return global logger reference
- */
-logger_t& getLogger();
-
-/**
- * Logging helper macro
- *
- * \code{.cpp}
- * OCS2_LOG(INFO) << "Hello, world!";
- * \endcode
- */
+    /**
+         * Logging helper macro
+         *
+         * \code{.cpp}
+         * OCS2_LOG(INFO) << "Hello, world!";
+         * \endcode
+         */
 #define OCS2_LOG(LVL) \
   BOOST_LOG_STREAM_WITH_PARAMS(::ocs2::log::getLogger(), (::boost::log::keywords::severity = ::ocs2::log::SeverityLevel::LVL))
 
-/* Compact helper macros */
+    /* Compact helper macros */
 #define OCS2_DEBUG OCS2_LOG(DEBUG)
 #define OCS2_INFO OCS2_LOG(INFO)
 #define OCS2_WARN OCS2_LOG(WARNING)
 #define OCS2_ERROR OCS2_LOG(ERROR)
-
-}  // namespace log
-}  // namespace ocs2
+}

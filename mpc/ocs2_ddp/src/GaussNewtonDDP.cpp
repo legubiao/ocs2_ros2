@@ -305,7 +305,7 @@ namespace ocs2 {
         // - state-input soft constraint cost
         // - state-only intermediate cost
         // - state-only soft constraint cost
-        const ModelData modelData = [&]() {
+        const ModelData modelData = [&] {
             const auto multiplierCollection = getIntermediateDualSolution(time);
             return ocs2::approximateIntermediateLQ(optimalControlProblemStock_[0], time, state, input,
                                                    multiplierCollection);
@@ -451,9 +451,8 @@ namespace ocs2 {
             }
             extractPrimalSolution({initTime_, finalTime}, inputPrimalSolution, outputPrimalSolution);
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
 

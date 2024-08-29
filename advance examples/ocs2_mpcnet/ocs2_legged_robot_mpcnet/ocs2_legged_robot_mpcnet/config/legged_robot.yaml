@@ -79,7 +79,7 @@ EPSILON: 1.e-8
 # whether to cheat by adding the gating loss
 CHEATING: True
 # parameter to control the relative importance of both loss types
-LAMBDA: 1.0
+LAMBDA: 1.5
 # dictionary for the gating loss (assigns modes to experts responsible for the corresponding contact configuration)
 EXPERT_FOR_MODE:
   6: 1   # trot
@@ -235,6 +235,6 @@ POLICY_EVALUATION_TASKS: 3
 #
 BATCH_SIZE: 128
 LEARNING_RATE: 1.e-3
-LEARNING_ITERATIONS: 100000
+LEARNING_ITERATIONS: 200000
 GRADIENT_CLIPPING: True
-GRADIENT_CLIPPING_VALUE: 1.0
+GRADIENT_CLIPPING_VALUE: 0.5

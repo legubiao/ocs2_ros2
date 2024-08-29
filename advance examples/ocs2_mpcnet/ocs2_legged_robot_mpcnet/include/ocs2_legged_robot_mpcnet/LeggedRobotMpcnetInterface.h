@@ -37,7 +37,7 @@ namespace ocs2::legged_robot {
     /**
     *  Legged robot MPC-Net interface between C++ and Python.
     */
-    class LeggedRobotMpcnetInterface final : public ocs2::mpcnet::MpcnetInterfaceBase {
+    class LeggedRobotMpcnetInterface final : public mpcnet::MpcnetInterfaceBase {
     public:
         /**
          * Constructor.
@@ -61,8 +61,8 @@ namespace ocs2::legged_robot {
         static std::unique_ptr<MPC_BASE> getMpc(const LeggedRobotInterface &leggedRobotInterface);
 
         // Legged robot interface pointers (keep alive for Pinocchio interface)
-        std::vector<std::unique_ptr<LeggedRobotInterface> > leggedRobotInterfacePtrs_;
+        std::vector<std::unique_ptr<LeggedRobotInterface> > interfaces_;
         // Legged robot RaiSim conversions pointers (keep alive for RaiSim rollout)
-        std::vector<std::unique_ptr<LeggedRobotRaisimConversions> > leggedRobotRaisimConversionsPtrs_;
+        std::vector<std::unique_ptr<LeggedRobotRaisimConversions> > conversions_ptrs;
     };
 }

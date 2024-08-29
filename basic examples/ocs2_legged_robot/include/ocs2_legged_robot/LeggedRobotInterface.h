@@ -30,7 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 // ocs2
-#include <ocs2_centroidal_model/FactoryFunctions.h>
 #include <ocs2_core/Types.h>
 #include <ocs2_core/penalties/Penalties.h>
 #include <ocs2_ddp/DDP_Settings.h>
@@ -50,81 +49,97 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * LeggedRobotInterface class
  * General interface for mpc implementation on the legged robot model
  */
-namespace ocs2 {
-namespace legged_robot {
+namespace ocs2::legged_robot {
+    class LeggedRobotInterface final : public RobotInterface {
+    public:
+        /**
+        * Constructor
+        *
+        * @throw Invalid argument error if input task file or urdf file does not exist.
+        *
+        * @param [in] taskFile: The absolute path to the configuration file for the MPC.
+        * @param [in] urdfFile: The absolute path to the URDF file for the robot.
+        * @param [in] referenceFile: The absolute path to the reference configuration file.
+        * @param [in] useHardFrictionConeConstraint: Which to use hard or soft friction cone constraints.
+        */
+        LeggedRobotInterface(const std::string &taskFile, const std::string &urdfFile,
+                             const std::string &referenceFile,
+                             bool useHardFrictionConeConstraint = false);
 
-class LeggedRobotInterface final : public RobotInterface {
- public:
-  /**
-   * Constructor
-   *
-   * @throw Invalid argument error if input task file or urdf file does not exist.
-   *
-   * @param [in] taskFile: The absolute path to the configuration file for the MPC.
-   * @param [in] urdfFile: The absolute path to the URDF file for the robot.
-   * @param [in] referenceFile: The absolute path to the reference configuration file.
-   * @param [in] useHardFrictionConeConstraint: Which to use hard or soft friction cone constraints.
-   */
-  LeggedRobotInterface(const std::string& taskFile, const std::string& urdfFile, const std::string& referenceFile,
-                       bool useHardFrictionConeConstraint = false);
+        ~LeggedRobotInterface() override = default;
 
-  ~LeggedRobotInterface() override = default;
+        const OptimalControlProblem &getOptimalControlProblem() const override { return *problemPtr_; }
 
-  const OptimalControlProblem& getOptimalControlProblem() const override { return *problemPtr_; }
+        const ModelSettings &modelSettings() const { return modelSettings_; }
+        const ddp::Settings &ddpSettings() const { return ddpSettings_; }
+        const mpc::Settings &mpcSettings() const { return mpcSettings_; }
+        const rollout::Settings &rolloutSettings() const { return rolloutSettings_; }
+        const sqp::Settings &sqpSettings() { return sqpSettings_; }
+        const ipm::Settings &ipmSettings() { return ipmSettings_; }
 
-  const ModelSettings& modelSettings() const { return modelSettings_; }
-  const ddp::Settings& ddpSettings() const { return ddpSettings_; }
-  const mpc::Settings& mpcSettings() const { return mpcSettings_; }
-  const rollout::Settings& rolloutSettings() const { return rolloutSettings_; }
-  const sqp::Settings& sqpSettings() { return sqpSettings_; }
-  const ipm::Settings& ipmSettings() { return ipmSettings_; }
+        const vector_t &getInitialState() const { return initialState_; }
+        const RolloutBase &getRollout() const { return *rolloutPtr_; }
+        PinocchioInterface &getPinocchioInterface() { return *pinocchioInterfacePtr_; }
+        const CentroidalModelInfo &getCentroidalModelInfo() const { return centroidalModelInfo_; }
 
-  const vector_t& getInitialState() const { return initialState_; }
-  const RolloutBase& getRollout() const { return *rolloutPtr_; }
-  PinocchioInterface& getPinocchioInterface() { return *pinocchioInterfacePtr_; }
-  const CentroidalModelInfo& getCentroidalModelInfo() const { return centroidalModelInfo_; }
-  std::shared_ptr<SwitchedModelReferenceManager> getSwitchedModelReferenceManagerPtr() const { return referenceManagerPtr_; }
+        std::shared_ptr<SwitchedModelReferenceManager> getSwitchedModelReferenceManagerPtr() const {
+            return referenceManagerPtr_;
+        }
 
-  const LeggedRobotInitializer& getInitializer() const override { return *initializerPtr_; }
-  std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const override { return referenceManagerPtr_; }
+        const LeggedRobotInitializer &getInitializer() const override { return *initializerPtr_; }
 
- private:
-  void setupOptimalConrolProblem(const std::string& taskFile, const std::string& urdfFile, const std::string& referenceFile, bool verbose);
+        std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const override {
+            return referenceManagerPtr_;
+        }
 
-  std::shared_ptr<GaitSchedule> loadGaitSchedule(const std::string& file, bool verbose) const;
+    private:
+        void setupOptimalConrolProblem(const std::string &taskFile, const std::string &urdfFile,
+                                       const std::string &referenceFile, bool verbose);
 
-  std::unique_ptr<StateInputCost> getBaseTrackingCost(const std::string& taskFile, const CentroidalModelInfo& info, bool verbose);
-  matrix_t initializeInputCostWeight(const std::string& taskFile, const CentroidalModelInfo& info);
+        std::shared_ptr<GaitSchedule> loadGaitSchedule(const std::string &file, bool verbose) const;
 
-  std::pair<scalar_t, RelaxedBarrierPenalty::Config> loadFrictionConeSettings(const std::string& taskFile, bool verbose) const;
-  std::unique_ptr<StateInputConstraint> getFrictionConeConstraint(size_t contactPointIndex, scalar_t frictionCoefficient);
-  std::unique_ptr<StateInputCost> getFrictionConeSoftConstraint(size_t contactPointIndex, scalar_t frictionCoefficient,
-                                                                const RelaxedBarrierPenalty::Config& barrierPenaltyConfig);
-  std::unique_ptr<StateInputConstraint> getZeroForceConstraint(size_t contactPointIndex);
-  std::unique_ptr<StateInputConstraint> getZeroVelocityConstraint(const EndEffectorKinematics<scalar_t>& eeKinematics,
-                                                                  size_t contactPointIndex, bool useAnalyticalGradients);
-  std::unique_ptr<StateInputConstraint> getNormalVelocityConstraint(const EndEffectorKinematics<scalar_t>& eeKinematics,
-                                                                    size_t contactPointIndex, bool useAnalyticalGradients);
+        std::unique_ptr<StateInputCost> getBaseTrackingCost(const std::string &taskFile,
+                                                            const CentroidalModelInfo &info, bool verbose);
 
-  ModelSettings modelSettings_;
-  ddp::Settings ddpSettings_;
-  mpc::Settings mpcSettings_;
-  sqp::Settings sqpSettings_;
-  ipm::Settings ipmSettings_;
-  const bool useHardFrictionConeConstraint_;
+        matrix_t initializeInputCostWeight(const std::string &taskFile, const CentroidalModelInfo &info);
 
-  std::unique_ptr<PinocchioInterface> pinocchioInterfacePtr_;
-  CentroidalModelInfo centroidalModelInfo_;
+        std::pair<scalar_t, RelaxedBarrierPenalty::Config> loadFrictionConeSettings(
+            const std::string &taskFile, bool verbose) const;
 
-  std::unique_ptr<OptimalControlProblem> problemPtr_;
-  std::shared_ptr<SwitchedModelReferenceManager> referenceManagerPtr_;
+        std::unique_ptr<StateInputConstraint> getFrictionConeConstraint(
+            size_t contactPointIndex, scalar_t frictionCoefficient);
 
-  rollout::Settings rolloutSettings_;
-  std::unique_ptr<RolloutBase> rolloutPtr_;
-  std::unique_ptr<LeggedRobotInitializer> initializerPtr_;
+        std::unique_ptr<StateInputCost> getFrictionConeSoftConstraint(
+            size_t contactPointIndex, scalar_t frictionCoefficient,
+            const RelaxedBarrierPenalty::Config &barrierPenaltyConfig);
 
-  vector_t initialState_;
-};
+        std::unique_ptr<StateInputConstraint> getZeroForceConstraint(size_t contactPointIndex);
 
-}  // namespace legged_robot
-}  // namespace ocs2
+        std::unique_ptr<StateInputConstraint> getZeroVelocityConstraint(
+            const EndEffectorKinematics<scalar_t> &eeKinematics,
+            size_t contactPointIndex, bool useAnalyticalGradients);
+
+        std::unique_ptr<StateInputConstraint> getNormalVelocityConstraint(
+            const EndEffectorKinematics<scalar_t> &eeKinematics,
+            size_t contactPointIndex, bool useAnalyticalGradients);
+
+        ModelSettings modelSettings_;
+        ddp::Settings ddpSettings_;
+        mpc::Settings mpcSettings_;
+        sqp::Settings sqpSettings_;
+        ipm::Settings ipmSettings_;
+        const bool useHardFrictionConeConstraint_;
+
+        std::unique_ptr<PinocchioInterface> pinocchioInterfacePtr_;
+        CentroidalModelInfo centroidalModelInfo_;
+
+        std::unique_ptr<OptimalControlProblem> problemPtr_;
+        std::shared_ptr<SwitchedModelReferenceManager> referenceManagerPtr_;
+
+        rollout::Settings rolloutSettings_;
+        std::unique_ptr<RolloutBase> rolloutPtr_;
+        std::unique_ptr<LeggedRobotInitializer> initializerPtr_;
+
+        vector_t initialState_;
+    };
+}

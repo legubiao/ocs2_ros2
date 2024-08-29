@@ -32,36 +32,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_legged_robot/gait/ModeSequenceTemplate.h>
 
 #include <ocs2_msgs/msg/mode_schedule.hpp>
-#include <std_msgs/msg/bool.hpp>
 #include <string>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
+#include <rclcpp/rclcpp.hpp>
 
-namespace ocs2 {
-namespace legged_robot {
+namespace ocs2::legged_robot {
+    /** This class implements mode_sequence communication using ROS. */
+    class GaitKeyboardPublisher {
+    public:
+        GaitKeyboardPublisher(const rclcpp::Node::SharedPtr &node,
+                              const std::string &gaitFile,
+                              const std::string &robotName, bool verbose = false);
 
-/** This class implements mode_sequence communication using ROS. */
-class GaitKeyboardPublisher {
- public:
-  GaitKeyboardPublisher(const rclcpp::Node::SharedPtr& node,
-                        const std::string& gaitFile,
-                        const std::string& robotName, bool verbose = false);
+        /** Prints the command line interface and responds to user input. Function
+         * returns after one user input. */
+        void getKeyboardCommand();
 
-  /** Prints the command line interface and responds to user input. Function
-   * returns after one user input. */
-  void getKeyboardCommand();
+    private:
+        /** Prints the list of available gaits. */
+        static void printGaitList(const std::vector<std::string> &gaitList);
 
- private:
-  /** Prints the list of available gaits. */
-  void printGaitList(const std::vector<std::string>& gaitList) const;
+        std::vector<std::string> gaitList_;
+        std::map<std::string, ModeSequenceTemplate> gaitMap_;
 
-  std::vector<std::string> gaitList_;
-  std::map<std::string, ModeSequenceTemplate> gaitMap_;
-
-  rclcpp::Publisher<ocs2_msgs::msg::ModeSchedule>::SharedPtr
-      modeSequenceTemplatePublisher_;
-};
-
-}  // namespace legged_robot
-}  // end of namespace ocs2
+        rclcpp::Publisher<ocs2_msgs::msg::ModeSchedule>::SharedPtr
+        modeSequenceTemplatePublisher_;
+    };
+}

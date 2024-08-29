@@ -30,57 +30,39 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <ocs2_core/Types.h>
-#include <ocs2_ddp/ILQR.h>
 #include <ocs2_ddp/SLQ.h>
+
+#include <memory>
 
 #include "ocs2_mpc/MPC_BASE.h"
 
 namespace ocs2 {
+    /**
+     * This is an MPC implementation with GaussNewton DDP (SLQ or ILQR) optimal control solvers.
+     */
+    class GaussNewtonDDP_MPC final : public MPC_BASE {
+    public:
+        /**
+         * Constructor
+         *
+         * @param [in] mpcSettings: Structure containing the settings for the MPC algorithm.
+         * @param [in] ddpSettings: Structure containing the settings for the DDP algorithm.
+         * @param [in] rollout: The rollout class used for simulating the system dynamics.
+         * @param [in] optimalControlProblem: The optimal control problem definition.
+         * @param [in] initializer: This class initializes the state-input for the time steps that no controller is available.
+         */
+        GaussNewtonDDP_MPC(const mpc::Settings &mpcSettings, ddp::Settings ddpSettings, const RolloutBase &rollout,
+                           const OptimalControlProblem &optimalControlProblem, const Initializer &initializer);
 
-/**
- * This is an MPC implementation with GaussNewton DDP (SLQ or ILQR) optimal control solvers.
- */
-class GaussNewtonDDP_MPC final : public MPC_BASE {
- public:
-  /**
-   * Constructor
-   *
-   * @param [in] mpcSettings: Structure containing the settings for the MPC algorithm.
-   * @param [in] ddpSettings: Structure containing the settings for the DDP algorithm.
-   * @param [in] rollout: The rollout class used for simulating the system dynamics.
-   * @param [in] optimalControlProblem: The optimal control problem definition.
-   * @param [in] initializer: This class initializes the state-input for the time steps that no controller is available.
-   */
-  GaussNewtonDDP_MPC(mpc::Settings mpcSettings, ddp::Settings ddpSettings, const RolloutBase& rollout,
-                     const OptimalControlProblem& optimalControlProblem, const Initializer& initializer)
-      : MPC_BASE(std::move(mpcSettings)) {
-    switch (ddpSettings.algorithm_) {
-      case ddp::Algorithm::SLQ:
-        ddpPtr_.reset(new SLQ(std::move(ddpSettings), rollout, optimalControlProblem, initializer));
-        break;
-      case ddp::Algorithm::ILQR:
-        ddpPtr_.reset(new ILQR(std::move(ddpSettings), rollout, optimalControlProblem, initializer));
-        break;
-      default:
-        throw std::runtime_error("Undefined ddp::Algorithm type!");
-    }
-  }
+        /** Default destructor. */
+        ~GaussNewtonDDP_MPC() override = default;
 
-  /** Default destructor. */
-  ~GaussNewtonDDP_MPC() override = default;
+        GaussNewtonDDP *getSolverPtr() override { return ddpPtr_.get(); }
+        [[nodiscard]] const GaussNewtonDDP *getSolverPtr() const override { return ddpPtr_.get(); }
 
-  GaussNewtonDDP* getSolverPtr() override { return ddpPtr_.get(); }
-  const GaussNewtonDDP* getSolverPtr() const override { return ddpPtr_.get(); }
+    private:
+        void calculateController(scalar_t initTime, const vector_t &initState, scalar_t finalTime) override;
 
- private:
-  void calculateController(scalar_t initTime, const vector_t& initState, scalar_t finalTime) override {
-    if (settings().coldStart_) {
-      ddpPtr_->reset();
-    }
-    ddpPtr_->run(initTime, initState, finalTime);
-  }
-
-  std::unique_ptr<GaussNewtonDDP> ddpPtr_;
-};
-
-}  // namespace ocs2
+        std::unique_ptr<GaussNewtonDDP> ddpPtr_;
+    };
+} // namespace ocs2

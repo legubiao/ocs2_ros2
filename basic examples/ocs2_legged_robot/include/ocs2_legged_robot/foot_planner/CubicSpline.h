@@ -31,46 +31,42 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_core/Types.h>
 
-namespace ocs2 {
-namespace legged_robot {
+namespace ocs2::legged_robot {
+    class CubicSpline {
+    public:
+        struct Node {
+            scalar_t time;
+            scalar_t position;
+            scalar_t velocity;
+        };
 
-class CubicSpline {
- public:
-  struct Node {
-    scalar_t time;
-    scalar_t position;
-    scalar_t velocity;
-  };
+        CubicSpline(Node start, Node end);
 
-  CubicSpline(Node start, Node end);
+        scalar_t position(scalar_t time) const;
 
-  scalar_t position(scalar_t time) const;
+        scalar_t velocity(scalar_t time) const;
 
-  scalar_t velocity(scalar_t time) const;
+        scalar_t acceleration(scalar_t time) const;
 
-  scalar_t acceleration(scalar_t time) const;
+        scalar_t startTimeDerivative(scalar_t t) const;
 
-  scalar_t startTimeDerivative(scalar_t t) const;
+        scalar_t finalTimeDerivative(scalar_t t) const;
 
-  scalar_t finalTimeDerivative(scalar_t t) const;
+    private:
+        scalar_t normalizedTime(scalar_t t) const;
 
- private:
-  scalar_t normalizedTime(scalar_t t) const;
+        scalar_t t0_;
+        scalar_t t1_;
+        scalar_t dt_;
 
-  scalar_t t0_;
-  scalar_t t1_;
-  scalar_t dt_;
+        scalar_t c0_;
+        scalar_t c1_;
+        scalar_t c2_;
+        scalar_t c3_;
 
-  scalar_t c0_;
-  scalar_t c1_;
-  scalar_t c2_;
-  scalar_t c3_;
-
-  scalar_t dc0_;  // derivative w.r.t. dt_
-  scalar_t dc1_;  // derivative w.r.t. dt_
-  scalar_t dc2_;  // derivative w.r.t. dt_
-  scalar_t dc3_;  // derivative w.r.t. dt_
-};
-
-}  // namespace legged_robot
-}  // namespace ocs2
+        scalar_t dc0_; // derivative w.r.t. dt_
+        scalar_t dc1_; // derivative w.r.t. dt_
+        scalar_t dc2_; // derivative w.r.t. dt_
+        scalar_t dc3_; // derivative w.r.t. dt_
+    };
+}

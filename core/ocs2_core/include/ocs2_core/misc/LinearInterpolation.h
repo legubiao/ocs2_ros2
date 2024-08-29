@@ -35,111 +35,112 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_core/Types.h"
 
-namespace ocs2 {
-namespace LinearInterpolation {
 
-using index_alpha_t = std::pair<int, scalar_t>;
+namespace ocs2::LinearInterpolation {
+    using index_alpha_t = std::pair<int, scalar_t>;
 
-template <class T>
-using remove_cvref_t = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
+    template<class T>
+    using remove_cvref_t = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
 
-/**
- * Get the interval index and interpolation coefficient alpha.
- * Alpha = 1 at the start of the interval and alpha = 0 at the end.
- *
- * @param [in] enquiryTime: The enquiry time for interpolation.
- * @param [in] timeArray: interpolation time array.
- * @return {index, alpha}
- */
-index_alpha_t timeSegment(scalar_t enquiryTime, const std::vector<scalar_t>& timeArray);
+    /**
+     * Get the interval index and interpolation coefficient alpha.
+     * Alpha = 1 at the start of the interval and alpha = 0 at the end.
+     *
+     * @param [in] enquiryTime: The enquiry time for interpolation.
+     * @param [in] timeArray: interpolation time array.
+     * @return {index, alpha}
+     */
+    index_alpha_t timeSegment(scalar_t enquiryTime, const std::vector<scalar_t> &timeArray);
 
-/**
- * Directly uses the index and interpolation coefficient provided by the user
- * @note If sizes in data array are not equal, the interpolation will snap to the data
- * point closest to the query time
- *
- *  - No data implies the zero function
- *  - Single data point implies a constant function
- *  - Multiple data points are used for linear interpolation and zero order extrapolation
- *
- * @param [in] indexAlpha : index and interpolation coefficient (alpha) pair
- * @param [in] dataArray: vector of data
- * @return The interpolation result
- *
- * @tparam Data: Data type
- * @tparam Alloc: Specialized allocation class
- */
-template <typename Data, class Alloc>
-Data interpolate(index_alpha_t indexAlpha, const std::vector<Data, Alloc>& dataArray);
+    /**
+     * Directly uses the index and interpolation coefficient provided by the user
+     * @note If sizes in data array are not equal, the interpolation will snap to the data
+     * point closest to the query time
+     *
+     *  - No data implies the zero function
+     *  - Single data point implies a constant function
+     *  - Multiple data points are used for linear interpolation and zero order extrapolation
+     *
+     * @param [in] indexAlpha : index and interpolation coefficient (alpha) pair
+     * @param [in] dataArray: vector of data
+     * @return The interpolation result
+     *
+     * @tparam Data: Data type
+     * @tparam Alloc: Specialized allocation class
+     */
+    template<typename Data, class Alloc>
+    Data interpolate(index_alpha_t indexAlpha, const std::vector<Data, Alloc> &dataArray);
 
-/**
- * Linearly interpolates at the given time. When duplicate values exist the lower range is selected s.t. ( ]
- * Example: t = [0.0, 1.0, 1.0, 2.0]
- * when querying tk = 1.0, the range (0.0, 1.0] is selected
- *
- *  - No data implies the zero function
- *  - Single data point implies a constant function
- *  - Multiple data points are used for linear interpolation and zero order extrapolation
- *
- * @param [in] enquiryTime: The enquiry time for interpolation.
- * @param [in] timeArray: Times vector
- * @param [in] dataArray: Data vector
- * @return The interpolation result
- *
- * @tparam Data: Data type
- * @tparam Alloc: Specialized allocation class
- */
-template <typename Data, class Alloc>
-Data interpolate(scalar_t enquiryTime, const std::vector<scalar_t>& timeArray, const std::vector<Data, Alloc>& dataArray);
+    /**
+     * Linearly interpolates at the given time. When duplicate values exist the lower range is selected s.t. ( ]
+     * Example: t = [0.0, 1.0, 1.0, 2.0]
+     * when querying tk = 1.0, the range (0.0, 1.0] is selected
+     *
+     *  - No data implies the zero function
+     *  - Single data point implies a constant function
+     *  - Multiple data points are used for linear interpolation and zero order extrapolation
+     *
+     * @param [in] enquiryTime: The enquiry time for interpolation.
+     * @param [in] timeArray: Times vector
+     * @param [in] dataArray: Data vector
+     * @return The interpolation result
+     *
+     * @tparam Data: Data type
+     * @tparam Alloc: Specialized allocation class
+     */
+    template<typename Data, class Alloc>
+    Data interpolate(scalar_t enquiryTime, const std::vector<scalar_t> &timeArray,
+                     const std::vector<Data, Alloc> &dataArray);
 
-/**
- * Directly uses the index and interpolation coefficient provided by the user
- * @note If sizes in data array are not equal, the interpolation will snap to the data
- * point closest to the query time
- *
- *  - No data implies the zero function
- *  - Single data point implies a constant function
- *  - Multiple data points are used for linear interpolation and zero order extrapolation
- *
- * @param [in] indexAlpha : index and interpolation coefficient (alpha) pair
- * @param [in] dataArray: vector of data
- * @param [in] accessFun: Method to access the subfield of Data in array. The signature of the accessFun
- *                        should be equivalent to the following where Field is any subfield of Data:
- *                        const Field& AccessFun(const std::vector<Data, Alloc>& array, size_t index)
- * @return The interpolation result
- *
- * @tparam Data: Data type
- * @tparam Alloc: Specialized allocation class
- */
-template <typename Data, class Alloc, class AccessFun>
-auto interpolate(index_alpha_t indexAlpha, const std::vector<Data, Alloc>& dataArray, AccessFun accessFun)
-    -> remove_cvref_t<typename std::result_of<AccessFun(const std::vector<Data, Alloc>&, size_t)>::type>;
+    /**
+     * Directly uses the index and interpolation coefficient provided by the user
+     * @note If sizes in data array are not equal, the interpolation will snap to the data
+     * point closest to the query time
+     *
+     *  - No data implies the zero function
+     *  - Single data point implies a constant function
+     *  - Multiple data points are used for linear interpolation and zero order extrapolation
+     *
+     * @param [in] indexAlpha : index and interpolation coefficient (alpha) pair
+     * @param [in] dataArray: vector of data
+     * @param [in] accessFun: Method to access the subfield of Data in array. The signature of the accessFun
+     *                        should be equivalent to the following where Field is any subfield of Data:
+     *                        const Field& AccessFun(const std::vector<Data, Alloc>& array, size_t index)
+     * @return The interpolation result
+     *
+     * @tparam Data: Data type
+     * @tparam Alloc: Specialized allocation class
+     */
+    template<typename Data, class Alloc, class AccessFun>
+    auto interpolate(index_alpha_t indexAlpha, const std::vector<Data, Alloc> &dataArray, AccessFun accessFun)
+        -> remove_cvref_t<typename std::result_of<AccessFun(const std::vector<Data, Alloc> &, size_t)>::type>;
 
-/**
- * Linearly interpolates at the given time. When duplicate values exist the lower range is selected s.t. ( ]
- * Example: t = [0.0, 1.0, 1.0, 2.0]
- * when querying tk = 1.0, the range (0.0, 1.0] is selected
- *
- *  - No data implies the zero function
- *  - Single data point implies a constant function
- *  - Multiple data points are used for linear interpolation and zero order extrapolation
- *
- * @param [in] enquiryTime: The enquiry time for interpolation.
- * @param [in] timeArray: Times vector
- * @param [in] dataArray: Data vector
- * @param [in] accessFun: Method to access the subfield of Data in array. The signature of the accessFun
- *                        should be equivalent to the following where Field is any subfield of Data:
- *                        const Field& AccessFun(const std::vector<Data, Alloc>& array, size_t index)
- * @return The interpolation result
- *
- * @tparam Data: Data type
- * @tparam Alloc: Specialized allocation class
- */
-template <typename Data, class Alloc, class AccessFun>
-auto interpolate(scalar_t enquiryTime, const std::vector<scalar_t>& timeArray, const std::vector<Data, Alloc>& dataArray,
-                 AccessFun accessFun) -> remove_cvref_t<typename std::result_of<AccessFun(const std::vector<Data, Alloc>&, size_t)>::type>;
+    /**
+     * Linearly interpolates at the given time. When duplicate values exist the lower range is selected s.t. ( ]
+     * Example: t = [0.0, 1.0, 1.0, 2.0]
+     * when querying tk = 1.0, the range (0.0, 1.0] is selected
+     *
+     *  - No data implies the zero function
+     *  - Single data point implies a constant function
+     *  - Multiple data points are used for linear interpolation and zero order extrapolation
+     *
+     * @param [in] enquiryTime: The enquiry time for interpolation.
+     * @param [in] timeArray: Times vector
+     * @param [in] dataArray: Data vector
+     * @param [in] accessFun: Method to access the subfield of Data in array. The signature of the accessFun
+     *                        should be equivalent to the following where Field is any subfield of Data:
+     *                        const Field& AccessFun(const std::vector<Data, Alloc>& array, size_t index)
+     * @return The interpolation result
+     *
+     * @tparam Data: Data type
+     * @tparam Alloc: Specialized allocation class
+     */
+    template<typename Data, class Alloc, class AccessFun>
+    auto interpolate(scalar_t enquiryTime, const std::vector<scalar_t> &timeArray,
+                     const std::vector<Data, Alloc> &dataArray,
+                     AccessFun accessFun) -> remove_cvref_t<typename std::result_of<AccessFun(
+        const std::vector<Data, Alloc> &, size_t)>::type>;
+} // namespace ocs2::LinearInterpolation
 
-}  // namespace LinearInterpolation
-}  // namespace ocs2
 
 #include "implementation/LinearInterpolation.h"

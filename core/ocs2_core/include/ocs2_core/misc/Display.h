@@ -33,22 +33,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 
 namespace ocs2 {
+    /** Loops over the elements in a container and creates a delimited string */
+    template<typename Container>
+    std::string toDelimitedString(const Container &container, const std::string &delimiter = ", ") {
+        std::stringstream ss;
 
-/** Loops over the elements in a container and creates a delimited string */
-template <typename Container>
-std::string toDelimitedString(const Container& container, const std::string& delimiter = ", ") {
-  std::stringstream ss;
+        bool addDelimiter = false;
+        for (size_t i = 0; i < container.size(); i++) {
+            if (addDelimiter) {
+                ss << delimiter;
+            }
+            ss << container[i];
+            addDelimiter = true;
+        }
 
-  bool addDelimiter = false;
-  for (size_t i = 0; i < container.size(); i++) {
-    if (addDelimiter) {
-      ss << delimiter;
+        return ss.str();
     }
-    ss << container[i];
-    addDelimiter = true;
-  }
-
-  return ss.str();
-}
-
-}  // namespace ocs2
+} // namespace ocs2

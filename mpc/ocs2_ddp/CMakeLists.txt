@@ -28,6 +28,7 @@ add_library(${PROJECT_NAME}
         src/search_strategy/StrategySettings.cpp
         src/ContinuousTimeLqr.cpp
         src/GaussNewtonDDP.cpp
+        src/GaussNewtonDDP_MPC.cpp
         src/HessianCorrection.cpp
         src/ILQR.cpp
         src/SLQ.cpp

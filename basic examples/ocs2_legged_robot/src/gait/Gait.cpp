@@ -27,7 +27,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_legged_robot/gait/Gait.h"
+#include <ocs2_legged_robot/gait/Gait.h>
 
 #include <ocs2_core/misc/Display.h>
 
@@ -35,90 +35,71 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cassert>
 #include <cmath>
 
-namespace ocs2 {
-namespace legged_robot {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-bool isValidGait(const Gait& gait) {
-  bool validGait = true;
-  validGait &= gait.duration > 0.0;
-  validGait &= std::all_of(gait.eventPhases.begin(), gait.eventPhases.end(), [](scalar_t phase) { return 0.0 < phase && phase < 1.0; });
-  validGait &= std::is_sorted(gait.eventPhases.begin(), gait.eventPhases.end());
-  validGait &= gait.eventPhases.size() + 1 == gait.modeSequence.size();
-  return validGait;
-}
+namespace ocs2::legged_robot {
+    bool isValidGait(const Gait &gait) {
+        bool validGait = true;
+        validGait &= gait.duration > 0.0;
+        validGait &= std::all_of(gait.eventPhases.begin(), gait.eventPhases.end(),
+                                 [](scalar_t phase) { return 0.0 < phase && phase < 1.0; });
+        validGait &= std::is_sorted(gait.eventPhases.begin(), gait.eventPhases.end());
+        validGait &= gait.eventPhases.size() + 1 == gait.modeSequence.size();
+        return validGait;
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-bool isValidPhase(scalar_t phase) {
-  return phase >= 0.0 && phase < 1.0;
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-scalar_t wrapPhase(scalar_t phase) {
-  phase = std::fmod(phase, 1.0);
-  if (phase < 0.0) {
-    phase += 1.0;
-  }
-  return phase;
-}
+    bool isValidPhase(scalar_t phase) {
+        return phase >= 0.0 && phase < 1.0;
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-int getModeIndexFromPhase(scalar_t phase, const Gait& gait) {
-  assert(isValidPhase(phase));
-  assert(isValidGait(gait));
-  auto firstLargerValueIterator = std::upper_bound(gait.eventPhases.begin(), gait.eventPhases.end(), phase);
-  return static_cast<int>(firstLargerValueIterator - gait.eventPhases.begin());
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-size_t getModeFromPhase(scalar_t phase, const Gait& gait) {
-  assert(isValidPhase(phase));
-  assert(isValidGait(gait));
-  return gait.modeSequence[getModeIndexFromPhase(phase, gait)];
-}
+    scalar_t wrapPhase(scalar_t phase) {
+        phase = std::fmod(phase, 1.0);
+        if (phase < 0.0) {
+            phase += 1.0;
+        }
+        return phase;
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-scalar_t timeLeftInGait(scalar_t phase, const Gait& gait) {
-  assert(isValidPhase(phase));
-  assert(isValidGait(gait));
-  return (1.0 - phase) * gait.duration;
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-scalar_t timeLeftInMode(scalar_t phase, const Gait& gait) {
-  assert(isValidPhase(phase));
-  assert(isValidGait(gait));
-  int modeIndex = getModeIndexFromPhase(phase, gait);
-  if (modeIndex < gait.eventPhases.size()) {
-    return (gait.eventPhases[modeIndex] - phase) * gait.duration;
-  } else {
-    return timeLeftInGait(phase, gait);
-  }
-}
+    int getModeIndexFromPhase(scalar_t phase, const Gait &gait) {
+        assert(isValidPhase(phase));
+        assert(isValidGait(gait));
+        auto firstLargerValueIterator = std::upper_bound(gait.eventPhases.begin(), gait.eventPhases.end(), phase);
+        return static_cast<int>(firstLargerValueIterator - gait.eventPhases.begin());
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::ostream& operator<<(std::ostream& stream, const Gait& gait) {
-  stream << "Duration:       " << gait.duration << "\n";
-  stream << "Event phases:  {" << toDelimitedString(gait.eventPhases) << "}\n";
-  stream << "Mode sequence: {" << toDelimitedString(gait.modeSequence) << "}\n";
-  return stream;
-}
 
-}  // namespace legged_robot
-}  // namespace ocs2
+    size_t getModeFromPhase(scalar_t phase, const Gait &gait) {
+        assert(isValidPhase(phase));
+        assert(isValidGait(gait));
+        return gait.modeSequence[getModeIndexFromPhase(phase, gait)];
+    }
+
+
+    scalar_t timeLeftInGait(scalar_t phase, const Gait &gait) {
+        assert(isValidPhase(phase));
+        assert(isValidGait(gait));
+        return (1.0 - phase) * gait.duration;
+    }
+
+
+    scalar_t timeLeftInMode(scalar_t phase, const Gait &gait) {
+        assert(isValidPhase(phase));
+        assert(isValidGait(gait));
+        int modeIndex = getModeIndexFromPhase(phase, gait);
+        if (modeIndex < gait.eventPhases.size()) {
+            return (gait.eventPhases[modeIndex] - phase) * gait.duration;
+        } else {
+            return timeLeftInGait(phase, gait);
+        }
+    }
+
+
+    std::ostream &operator<<(std::ostream &stream, const Gait &gait) {
+        stream << "Duration:       " << gait.duration << "\n";
+        stream << "Event phases:  {" << toDelimitedString(gait.eventPhases) << "}\n";
+        stream << "Mode sequence: {" << toDelimitedString(gait.modeSequence) << "}\n";
+        return stream;
+    }
+} // namespace ocs2::legged_robot

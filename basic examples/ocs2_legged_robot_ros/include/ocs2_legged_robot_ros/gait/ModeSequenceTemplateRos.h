@@ -34,31 +34,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_msgs/msg/mode_schedule.hpp>
 #include <vector>
 
-namespace ocs2 {
-namespace legged_robot {
+namespace ocs2::legged_robot {
+    /** Convert mode sequence template to ROS message */
+    inline ocs2_msgs::msg::ModeSchedule createModeSequenceTemplateMsg(
+        const ModeSequenceTemplate &ModeSequenceTemplate) {
+        ocs2_msgs::msg::ModeSchedule modeScheduleMsg;
+        modeScheduleMsg.event_times.assign(
+            ModeSequenceTemplate.switchingTimes.begin(),
+            ModeSequenceTemplate.switchingTimes.end());
+        modeScheduleMsg.mode_sequence.assign(
+            ModeSequenceTemplate.modeSequence.begin(),
+            ModeSequenceTemplate.modeSequence.end());
+        return modeScheduleMsg;
+    }
 
-/** Convert mode sequence template to ROS message */
-inline ocs2_msgs::msg::ModeSchedule createModeSequenceTemplateMsg(
-    const ModeSequenceTemplate& ModeSequenceTemplate) {
-  ocs2_msgs::msg::ModeSchedule modeScheduleMsg;
-  modeScheduleMsg.event_times.assign(
-      ModeSequenceTemplate.switchingTimes.begin(),
-      ModeSequenceTemplate.switchingTimes.end());
-  modeScheduleMsg.mode_sequence.assign(
-      ModeSequenceTemplate.modeSequence.begin(),
-      ModeSequenceTemplate.modeSequence.end());
-  return modeScheduleMsg;
+    /** Convert ROS message to mode sequence template */
+    inline ModeSequenceTemplate readModeSequenceTemplateMsg(
+        const ocs2_msgs::msg::ModeSchedule &modeScheduleMsg) {
+        std::vector switchingTimes(modeScheduleMsg.event_times.begin(),
+                                             modeScheduleMsg.event_times.end());
+        std::vector<size_t> modeSequence(modeScheduleMsg.mode_sequence.begin(),
+                                         modeScheduleMsg.mode_sequence.end());
+        return {switchingTimes, modeSequence};
+    }
 }
-
-/** Convert ROS message to mode sequence template */
-inline ModeSequenceTemplate readModeSequenceTemplateMsg(
-    const ocs2_msgs::msg::ModeSchedule& modeScheduleMsg) {
-  std::vector<scalar_t> switchingTimes(modeScheduleMsg.event_times.begin(),
-                                       modeScheduleMsg.event_times.end());
-  std::vector<size_t> modeSequence(modeScheduleMsg.mode_sequence.begin(),
-                                   modeScheduleMsg.mode_sequence.end());
-  return {switchingTimes, modeSequence};
-}
-
-}  // namespace legged_robot
-}  // namespace ocs2

@@ -34,32 +34,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_legged_robot/reference_manager/SwitchedModelReferenceManager.h"
 
-namespace ocs2 {
-namespace legged_robot {
+namespace ocs2::legged_robot {
+    class LeggedRobotInitializer final : public Initializer {
+    public:
+        /**
+         * Constructor
+         * @param [in] info : The centroidal model information.
+         * @param [in] referenceManager : Switched system reference manager.
+         * @param [in] extendNormalizedMomentum: If true, it extrapolates the normalized momenta; otherwise sets them to zero.
+         */
+        LeggedRobotInitializer(CentroidalModelInfo info, const SwitchedModelReferenceManager &referenceManager,
+                               bool extendNormalizedMomentum = false);
 
-class LeggedRobotInitializer final : public Initializer {
- public:
-  /*
-   * Constructor
-   * @param [in] info : The centroidal model information.
-   * @param [in] referenceManager : Switched system reference manager.
-   * @param [in] extendNormalizedMomentum: If true, it extrapolates the normalized momenta; otherwise sets them to zero.
-   */
-  LeggedRobotInitializer(CentroidalModelInfo info, const SwitchedModelReferenceManager& referenceManager,
-                         bool extendNormalizedMomentum = false);
+        ~LeggedRobotInitializer() override = default;
 
-  ~LeggedRobotInitializer() override = default;
-  LeggedRobotInitializer* clone() const override;
+        LeggedRobotInitializer *clone() const override;
 
-  void compute(scalar_t time, const vector_t& state, scalar_t nextTime, vector_t& input, vector_t& nextState) override;
+        void compute(scalar_t time, const vector_t &state, scalar_t nextTime, vector_t &input,
+                     vector_t &nextState) override;
 
- private:
-  LeggedRobotInitializer(const LeggedRobotInitializer& other) = default;
+    private:
+        LeggedRobotInitializer(const LeggedRobotInitializer &other) = default;
 
-  const CentroidalModelInfo info_;
-  const SwitchedModelReferenceManager* referenceManagerPtr_;
-  const bool extendNormalizedMomentum_;
-};
-
-}  // namespace legged_robot
-}  // namespace ocs2
+        const CentroidalModelInfo info_;
+        const SwitchedModelReferenceManager *referenceManagerPtr_;
+        const bool extendNormalizedMomentum_;
+    };
+}

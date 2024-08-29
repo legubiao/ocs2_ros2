@@ -40,61 +40,64 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_python_interface/PythonInterface.h>
 #include <ocs2_robotic_tools/common/RobotInterface.h>
 
-namespace ocs2 {
-namespace pybindings_test {
+#include <memory>
 
-class DummyInterface final : public RobotInterface {
- public:
-  DummyInterface() {
-    const matrix_t A = (matrix_t(2, 2) << 0, 1, 0, 0).finished();
-    const matrix_t B = (matrix_t(2, 1) << 0, 1).finished();
-    problem_.dynamicsPtr.reset(new LinearSystemDynamics(A, B));
 
-    const matrix_t Q = (matrix_t(2, 2) << 1, 0, 0, 1).finished();
-    const matrix_t R = (matrix_t(1, 1) << 1).finished();
-    const matrix_t Qf = (matrix_t(2, 2) << 2, 0, 0, 2).finished();
-    problem_.costPtr->add("cost", std::make_unique<QuadraticStateInputCost>(Q, R));
-    problem_.finalCostPtr->add("finalCost", std::make_unique<QuadraticStateCost>(Qf));
+namespace ocs2::pybindings_test {
+    class DummyInterface final : public RobotInterface {
+    public:
+        DummyInterface() {
+            const matrix_t A = (matrix_t(2, 2) << 0, 1, 0, 0).finished();
+            const matrix_t B = (matrix_t(2, 1) << 0, 1).finished();
+            problem_.dynamicsPtr = std::make_unique<LinearSystemDynamics>(A, B);
 
-    problem_.targetTrajectoriesPtr = &targetTrajectories_;
+            const matrix_t Q = (matrix_t(2, 2) << 1, 0, 0, 1).finished();
+            const matrix_t R = (matrix_t(1, 1) << 1).finished();
+            const matrix_t Qf = (matrix_t(2, 2) << 2, 0, 0, 2).finished();
+            problem_.costPtr->add("cost", std::make_unique<QuadraticStateInputCost>(Q, R));
+            problem_.finalCostPtr->add("finalCost", std::make_unique<QuadraticStateCost>(Qf));
 
-    initializerPtr_.reset(new DefaultInitializer(1));
+            problem_.targetTrajectoriesPtr = &targetTrajectories_;
 
-    rollout::Settings rolloutSettings;
-    rolloutPtr_.reset(new TimeTriggeredRollout(*problem_.dynamicsPtr, rolloutSettings));
-  }
-  ~DummyInterface() override = default;
+            initializerPtr_ = std::make_unique<DefaultInitializer>(1);
 
-  std::unique_ptr<ocs2::GaussNewtonDDP_MPC> getMpc() {
-    mpc::Settings mpcSettings;
-    ddp::Settings ddpSettings;
-    ddpSettings.algorithm_ = ddp::Algorithm::SLQ;
-    return std::make_unique<GaussNewtonDDP_MPC>(std::move(mpcSettings), std::move(ddpSettings), *rolloutPtr_, problem_, *initializerPtr_);
-  }
+            rollout::Settings rolloutSettings;
+            rolloutPtr_ = std::make_unique<TimeTriggeredRollout>(*problem_.dynamicsPtr, rolloutSettings);
+        }
 
-  const OptimalControlProblem& getOptimalControlProblem() const override { return problem_; }
-  const Initializer& getInitializer() const override { return *initializerPtr_; }
+        ~DummyInterface() override = default;
 
- private:
-  OptimalControlProblem problem_;
-  std::unique_ptr<Initializer> initializerPtr_;
-  std::unique_ptr<RolloutBase> rolloutPtr_;
-  const TargetTrajectories targetTrajectories_ = TargetTrajectories({0.0}, {vector_t::Zero(2)}, {vector_t::Zero(2)});
-};
+        std::unique_ptr<GaussNewtonDDP_MPC> getMpc() {
+            mpc::Settings mpcSettings;
+            ddp::Settings ddpSettings;
+            ddpSettings.algorithm_ = ddp::Algorithm::SLQ;
+            return std::make_unique<GaussNewtonDDP_MPC>(mpcSettings, ddpSettings, *rolloutPtr_,
+                                                        problem_, *initializerPtr_);
+        }
 
-class DummyPyBindings final : public PythonInterface {
- public:
-  using Base = PythonInterface;
+        const OptimalControlProblem &getOptimalControlProblem() const override { return problem_; }
+        const Initializer &getInitializer() const override { return *initializerPtr_; }
 
-  DummyPyBindings() {
-    DummyInterface robot;
-    PythonInterface::init(robot, robot.getMpc());
-  }
-};
+    private:
+        OptimalControlProblem problem_;
+        std::unique_ptr<Initializer> initializerPtr_;
+        std::unique_ptr<RolloutBase> rolloutPtr_;
+        const TargetTrajectories targetTrajectories_ = TargetTrajectories(
+            {0.0}, {vector_t::Zero(2)}, {vector_t::Zero(2)});
+    };
 
-}  // namespace pybindings_test
-}  // namespace ocs2
+    class DummyPyBindings final : public PythonInterface {
+    public:
+        using Base = PythonInterface;
+
+        DummyPyBindings() {
+            DummyInterface robot;
+            PythonInterface::init(robot, robot.getMpc());
+        }
+    };
+} // namespace ocs2::pybindings_test
+
 
 TEST(OCS2PyBindingsTest, createDummyPyBindings) {
-  ocs2::pybindings_test::DummyPyBindings dummy;
+    ocs2::pybindings_test::DummyPyBindings dummy;
 }

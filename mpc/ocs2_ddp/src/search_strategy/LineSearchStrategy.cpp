@@ -141,7 +141,7 @@ namespace ocs2 {
         lineSearchInputRef_.modeSchedulePtr = &modeSchedule;
         bestSolutionRef_ = &solutionRef;
 
-        // perform a rollout with steplength zero.
+        // perform a rollout with step length zero.
         constexpr size_t taskId = 0;
         constexpr scalar_t stepLength = 0.0;
         try {

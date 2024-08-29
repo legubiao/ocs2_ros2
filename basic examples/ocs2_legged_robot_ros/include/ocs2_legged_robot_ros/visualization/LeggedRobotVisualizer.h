@@ -42,93 +42,92 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rclcpp/rclcpp.hpp"
 
-namespace ocs2 {
-namespace legged_robot {
+namespace ocs2::legged_robot {
+    class LeggedRobotVisualizer : public DummyObserver {
+    public:
+        /** Visualization settings (publicly available) */
+        std::string frameId_ = "odom"; // Frame name all messages are published in
+        scalar_t footMarkerDiameter_ = 0.03; // Size of the spheres at the feet
+        scalar_t footAlphaWhenLifted_ = 0.3; // Alpha value when a foot is lifted.
+        scalar_t forceScale_ = 1000.0; // Vector scale in N/m
+        scalar_t velScale_ = 5.0; // Vector scale in m/s
+        scalar_t copMarkerDiameter_ =
+                0.03; // Size of the sphere at the center of pressure
+        scalar_t supportPolygonLineWidth_ =
+                0.005; // LineThickness for the support polygon
+        scalar_t trajectoryLineWidth_ = 0.01; // LineThickness for trajectories
+        std::vector<Color> feetColorMap_ = {
+            Color::blue, Color::orange, Color::yellow,
+            Color::purple
+        }; // Colors for markers per feet
 
-class LeggedRobotVisualizer : public DummyObserver {
- public:
-  /** Visualization settings (publicly available) */
-  std::string frameId_ = "odom";  // Frame name all messages are published in
-  scalar_t footMarkerDiameter_ = 0.03;  // Size of the spheres at the feet
-  scalar_t footAlphaWhenLifted_ = 0.3;  // Alpha value when a foot is lifted.
-  scalar_t forceScale_ = 1000.0;        // Vector scale in N/m
-  scalar_t velScale_ = 5.0;             // Vector scale in m/s
-  scalar_t copMarkerDiameter_ =
-      0.03;  // Size of the sphere at the center of pressure
-  scalar_t supportPolygonLineWidth_ =
-      0.005;  // LineThickness for the support polygon
-  scalar_t trajectoryLineWidth_ = 0.01;  // LineThickness for trajectories
-  std::vector<Color> feetColorMap_ = {
-      Color::blue, Color::orange, Color::yellow,
-      Color::purple};  // Colors for markers per feet
+        /**
+        *
+        * @param pinocchioInterface
+        * @param maxUpdateFrequency : maximum publish frequency measured in MPC time.
+        */
+        LeggedRobotVisualizer(
+            PinocchioInterface pinocchioInterface,
+            CentroidalModelInfo centroidalModelInfo,
+            const PinocchioEndEffectorKinematics &endEffectorKinematics,
+            const rclcpp::Node::SharedPtr &node, scalar_t maxUpdateFrequency = 100.0);
 
-  /**
-   *
-   * @param pinocchioInterface
-   * @param n
-   * @param maxUpdateFrequency : maximum publish frequency measured in MPC time.
-   */
-  LeggedRobotVisualizer(
-      PinocchioInterface pinocchioInterface,
-      CentroidalModelInfo centroidalModelInfo,
-      const PinocchioEndEffectorKinematics& endEffectorKinematics,
-      const rclcpp::Node::SharedPtr& node, scalar_t maxUpdateFrequency = 100.0);
+        ~LeggedRobotVisualizer() override = default;
 
-  ~LeggedRobotVisualizer() override = default;
+        void update(const SystemObservation &observation,
+                    const PrimalSolution &primalSolution,
+                    const CommandData &command) override;
 
-  void update(const SystemObservation& observation,
-              const PrimalSolution& primalSolution,
-              const CommandData& command) override;
+        void publishTrajectory(
+            const std::vector<SystemObservation> &system_observation_array,
+            scalar_t speed = 1.0);
 
-  void publishTrajectory(
-      const std::vector<SystemObservation>& system_observation_array,
-      scalar_t speed = 1.0);
+        void publishObservation(rclcpp::Time timeStamp,
+                                const SystemObservation &observation);
 
-  void publishObservation(rclcpp::Time timeStamp,
-                          const SystemObservation& observation);
+        void publishDesiredTrajectory(rclcpp::Time timeStamp,
+                                      const TargetTrajectories &targetTrajectories);
 
-  void publishDesiredTrajectory(rclcpp::Time timeStamp,
-                                const TargetTrajectories& targetTrajectories);
+        void publishOptimizedStateTrajectory(rclcpp::Time timeStamp,
+                                             const scalar_array_t &mpcTimeTrajectory,
+                                             const vector_array_t &mpcStateTrajectory,
+                                             const ModeSchedule &modeSchedule);
 
-  void publishOptimizedStateTrajectory(rclcpp::Time timeStamp,
-                                       const scalar_array_t& mpcTimeTrajectory,
-                                       const vector_array_t& mpcStateTrajectory,
-                                       const ModeSchedule& modeSchedule);
+    protected:
+        rclcpp::Node::SharedPtr node_;
 
- protected:
-  rclcpp::Node::SharedPtr node_;
+    private:
+        LeggedRobotVisualizer(const LeggedRobotVisualizer &) = delete;
 
- private:
-  LeggedRobotVisualizer(const LeggedRobotVisualizer&) = delete;
-  void publishJointTransforms(rclcpp::Time timeStamp,
-                              const vector_t& jointAngles) const;
-  void publishBaseTransform(rclcpp::Time timeStamp, const vector_t& basePose);
-  void publishCartesianMarkers(rclcpp::Time timeStamp,
-                               const contact_flag_t& contactFlags,
-                               const std::vector<vector3_t>& feetPositions,
-                               const std::vector<vector3_t>& feetForces) const;
+        void publishJointTransforms(rclcpp::Time timeStamp,
+                                    const vector_t &jointAngles) const;
 
-  PinocchioInterface pinocchioInterface_;
-  const CentroidalModelInfo centroidalModelInfo_;
-  std::unique_ptr<PinocchioEndEffectorKinematics> endEffectorKinematicsPtr_;
+        void publishBaseTransform(rclcpp::Time timeStamp, const vector_t &basePose);
 
-  tf2_ros::TransformBroadcaster tfBroadcaster_;
-  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointPublisher_;
+        void publishCartesianMarkers(rclcpp::Time timeStamp,
+                                     const contact_flag_t &contactFlags,
+                                     const std::vector<vector3_t> &feetPositions,
+                                     const std::vector<vector3_t> &feetForces) const;
 
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
-      costDesiredBasePositionPublisher_;
-  std::vector<rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr>
-      costDesiredFeetPositionPublishers_;
+        PinocchioInterface pinocchioInterface_;
+        const CentroidalModelInfo centroidalModelInfo_;
+        std::unique_ptr<PinocchioEndEffectorKinematics> endEffectorKinematicsPtr_;
 
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      stateOptimizedPublisher_;
+        tf2_ros::TransformBroadcaster tfBroadcaster_;
+        rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr jointPublisher_;
 
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      currentStatePublisher_;
+        rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
+        costDesiredBasePositionPublisher_;
+        std::vector<rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr>
+        costDesiredFeetPositionPublishers_;
 
-  scalar_t lastTime_;
-  scalar_t minPublishTimeDifference_;
-};
+        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+        stateOptimizedPublisher_;
 
-}  // namespace legged_robot
-}  // namespace ocs2
+        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+        currentStatePublisher_;
+
+        scalar_t lastTime_;
+        scalar_t minPublishTimeDifference_;
+    };
+}

@@ -27,61 +27,51 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_legged_robot/constraint/NormalVelocityConstraintCppAd.h"
-#include "ocs2_legged_robot/LeggedRobotPreComputation.h"
+#include <ocs2_legged_robot/constraint/NormalVelocityConstraintCppAd.h>
+#include <ocs2_legged_robot/LeggedRobotPreComputation.h>
 
-namespace ocs2 {
-namespace legged_robot {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-NormalVelocityConstraintCppAd::NormalVelocityConstraintCppAd(const SwitchedModelReferenceManager& referenceManager,
-                                                             const EndEffectorKinematics<scalar_t>& endEffectorKinematics,
-                                                             size_t contactPointIndex)
-    : StateInputConstraint(ConstraintOrder::Linear),
-      referenceManagerPtr_(&referenceManager),
-      eeLinearConstraintPtr_(new EndEffectorLinearConstraint(endEffectorKinematics, 1)),
-      contactPointIndex_(contactPointIndex) {}
+namespace ocs2::legged_robot {
+    NormalVelocityConstraintCppAd::NormalVelocityConstraintCppAd(
+        const SwitchedModelReferenceManager &referenceManager,
+        const EndEffectorKinematics<scalar_t> &endEffectorKinematics,
+        size_t contactPointIndex)
+        : StateInputConstraint(ConstraintOrder::Linear),
+          referenceManagerPtr_(&referenceManager),
+          eeLinearConstraintPtr_(new EndEffectorLinearConstraint(endEffectorKinematics, 1)),
+          contactPointIndex_(contactPointIndex) {
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-NormalVelocityConstraintCppAd::NormalVelocityConstraintCppAd(const NormalVelocityConstraintCppAd& rhs)
-    : StateInputConstraint(rhs),
-      referenceManagerPtr_(rhs.referenceManagerPtr_),
-      eeLinearConstraintPtr_(rhs.eeLinearConstraintPtr_->clone()),
-      contactPointIndex_(rhs.contactPointIndex_) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-bool NormalVelocityConstraintCppAd::isActive(scalar_t time) const {
-  return !referenceManagerPtr_->getContactFlags(time)[contactPointIndex_];
-}
+    NormalVelocityConstraintCppAd::NormalVelocityConstraintCppAd(const NormalVelocityConstraintCppAd &rhs)
+        : StateInputConstraint(rhs),
+          referenceManagerPtr_(rhs.referenceManagerPtr_),
+          eeLinearConstraintPtr_(rhs.eeLinearConstraintPtr_->clone()),
+          contactPointIndex_(rhs.contactPointIndex_) {
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-vector_t NormalVelocityConstraintCppAd::getValue(scalar_t time, const vector_t& state, const vector_t& input,
-                                                 const PreComputation& preComp) const {
-  const auto& preCompLegged = cast<LeggedRobotPreComputation>(preComp);
-  eeLinearConstraintPtr_->configure(preCompLegged.getEeNormalVelocityConstraintConfigs()[contactPointIndex_]);
 
-  return eeLinearConstraintPtr_->getValue(time, state, input, preComp);
-}
+    bool NormalVelocityConstraintCppAd::isActive(scalar_t time) const {
+        return !referenceManagerPtr_->getContactFlags(time)[contactPointIndex_];
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-VectorFunctionLinearApproximation NormalVelocityConstraintCppAd::getLinearApproximation(scalar_t time, const vector_t& state,
-                                                                                        const vector_t& input,
-                                                                                        const PreComputation& preComp) const {
-  const auto& preCompLegged = cast<LeggedRobotPreComputation>(preComp);
-  eeLinearConstraintPtr_->configure(preCompLegged.getEeNormalVelocityConstraintConfigs()[contactPointIndex_]);
 
-  return eeLinearConstraintPtr_->getLinearApproximation(time, state, input, preComp);
-}
+    vector_t NormalVelocityConstraintCppAd::getValue(scalar_t time, const vector_t &state, const vector_t &input,
+                                                     const PreComputation &preComp) const {
+        const auto &preCompLegged = cast<LeggedRobotPreComputation>(preComp);
+        eeLinearConstraintPtr_->configure(preCompLegged.getEeNormalVelocityConstraintConfigs()[contactPointIndex_]);
 
-}  // namespace legged_robot
-}  // namespace ocs2
+        return eeLinearConstraintPtr_->getValue(time, state, input, preComp);
+    }
+
+
+    VectorFunctionLinearApproximation NormalVelocityConstraintCppAd::getLinearApproximation(
+        scalar_t time, const vector_t &state,
+        const vector_t &input,
+        const PreComputation &preComp) const {
+        const auto &preCompLegged = cast<LeggedRobotPreComputation>(preComp);
+        eeLinearConstraintPtr_->configure(preCompLegged.getEeNormalVelocityConstraintConfigs()[contactPointIndex_]);
+
+        return eeLinearConstraintPtr_->getLinearApproximation(time, state, input, preComp);
+    }
+} // namespace ocs2::legged_robot

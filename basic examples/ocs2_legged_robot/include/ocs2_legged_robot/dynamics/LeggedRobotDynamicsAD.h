@@ -36,26 +36,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_legged_robot/common/ModelSettings.h"
 
-namespace ocs2 {
-namespace legged_robot {
+namespace ocs2::legged_robot {
+    class LeggedRobotDynamicsAD final : public SystemDynamicsBase {
+    public:
+        LeggedRobotDynamicsAD(const PinocchioInterface &pinocchioInterface, const CentroidalModelInfo &info,
+                              const std::string &modelName,
+                              const ModelSettings &modelSettings);
 
-class LeggedRobotDynamicsAD final : public SystemDynamicsBase {
- public:
-  LeggedRobotDynamicsAD(const PinocchioInterface& pinocchioInterface, const CentroidalModelInfo& info, const std::string& modelName,
-                        const ModelSettings& modelSettings);
+        ~LeggedRobotDynamicsAD() override = default;
 
-  ~LeggedRobotDynamicsAD() override = default;
-  LeggedRobotDynamicsAD* clone() const override { return new LeggedRobotDynamicsAD(*this); }
+        LeggedRobotDynamicsAD *clone() const override { return new LeggedRobotDynamicsAD(*this); }
 
-  vector_t computeFlowMap(scalar_t time, const vector_t& state, const vector_t& input, const PreComputation& preComp) override;
-  VectorFunctionLinearApproximation linearApproximation(scalar_t time, const vector_t& state, const vector_t& input,
-                                                        const PreComputation& preComp) override;
+        vector_t computeFlowMap(scalar_t time, const vector_t &state, const vector_t &input,
+                                const PreComputation &preComp) override;
 
- private:
-  LeggedRobotDynamicsAD(const LeggedRobotDynamicsAD& rhs) = default;
+        VectorFunctionLinearApproximation linearApproximation(scalar_t time, const vector_t &state,
+                                                              const vector_t &input,
+                                                              const PreComputation &preComp) override;
 
-  PinocchioCentroidalDynamicsAD pinocchioCentroidalDynamicsAd_;
-};
+    private:
+        LeggedRobotDynamicsAD(const LeggedRobotDynamicsAD &rhs) = default;
 
-}  // namespace legged_robot
-}  // namespace ocs2
+        PinocchioCentroidalDynamicsAD pinocchioCentroidalDynamicsAd_;
+    };
+}

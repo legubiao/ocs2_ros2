@@ -27,7 +27,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_legged_robot_ros/gait/GaitKeyboardPublisher.h"
+#include <ocs2_legged_robot_ros/gait/GaitKeyboardPublisher.h>
 
 #include <ocs2_core/misc/CommandLine.h>
 #include <ocs2_core/misc/LoadData.h>
@@ -35,86 +35,77 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <ocs2_msgs/msg/mode_schedule.hpp>
 
-#include "ocs2_legged_robot_ros/gait/ModeSequenceTemplateRos.h"
+#include <ocs2_legged_robot_ros/gait/ModeSequenceTemplateRos.h>
 
-namespace ocs2 {
-namespace legged_robot {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-GaitKeyboardPublisher::GaitKeyboardPublisher(
-    const rclcpp::Node::SharedPtr& node, const std::string& gaitFile,
-    const std::string& robotName, bool verbose) {
-  RCLCPP_INFO_STREAM(node->get_logger(),
-                     robotName + "_mpc_mode_schedule node is setting up ...");
-  loadData::loadStdVector(gaitFile, "list", gaitList_, verbose);
+namespace ocs2::legged_robot {
+    GaitKeyboardPublisher::GaitKeyboardPublisher(
+        const rclcpp::Node::SharedPtr &node, const std::string &gaitFile,
+        const std::string &robotName, bool verbose) {
+        RCLCPP_INFO_STREAM(node->get_logger(),
+                           robotName + "_mpc_mode_schedule node is setting up ...");
+        loadData::loadStdVector(gaitFile, "list", gaitList_, verbose);
 
-  modeSequenceTemplatePublisher_ =
-      node->create_publisher<ocs2_msgs::msg::ModeSchedule>(
-          robotName + "_mpc_mode_schedule", 1);
+        modeSequenceTemplatePublisher_ =
+                node->create_publisher<ocs2_msgs::msg::ModeSchedule>(
+                    robotName + "_mpc_mode_schedule", 1);
 
-  gaitMap_.clear();
-  for (const auto& gaitName : gaitList_) {
-    gaitMap_.insert(
-        {gaitName, loadModeSequenceTemplate(gaitFile, gaitName, verbose)});
-  }
-  RCLCPP_INFO_STREAM(node->get_logger(),
-                     robotName + "_mpc_mode_schedule command node is ready.");
-}
+        gaitMap_.clear();
+        for (const auto &gaitName: gaitList_) {
+            gaitMap_.insert(
+                {gaitName, loadModeSequenceTemplate(gaitFile, gaitName, verbose)});
+        }
+        RCLCPP_INFO_STREAM(node->get_logger(),
+                           robotName + "_mpc_mode_schedule command node is ready.");
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void GaitKeyboardPublisher::getKeyboardCommand() {
-  const std::string commadMsg =
-      "Enter the desired gait, for the list of available gait enter \"list\"";
-  std::cout << commadMsg << ": ";
 
-  auto shouldTerminate = []() { return !rclcpp::ok(); };
-  const auto commandLine = stringToWords(getCommandLineString(shouldTerminate));
+    void GaitKeyboardPublisher::getKeyboardCommand() {
+        const std::string commadMsg =
+                "Enter the desired gait, for the list of available gait enter \"list\"";
+        std::cout << commadMsg << ": ";
 
-  if (commandLine.empty()) {
-    return;
-  }
+        auto shouldTerminate = []() { return !rclcpp::ok(); };
+        const auto commandLine = stringToWords(getCommandLineString(shouldTerminate));
 
-  if (commandLine.size() > 1) {
-    std::cout << "WARNING: The command should be a single word." << std::endl;
-    return;
-  }
+        if (commandLine.empty()) {
+            return;
+        }
 
-  // lower case transform
-  auto gaitCommand = commandLine.front();
-  std::transform(gaitCommand.begin(), gaitCommand.end(), gaitCommand.begin(),
-                 ::tolower);
+        if (commandLine.size() > 1) {
+            std::cout << "WARNING: The command should be a single word." << std::endl;
+            return;
+        }
 
-  if (gaitCommand == "list") {
-    printGaitList(gaitList_);
-    return;
-  }
+        // lower case transform
+        auto gaitCommand = commandLine.front();
+        std::transform(gaitCommand.begin(), gaitCommand.end(), gaitCommand.begin(),
+                       ::tolower);
 
-  try {
-    ModeSequenceTemplate ModeSequenceTemplate = gaitMap_.at(gaitCommand);
-    modeSequenceTemplatePublisher_->publish(
-        createModeSequenceTemplateMsg(ModeSequenceTemplate));
-  } catch (const std::out_of_range& e) {
-    std::cout << "Gait \"" << gaitCommand << "\" not found.\n";
-    printGaitList(gaitList_);
-  }
-}
+        if (gaitCommand == "list") {
+            printGaitList(gaitList_);
+            return;
+        }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void GaitKeyboardPublisher::printGaitList(
-    const std::vector<std::string>& gaitList) const {
-  std::cout << "List of available gaits:\n";
-  size_t itr = 0;
-  for (const auto& s : gaitList) {
-    std::cout << "[" << itr++ << "]: " << s << "\n";
-  }
-  std::cout << std::endl;
-}
+        try {
+            const ModeSequenceTemplate ModeSequenceTemplate = gaitMap_.at(gaitCommand);
+            modeSequenceTemplatePublisher_->publish(
+                createModeSequenceTemplateMsg(ModeSequenceTemplate));
+        } catch (const std::out_of_range &e) {
+            std::cout << "Gait \"" << gaitCommand << "\" not found.\n";
+            printGaitList(gaitList_);
+        }
+    }
 
-}  // namespace legged_robot
-}  // end of namespace ocs2
+
+    void GaitKeyboardPublisher::printGaitList(
+        const std::vector<std::string> &gaitList) {
+        std::cout << "List of available gaits:\n";
+        size_t itr = 0;
+        for (const auto &s: gaitList) {
+            std::cout << "[" << itr++ << "]: " << s << "\n";
+        }
+        std::cout << std::endl;
+    }
+} // namespace ocs2::legged_robot
+// end of namespace ocs2

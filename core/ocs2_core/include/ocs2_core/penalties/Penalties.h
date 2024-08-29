@@ -47,11 +47,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/penalties/augmented/SlacknessSquaredHingePenalty.h>
 
 // load functions
-namespace ocs2 {
-namespace loadData {
 
-template <class ConfigType>
-void loadPenaltyConfig(const std::string& fileName, const std::string& fieldName, ConfigType& config, bool verbose = true);
-
-}  // namespace loadData
-}  // namespace ocs2
+namespace ocs2::loadData {
+    template<class ConfigType>
+    void loadPenaltyConfig(const std::string &fileName, const std::string &fieldName, ConfigType &config,
+                           bool verbose = true);
+} // namespace ocs2::loadData

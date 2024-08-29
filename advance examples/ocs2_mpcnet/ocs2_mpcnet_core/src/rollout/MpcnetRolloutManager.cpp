@@ -189,7 +189,7 @@ namespace ocs2::mpcnet {
                 const auto result = policyEvaluationPtrs_[threadNumber]->run(
                     alpha, policyFilePath, timeStep, initialObservations.at(i),
                     modeSchedules.at(i), targetTrajectories.at(i));
-                nPolicyEvaluationTasksDone_++;
+                ++nPolicyEvaluationTasksDone_;
                 // print thread and task number
                 std::cerr << "Policy evaluation thread " << threadNumber << " finished task " <<
                         nPolicyEvaluationTasksDone_ << "\n";
@@ -212,12 +212,12 @@ namespace ocs2::mpcnet {
         // check if done
         if (nPolicyEvaluationTasksDone_ < policyEvaluationFtrs_.size()) {
             return false;
-        } else if (nPolicyEvaluationTasksDone_ == policyEvaluationFtrs_.size()) {
-            return true;
-        } else {
-            throw std::runtime_error(
-                "[MpcnetRolloutManager::isPolicyEvaluationDone] error since more tasks done than futures available.");
         }
+        if (nPolicyEvaluationTasksDone_ == policyEvaluationFtrs_.size()) {
+            return true;
+        }
+        throw std::runtime_error(
+            "[MpcnetRolloutManager::isPolicyEvaluationDone] error since more tasks done than futures available.");
     }
 
 

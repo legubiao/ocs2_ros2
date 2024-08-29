@@ -30,50 +30,37 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <array>
-#include <cppad/cg.hpp>
-#include <iostream>
-#include <memory>
-
 #include <ocs2_centroidal_model/AccessHelperFunctions.h>
-#include <ocs2_robotic_tools/common/RotationTransforms.h>
 
 #include "ocs2_legged_robot/common/Types.h"
 
-namespace ocs2 {
-namespace legged_robot {
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-/** Counts contact feet */
-inline size_t numberOfClosedContacts(const contact_flag_t& contactFlags) {
-  size_t numStanceLegs = 0;
-  for (auto legInContact : contactFlags) {
-    if (legInContact) {
-      ++numStanceLegs;
+namespace ocs2::legged_robot {
+    /** Counts contact feet */
+    inline size_t numberOfClosedContacts(const contact_flag_t &contactFlags) {
+        size_t numStanceLegs = 0;
+        for (auto legInContact: contactFlags) {
+            if (legInContact) {
+                ++numStanceLegs;
+            }
+        }
+        return numStanceLegs;
     }
-  }
-  return numStanceLegs;
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-/** Computes an input with zero joint velocity and forces which equally distribute the robot weight between contact feet. */
-inline vector_t weightCompensatingInput(const CentroidalModelInfoTpl<scalar_t>& info, const contact_flag_t& contactFlags) {
-  const auto numStanceLegs = numberOfClosedContacts(contactFlags);
-  vector_t input = vector_t::Zero(info.inputDim);
-  if (numStanceLegs > 0) {
-    const scalar_t totalWeight = info.robotMass * 9.81;
-    const vector3_t forceInInertialFrame(0.0, 0.0, totalWeight / numStanceLegs);
-    for (size_t i = 0; i < contactFlags.size(); i++) {
-      if (contactFlags[i]) {
-        centroidal_model::getContactForces(input, i, info) = forceInInertialFrame;
-      }
-    }  // end of i loop
-  }
-  return input;
-}
 
-}  // namespace legged_robot
-}  // namespace ocs2
+    /** Computes an input with zero joint velocity and forces which equally distribute the robot weight between contact feet. */
+    inline vector_t weightCompensatingInput(const CentroidalModelInfoTpl<scalar_t> &info,
+                                            const contact_flag_t &contactFlags) {
+        const auto numStanceLegs = numberOfClosedContacts(contactFlags);
+        vector_t input = vector_t::Zero(info.inputDim);
+        if (numStanceLegs > 0) {
+            const scalar_t totalWeight = info.robotMass * 9.81;
+            const vector3_t forceInInertialFrame(0.0, 0.0, totalWeight / numStanceLegs);
+            for (size_t i = 0; i < contactFlags.size(); i++) {
+                if (contactFlags[i]) {
+                    centroidal_model::getContactForces(input, i, info) = forceInInertialFrame;
+                }
+            } // end of i loop
+        }
+        return input;
+    }
+}

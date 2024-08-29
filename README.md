@@ -1,6 +1,4 @@
 # OCS2_ROS2 Toolbox
-<script src="//unpkg.com/docsify-bilibili/bilibili.min.js"></script>
-
 ## 1. Summary
 OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), it was refactored to be compatible with ROS2 and modern cmake. Below is the current todolist of the project:
 

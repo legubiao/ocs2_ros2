@@ -36,59 +36,65 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_legged_robot/common/utils.h"
 #include "ocs2_legged_robot/reference_manager/SwitchedModelReferenceManager.h"
 
-namespace ocs2 {
-namespace legged_robot {
+namespace ocs2::legged_robot {
+    /**
+    * State-input tracking cost used for intermediate times
+    */
+    class LeggedRobotStateInputQuadraticCost final : public QuadraticStateInputCost {
+    public:
+        LeggedRobotStateInputQuadraticCost(matrix_t Q, matrix_t R, CentroidalModelInfo info,
+                                           const SwitchedModelReferenceManager &referenceManager)
+            : QuadraticStateInputCost(std::move(Q), std::move(R)), info_(std::move(info)),
+              referenceManagerPtr_(&referenceManager) {
+        }
 
-/**
- * State-input tracking cost used for intermediate times
- */
-class LeggedRobotStateInputQuadraticCost final : public QuadraticStateInputCost {
- public:
-  LeggedRobotStateInputQuadraticCost(matrix_t Q, matrix_t R, CentroidalModelInfo info,
-                                     const SwitchedModelReferenceManager& referenceManager)
-      : QuadraticStateInputCost(std::move(Q), std::move(R)), info_(std::move(info)), referenceManagerPtr_(&referenceManager) {}
+        ~LeggedRobotStateInputQuadraticCost() override = default;
 
-  ~LeggedRobotStateInputQuadraticCost() override = default;
-  LeggedRobotStateInputQuadraticCost* clone() const override { return new LeggedRobotStateInputQuadraticCost(*this); }
+        LeggedRobotStateInputQuadraticCost *clone() const override {
+            return new LeggedRobotStateInputQuadraticCost(*this);
+        }
 
- private:
-  LeggedRobotStateInputQuadraticCost(const LeggedRobotStateInputQuadraticCost& rhs) = default;
+    private:
+        LeggedRobotStateInputQuadraticCost(const LeggedRobotStateInputQuadraticCost &rhs) = default;
 
-  std::pair<vector_t, vector_t> getStateInputDeviation(scalar_t time, const vector_t& state, const vector_t& input,
-                                                       const TargetTrajectories& targetTrajectories) const override {
-    const auto contactFlags = referenceManagerPtr_->getContactFlags(time);
-    const vector_t xNominal = targetTrajectories.getDesiredState(time);
-    const vector_t uNominal = weightCompensatingInput(info_, contactFlags);
-    return {state - xNominal, input - uNominal};
-  }
+        std::pair<vector_t, vector_t> getStateInputDeviation(scalar_t time, const vector_t &state,
+                                                             const vector_t &input,
+                                                             const TargetTrajectories &targetTrajectories)
+        const override {
+            const auto contactFlags = referenceManagerPtr_->getContactFlags(time);
+            const vector_t xNominal = targetTrajectories.getDesiredState(time);
+            const vector_t uNominal = weightCompensatingInput(info_, contactFlags);
+            return {state - xNominal, input - uNominal};
+        }
 
-  const CentroidalModelInfo info_;
-  const SwitchedModelReferenceManager* referenceManagerPtr_;
-};
+        const CentroidalModelInfo info_;
+        const SwitchedModelReferenceManager *referenceManagerPtr_;
+    };
 
-/**
- * State tracking cost used for the final time
- */
-class LeggedRobotStateQuadraticCost final : public QuadraticStateCost {
- public:
-  LeggedRobotStateQuadraticCost(matrix_t Q, CentroidalModelInfo info, const SwitchedModelReferenceManager& referenceManager)
-      : QuadraticStateCost(std::move(Q)), info_(std::move(info)), referenceManagerPtr_(&referenceManager) {}
+    /**
+    * State tracking cost used for the final time
+    */
+    class LeggedRobotStateQuadraticCost final : public QuadraticStateCost {
+    public:
+        LeggedRobotStateQuadraticCost(matrix_t Q, CentroidalModelInfo info,
+                                      const SwitchedModelReferenceManager &referenceManager)
+            : QuadraticStateCost(std::move(Q)), info_(std::move(info)), referenceManagerPtr_(&referenceManager) {
+        }
 
-  ~LeggedRobotStateQuadraticCost() override = default;
-  LeggedRobotStateQuadraticCost* clone() const override { return new LeggedRobotStateQuadraticCost(*this); }
+        ~LeggedRobotStateQuadraticCost() override = default;
 
- private:
-  LeggedRobotStateQuadraticCost(const LeggedRobotStateQuadraticCost& rhs) = default;
+        LeggedRobotStateQuadraticCost *clone() const override { return new LeggedRobotStateQuadraticCost(*this); }
 
-  vector_t getStateDeviation(scalar_t time, const vector_t& state, const TargetTrajectories& targetTrajectories) const override {
-    const auto contactFlags = referenceManagerPtr_->getContactFlags(time);
-    const vector_t xNominal = targetTrajectories.getDesiredState(time);
-    return state - xNominal;
-  }
+    private:
+        LeggedRobotStateQuadraticCost(const LeggedRobotStateQuadraticCost &rhs) = default;
 
-  const CentroidalModelInfo info_;
-  const SwitchedModelReferenceManager* referenceManagerPtr_;
-};
+        vector_t getStateDeviation(scalar_t time, const vector_t &state,
+                                   const TargetTrajectories &targetTrajectories) const override {
+            const vector_t xNominal = targetTrajectories.getDesiredState(time);
+            return state - xNominal;
+        }
 
-}  // namespace legged_robot
-}  // namespace ocs2
+        const CentroidalModelInfo info_;
+        const SwitchedModelReferenceManager *referenceManagerPtr_;
+    };
+}

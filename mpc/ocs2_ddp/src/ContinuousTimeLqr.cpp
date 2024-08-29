@@ -33,7 +33,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_oc/approximate_model/LinearQuadraticApproximator.h>
 
 namespace ocs2::continuous_time_lqr {
-
     solution solve(OptimalControlProblem &problem, scalar_t time, const vector_t &state, const vector_t &input,
                    const Settings &settings) {
         // OCP check
@@ -87,7 +86,7 @@ namespace ocs2::continuous_time_lqr {
         matrix_t dW(2 * stateDim, 2 * stateDim);
         matrix_t JWinvJ(2 * stateDim, 2 * stateDim);
 
-        const scalar_t exponent = 0.5 / stateDim;
+        const scalar_t exponent = 0.5 / static_cast<double>(stateDim);
         scalar_t Wnorm;
         size_t iter = 0;
         do {
@@ -113,10 +112,11 @@ namespace ocs2::continuous_time_lqr {
         // Solve for value function through system of equations M * S = N
         matrix_t lhsM(2 * stateDim, stateDim);
         lhsM << W.bottomRightCorner(stateDim, stateDim), W.topRightCorner(stateDim, stateDim) + matrix_t::Identity(
-            stateDim, stateDim);
+            static_cast<long>(stateDim), static_cast<long>(stateDim));
         matrix_t rhsN(2 * stateDim, stateDim);
-        rhsN << matrix_t::Identity(stateDim, stateDim) - W.bottomLeftCorner(stateDim, stateDim), -W.topLeftCorner(
-            stateDim, stateDim);
+        rhsN << matrix_t::Identity(static_cast<long>(stateDim), static_cast<long>(stateDim)) - W.
+                bottomLeftCorner(stateDim, stateDim), -W.topLeftCorner(
+                    stateDim, stateDim);
         const matrix_t S = lhsM.colPivHouseholderQr().solve(rhsN);
 
         // Compute feedback gains

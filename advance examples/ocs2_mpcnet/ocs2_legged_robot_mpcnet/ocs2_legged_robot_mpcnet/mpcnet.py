@@ -194,7 +194,7 @@ class LeggedRobotMpcnet(mpcnet.Mpcnet):
         return np.array(self.config.DEFAULT_TARGET_STATE) + random_deviation
 
     def get_tasks(
-        self, tasks_number: int, duration: float
+            self, tasks_number: int, duration: float
     ) -> Tuple[SystemObservationArray, ModeScheduleArray, TargetTrajectoriesArray]:
         """Get tasks.
 

@@ -27,46 +27,38 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "ocs2_legged_robot/reference_manager/SwitchedModelReferenceManager.h"
+#include <ocs2_legged_robot/reference_manager/SwitchedModelReferenceManager.h>
 
-namespace ocs2 {
-namespace legged_robot {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-SwitchedModelReferenceManager::SwitchedModelReferenceManager(std::shared_ptr<GaitSchedule> gaitSchedulePtr,
-                                                             std::shared_ptr<SwingTrajectoryPlanner> swingTrajectoryPtr)
-    : ReferenceManager(TargetTrajectories(), ModeSchedule()),
-      gaitSchedulePtr_(std::move(gaitSchedulePtr)),
-      swingTrajectoryPtr_(std::move(swingTrajectoryPtr)) {}
+namespace ocs2::legged_robot {
+    SwitchedModelReferenceManager::SwitchedModelReferenceManager(std::shared_ptr<GaitSchedule> gaitSchedulePtr,
+                                                                 std::shared_ptr<SwingTrajectoryPlanner>
+                                                                 swingTrajectoryPtr)
+        : ReferenceManager(TargetTrajectories(), ModeSchedule()),
+          gaitSchedulePtr_(std::move(gaitSchedulePtr)),
+          swingTrajectoryPtr_(std::move(swingTrajectoryPtr)) {
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void SwitchedModelReferenceManager::setModeSchedule(const ModeSchedule& modeSchedule) {
-  ReferenceManager::setModeSchedule(modeSchedule);
-  gaitSchedulePtr_->setModeSchedule(modeSchedule);
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-contact_flag_t SwitchedModelReferenceManager::getContactFlags(scalar_t time) const {
-  return modeNumber2StanceLeg(this->getModeSchedule().modeAtTime(time));
-}
+    void SwitchedModelReferenceManager::setModeSchedule(const ModeSchedule &modeSchedule) {
+        ReferenceManager::setModeSchedule(modeSchedule);
+        gaitSchedulePtr_->setModeSchedule(modeSchedule);
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void SwitchedModelReferenceManager::modifyReferences(scalar_t initTime, scalar_t finalTime, const vector_t& initState,
-                                                     TargetTrajectories& targetTrajectories, ModeSchedule& modeSchedule) {
-  const auto timeHorizon = finalTime - initTime;
-  modeSchedule = gaitSchedulePtr_->getModeSchedule(initTime - timeHorizon, finalTime + timeHorizon);
 
-  const scalar_t terrainHeight = 0.0;
-  swingTrajectoryPtr_->update(modeSchedule, terrainHeight);
-}
+    contact_flag_t SwitchedModelReferenceManager::getContactFlags(scalar_t time) const {
+        return modeNumber2StanceLeg(this->getModeSchedule().modeAtTime(time));
+    }
 
-}  // namespace legged_robot
-}  // namespace ocs2
+
+    void SwitchedModelReferenceManager::modifyReferences(scalar_t initTime, scalar_t finalTime,
+                                                         const vector_t &initState,
+                                                         TargetTrajectories &targetTrajectories,
+                                                         ModeSchedule &modeSchedule) {
+        const auto timeHorizon = finalTime - initTime;
+        modeSchedule = gaitSchedulePtr_->getModeSchedule(initTime - timeHorizon, finalTime + timeHorizon);
+
+        const scalar_t terrainHeight = 0.0;
+        swingTrajectoryPtr_->update(modeSchedule, terrainHeight);
+    }
+} // namespace ocs2::legged_robot
