@@ -50,8 +50,7 @@ rosdep install --from-paths src --ignore-src -r -y
 
 ### 2.4 Basic Examples
 
-- Bilibili video 
-- bvid=BV12vv9eGEns
+<iframe src="//player.bilibili.com/player.html?bvid=BV12vv9eGEns&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
 
 
 Check [here](basic%20examples/) for more detailed instructions.
