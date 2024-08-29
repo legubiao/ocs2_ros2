@@ -1,4 +1,5 @@
 # OCS2_ROS2 Toolbox
+<script src="//unpkg.com/docsify-bilibili/bilibili.min.js"></script>
 
 ## 1. Summary
 OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), it was refactored to be compatible with ROS2 and modern cmake. Below is the current todolist of the project:
@@ -48,10 +49,10 @@ rosdep install --from-paths src --ignore-src -r -y
 ```
 
 ### 2.4 Basic Examples
-**⚠️ Warning:**
 
-* **If build without "-DCMAKE_BUILD_TYPE=RelWithDebInfo", the mpc will have poor performance.**
-* **Don't forget to deactivate conda before "colcon build", otherwise gtest would generate some file caused later build all failed and you may need to clean the ros2 workspace to recover.**
+- Bilibili video 
+- bvid=BV12vv9eGEns
+
 
 Check [here](basic%20examples/) for more detailed instructions.
 
