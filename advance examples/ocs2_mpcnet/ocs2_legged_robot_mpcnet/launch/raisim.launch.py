@@ -57,7 +57,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             name='policyFile',
             default_value=os.path.join(
-                get_package_share_directory('ocs2_legged_robot_mpcnet'), 'policy', 'without_raisim.onnx')
+                get_package_share_directory('ocs2_legged_robot_mpcnet'), 'policy', 'raisim.onnx')
         ),
         DeclareLaunchArgument(
             name='useRaisim',

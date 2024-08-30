@@ -61,11 +61,11 @@ namespace ocs2::mpcnet {
                           std::shared_ptr<MpcnetDefinitionBase> mpcnetDefinitionPtr,
                           std::shared_ptr<ReferenceManagerInterface> referenceManagerPtr)
             : mpcPtr_(std::move(mpcPtr)),
+              mpcnetDefinitionPtr_(std::move(mpcnetDefinitionPtr)),
+              behavioralControllerPtr_(new MpcnetBehavioralController()),
               mpcnetPtr_(std::move(mpcnetPtr)),
               rolloutPtr_(std::move(rolloutPtr)),
-              mpcnetDefinitionPtr_(std::move(mpcnetDefinitionPtr)),
-              referenceManagerPtr_(std::move(referenceManagerPtr)),
-              behavioralControllerPtr_(new MpcnetBehavioralController()) {
+              referenceManagerPtr_(std::move(referenceManagerPtr)) {
         }
 
         /**

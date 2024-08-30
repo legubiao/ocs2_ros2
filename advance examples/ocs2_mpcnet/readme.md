@@ -68,6 +68,11 @@ colcon build --packages-up-to ocs2_legged_robot_mpcnet
 source ~/ocs2_ws/install/setup.bash
 ros2 launch ocs2_legged_robot_mpcnet default.launch.py
 ```
+* launch the simulation with raisim
+```bash
+source ~/ocs2_ws/install/setup.bash
+ros2 launch ocs2_legged_robot_mpcnet raisim.launch.py
+```
 
 
 ## 3. Train MPC-Net
@@ -112,6 +117,12 @@ to run the trained model, copy the .onnx and .pt file in the runs folder to the 
 source ~/ocs2_ws/install/setup.bash
 cd ~/ocs2_ws/src/ocs2_ros2/advance\ examples/ocs2_mpcnet/ocs2_legged_robot_mpcnet/ocs2_legged_robot_mpcnet
 python train.py
+```
+* train the MPC-Net with the raisim environment
+```bash
+source ~/ocs2_ws/install/setup.bash
+cd ~/ocs2_ws/src/ocs2_ros2/advance\ examples/ocs2_mpcnet/ocs2_legged_robot_mpcnet/ocs2_legged_robot_mpcnet
+python train.py legged_robot_raisim.yaml
 ```
 * check the tensorboard
 ```bash
