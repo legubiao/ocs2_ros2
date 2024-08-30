@@ -63,19 +63,19 @@ class HamiltonianLoss(BaseLoss):
         super().__init__(config)
 
     def __call__(
-        self,
-        x_query: torch.Tensor,
-        x_nominal: torch.Tensor,
-        u_query: torch.Tensor,
-        u_nominal: torch.Tensor,
-        p_query: torch.Tensor,
-        p_nominal: torch.Tensor,
-        dHdxx: torch.Tensor,
-        dHdux: torch.Tensor,
-        dHduu: torch.Tensor,
-        dHdx: torch.Tensor,
-        dHdu: torch.Tensor,
-        H: torch.Tensor,
+            self,
+            x_query: torch.Tensor,
+            x_nominal: torch.Tensor,
+            u_query: torch.Tensor,
+            u_nominal: torch.Tensor,
+            p_query: torch.Tensor,
+            p_nominal: torch.Tensor,
+            dHdxx: torch.Tensor,
+            dHdux: torch.Tensor,
+            dHduu: torch.Tensor,
+            dHdx: torch.Tensor,
+            dHdu: torch.Tensor,
+            H: torch.Tensor,
     ) -> torch.Tensor:
         """Computes the loss.
 
@@ -102,16 +102,16 @@ class HamiltonianLoss(BaseLoss):
 
     @staticmethod
     def compute(
-        x_query: torch.Tensor,
-        x_nominal: torch.Tensor,
-        u_query: torch.Tensor,
-        u_nominal: torch.Tensor,
-        dHdxx: torch.Tensor,
-        dHdux: torch.Tensor,
-        dHduu: torch.Tensor,
-        dHdx: torch.Tensor,
-        dHdu: torch.Tensor,
-        H: torch.Tensor,
+            x_query: torch.Tensor,
+            x_nominal: torch.Tensor,
+            u_query: torch.Tensor,
+            u_nominal: torch.Tensor,
+            dHdxx: torch.Tensor,
+            dHdux: torch.Tensor,
+            dHduu: torch.Tensor,
+            dHdx: torch.Tensor,
+            dHdu: torch.Tensor,
+            H: torch.Tensor,
     ) -> torch.Tensor:
         """Computes the Hamiltonian losses for a batch.
 
@@ -142,10 +142,10 @@ class HamiltonianLoss(BaseLoss):
             dx = torch.sub(x_query, x_nominal)
             du = torch.sub(u_query, u_nominal)
             return (
-                0.5 * bdot(dx, bmv(dHdxx, dx))
-                + bdot(du, bmv(dHdux, dx))
-                + 0.5 * bdot(du, bmv(dHduu, du))
-                + bdot(dHdx, dx)
-                + bdot(dHdu, du)
-                + H
+                    0.5 * bdot(dx, bmv(dHdxx, dx))
+                    + bdot(du, bmv(dHdux, dx))
+                    + 0.5 * bdot(du, bmv(dHduu, du))
+                    + bdot(dHdx, dx)
+                    + bdot(dHdu, du)
+                    + H
             )

@@ -45,9 +45,10 @@ from ocs2_mpcnet_core.policy import MixtureOfNonlinearExpertsPolicy
 
 from ocs2_legged_robot_mpcnet import LeggedRobotMpcnet
 from ocs2_legged_robot_mpcnet import MpcnetInterface
+from typing import Optional
 
 
-def main(root_dir: str, config_file_name: str) -> None:
+def main(root_dir: str, config_file_name: str, pt_file_path: Optional[str] = None) -> None:
     # config
     config = Config(os.path.join(root_dir, "config", config_file_name))
     # interface
@@ -60,14 +61,19 @@ def main(root_dir: str, config_file_name: str) -> None:
     # policy
     policy = MixtureOfNonlinearExpertsPolicy(config)
     # mpcnet
-    mpcnet = LeggedRobotMpcnet(root_dir, config, interface, memory, policy, experts_loss, gating_loss)
+    mpcnet = LeggedRobotMpcnet(root_dir, config, interface, memory, policy, experts_loss, gating_loss, pt_file_path)
     # train
     mpcnet.train()
 
 
 if __name__ == "__main__":
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    if len(sys.argv) > 1:
-        main(root_dir, sys.argv[1])
+    pt_file_path = root_dir + "/../policy/init_policy.pt"
+    if not os.path.exists(pt_file_path):
+        pt_file_path = None
     else:
-        main(root_dir, "legged_robot.yaml")
+        print("Found pre-trained policy at: ", pt_file_path)
+    if len(sys.argv) > 1:
+        main(root_dir, sys.argv[1], pt_file_path)
+    else:
+        main(root_dir, "legged_robot.yaml", pt_file_path)

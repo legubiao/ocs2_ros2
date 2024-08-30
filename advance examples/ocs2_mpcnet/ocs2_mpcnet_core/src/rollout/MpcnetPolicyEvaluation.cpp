@@ -59,6 +59,8 @@ namespace ocs2::mpcnet {
                     "\n";
             // this policy evaluation run failed, incurred quantities are not reported
             metrics.incurredHamiltonian = std::numeric_limits<scalar_t>::quiet_NaN();
+            // metrics.incurredHamiltonian *= targetTrajectories.timeTrajectory.back() / systemObservation_.time;
+            // metrics.incurredHamiltonian = std::abs(metrics.incurredHamiltonian);
         }
 
         // report survival time

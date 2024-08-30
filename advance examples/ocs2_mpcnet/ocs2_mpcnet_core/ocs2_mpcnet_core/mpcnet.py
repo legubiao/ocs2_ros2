@@ -32,23 +32,23 @@
 Provides a class that handles the MPC-Net training.
 """
 
-import sys
+import datetime
 import os
 import time
-import datetime
-import torch
-import numpy as np
-from typing import Optional, Tuple
 from abc import ABCMeta, abstractmethod
-from torch.utils.tensorboard import SummaryWriter
+from typing import Optional, Tuple
 
-
-from ocs2_mpcnet_core import helper
-from ocs2_mpcnet_core import SystemObservationArray, ModeScheduleArray, TargetTrajectoriesArray
+import numpy as np
+import torch
+import torch.onnx
 from ocs2_mpcnet_core.config import Config
 from ocs2_mpcnet_core.loss import BaseLoss
 from ocs2_mpcnet_core.memory import BaseMemory
 from ocs2_mpcnet_core.policy import BasePolicy
+from torch.utils.tensorboard import SummaryWriter
+
+from ocs2_mpcnet_core import SystemObservationArray, ModeScheduleArray, TargetTrajectoriesArray
+from ocs2_mpcnet_core import helper
 
 
 class Mpcnet(metaclass=ABCMeta):
@@ -62,14 +62,15 @@ class Mpcnet(metaclass=ABCMeta):
     """
 
     def __init__(
-        self,
-        root_dir: str,
-        config: Config,
-        interface: object,
-        memory: BaseMemory,
-        policy: BasePolicy,
-        experts_loss: BaseLoss,
-        gating_loss: Optional[BaseLoss] = None,
+            self,
+            root_dir: str,
+            config: Config,
+            interface: object,
+            memory: BaseMemory,
+            policy: BasePolicy,
+            experts_loss: BaseLoss,
+            gating_loss: Optional[BaseLoss] = None,
+            pt_file_path: Optional[str] = None,
     ) -> None:
         """Initializes the Mpcnet class.
 
@@ -98,7 +99,11 @@ class Mpcnet(metaclass=ABCMeta):
         # memory
         self.memory = memory
         # policy
-        self.policy = policy
+        if pt_file_path:
+            self.policy = torch.load(pt_file_path, weights_only=False)
+            print("==============\nLoaded policy from", pt_file_path, "\n==============")
+        else:
+            self.policy = policy
         self.policy.to(config.DEVICE)
         self.dummy_observation = torch.randn(1, config.OBSERVATION_DIM, device=config.DEVICE, dtype=config.DTYPE)
         # optimizer
@@ -106,7 +111,7 @@ class Mpcnet(metaclass=ABCMeta):
 
     @abstractmethod
     def get_tasks(
-        self, tasks_number: int, duration: float
+            self, tasks_number: int, duration: float
     ) -> Tuple[SystemObservationArray, ModeScheduleArray, TargetTrajectoriesArray]:
         """Get tasks.
 

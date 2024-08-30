@@ -187,7 +187,7 @@ ACTION_SCALING:
 # rollout
 #
 # RaiSim or TimeTriggered rollout for data generation and policy evaluation
-RAISIM: True
+RAISIM: False
 # weights defining how often a gait is chosen for rollout
 WEIGHTS_FOR_GAITS:
   stance: 1.0
@@ -235,6 +235,6 @@ POLICY_EVALUATION_TASKS: 3
 #
 BATCH_SIZE: 128
 LEARNING_RATE: 1.e-3
-LEARNING_ITERATIONS: 200000
+LEARNING_ITERATIONS: 100000
 GRADIENT_CLIPPING: True
-GRADIENT_CLIPPING_VALUE: 0.5
+GRADIENT_CLIPPING_VALUE: 1

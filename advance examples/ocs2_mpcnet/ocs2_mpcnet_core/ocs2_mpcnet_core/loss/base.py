@@ -56,19 +56,19 @@ class BaseLoss(metaclass=ABCMeta):
 
     @abstractmethod
     def __call__(
-        self,
-        x_query: torch.Tensor,
-        x_nominal: torch.Tensor,
-        u_query: torch.Tensor,
-        u_nominal: torch.Tensor,
-        p_query: torch.Tensor,
-        p_nominal: torch.Tensor,
-        dHdxx: torch.Tensor,
-        dHdux: torch.Tensor,
-        dHduu: torch.Tensor,
-        dHdx: torch.Tensor,
-        dHdu: torch.Tensor,
-        H: torch.Tensor,
+            self,
+            x_query: torch.Tensor,
+            x_nominal: torch.Tensor,
+            u_query: torch.Tensor,
+            u_nominal: torch.Tensor,
+            p_query: torch.Tensor,
+            p_nominal: torch.Tensor,
+            dHdxx: torch.Tensor,
+            dHdux: torch.Tensor,
+            dHduu: torch.Tensor,
+            dHdx: torch.Tensor,
+            dHdu: torch.Tensor,
+            H: torch.Tensor,
     ) -> torch.Tensor:
         """Computes the loss.
 
