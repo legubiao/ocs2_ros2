@@ -10,7 +10,7 @@ OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), 
 - [x] perceptive locomotion demo
 - [x] tinyxml2 problem in Ubuntu 24.04 ROS2 Jazzy
 - [x] raisim demo
-- [ ] mpc_net demo
+- [x] mpc_net demo
 
 The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up the IDE.
 
@@ -60,3 +60,6 @@ Check [here](basic%20examples/) for more detailed instructions.
 ### 3.2 RaiSim Simulation
 
 [OCS2_RaiSim](advance%20examples/ocs2_raisim/)
+
+### 3.3 MPC-Net
+[OCS2_MpcNet](advance%20examples/ocs2_mpcnet/)
