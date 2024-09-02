@@ -31,51 +31,43 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_self_collision/SelfCollisionConstraint.h>
 
 namespace ocs2 {
+    SelfCollisionConstraint::SelfCollisionConstraint(const PinocchioStateInputMapping<scalar_t> &mapping,
+                                                     PinocchioGeometryInterface pinocchioGeometryInterface,
+                                                     scalar_t minimumDistance)
+        : StateConstraint(ConstraintOrder::Linear),
+          selfCollision_(std::move(pinocchioGeometryInterface), minimumDistance),
+          mappingPtr_(mapping.clone()) {
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-SelfCollisionConstraint::SelfCollisionConstraint(const PinocchioStateInputMapping<scalar_t>& mapping,
-                                                 PinocchioGeometryInterface pinocchioGeometryInterface, scalar_t minimumDistance)
-    : StateConstraint(ConstraintOrder::Linear),
-      selfCollision_(std::move(pinocchioGeometryInterface), minimumDistance),
-      mappingPtr_(mapping.clone()) {}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-SelfCollisionConstraint::SelfCollisionConstraint(const SelfCollisionConstraint& rhs)
-    : StateConstraint(rhs), selfCollision_(rhs.selfCollision_), mappingPtr_(rhs.mappingPtr_->clone()) {}
+    SelfCollisionConstraint::SelfCollisionConstraint(const SelfCollisionConstraint &rhs)
+        : StateConstraint(rhs), selfCollision_(rhs.selfCollision_), mappingPtr_(rhs.mappingPtr_->clone()) {
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-size_t SelfCollisionConstraint::getNumConstraints(scalar_t time) const {
-  return selfCollision_.getNumCollisionPairs();
-}
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-vector_t SelfCollisionConstraint::getValue(scalar_t time, const vector_t& state, const PreComputation& preComputation) const {
-  const auto& pinocchioInterface = getPinocchioInterface(preComputation);
-  return selfCollision_.getValue(pinocchioInterface);
-}
+    size_t SelfCollisionConstraint::getNumConstraints(scalar_t time) const {
+        return selfCollision_.getNumCollisionPairs();
+    }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-VectorFunctionLinearApproximation SelfCollisionConstraint::getLinearApproximation(scalar_t time, const vector_t& state,
-                                                                                  const PreComputation& preComputation) const {
-  const auto& pinocchioInterface = getPinocchioInterface(preComputation);
-  mappingPtr_->setPinocchioInterface(pinocchioInterface);
 
-  VectorFunctionLinearApproximation constraint;
-  matrix_t dfdq, dfdv;
-  std::tie(constraint.f, dfdq) = selfCollision_.getLinearApproximation(pinocchioInterface);
-  dfdv.setZero(dfdq.rows(), dfdq.cols());
-  std::tie(constraint.dfdx, std::ignore) = mappingPtr_->getOcs2Jacobian(state, dfdq, dfdv);
-  return constraint;
-}
+    vector_t SelfCollisionConstraint::getValue(scalar_t time, const vector_t &state,
+                                               const PreComputation &preComputation) const {
+        const auto &pinocchioInterface = getPinocchioInterface(preComputation);
+        return selfCollision_.getValue(pinocchioInterface);
+    }
 
-}  // namespace ocs2
+
+    VectorFunctionLinearApproximation SelfCollisionConstraint::getLinearApproximation(
+        scalar_t time, const vector_t &state,
+        const PreComputation &preComputation) const {
+        const auto &pinocchioInterface = getPinocchioInterface(preComputation);
+        mappingPtr_->setPinocchioInterface(pinocchioInterface);
+
+        VectorFunctionLinearApproximation constraint;
+        matrix_t dfdq, dfdv;
+        std::tie(constraint.f, dfdq) = selfCollision_.getLinearApproximation(pinocchioInterface);
+        dfdv.setZero(dfdq.rows(), dfdq.cols());
+        std::tie(constraint.dfdx, std::ignore) = mappingPtr_->getOcs2Jacobian(state, dfdq, dfdv);
+        return constraint;
+    }
+} // namespace ocs2

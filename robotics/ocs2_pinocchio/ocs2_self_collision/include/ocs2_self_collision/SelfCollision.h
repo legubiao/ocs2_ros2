@@ -33,49 +33,47 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_self_collision/PinocchioGeometryInterface.h>
 
 namespace ocs2 {
+    class SelfCollision {
+    public:
+        using vector3_t = Eigen::Matrix<scalar_t, 3, 1>;
 
-class SelfCollision {
- public:
-  using vector3_t = Eigen::Matrix<scalar_t, 3, 1>;
+        /**
+         * Constructor
+         *
+         * @param [in] pinocchioGeometryInterface: pinocchio geometry interface of the robot model
+         * @parma [in] minimumDistance: minimum allowed distance between each collision pair
+         */
+        SelfCollision(PinocchioGeometryInterface pinocchioGeometryInterface, scalar_t minimumDistance);
 
-  /**
-   * Constructor
-   *
-   * @param [in] pinocchioGeometryInterface: pinocchio geometry interface of the robot model
-   * @parma [in] minimumDistance: minimum allowed distance between each collision pair
-   */
-  SelfCollision(PinocchioGeometryInterface pinocchioGeometryInterface, scalar_t minimumDistance);
+        /** Get the number of collision pairs */
+        size_t getNumCollisionPairs() const { return pinocchioGeometryInterface_.getNumCollisionPairs(); }
 
-  /** Get the number of collision pairs */
-  size_t getNumCollisionPairs() const { return pinocchioGeometryInterface_.getNumCollisionPairs(); }
+        /**
+         * Evaluate the distance violation
+         * This method computes the distance results of all collision pairs through PinocchioGeometryInterface
+         * and compare each of them with the specified minimum distance.
+         *
+         * @note Requires updated forwardKinematics() on pinocchioInterface.
+         *
+         * @param [in] pinocchioInterface: pinocchio interface of the robot model
+         * @return: The differences between the distance of each collision pair and the minimum distance
+         */
+        vector_t getValue(const PinocchioInterface &pinocchioInterface) const;
 
-  /**
-   * Evaluate the distance violation
-   * This method computes the distance results of all collision pairs through PinocchioGeometryInterface
-   * and compare each of them with the specified minimum distance.
-   *
-   * @note Requires updated forwardKinematics() on pinocchioInterface.
-   *
-   * @param [in] pinocchioInterface: pinocchio interface of the robot model
-   * @return: The differences between the distance of each collision pair and the minimum distance
-   */
-  vector_t getValue(const PinocchioInterface& pinocchioInterface) const;
+        /**
+         * Evaluate the linear approximation of the distance function
+         * This method analytically computes the first derivative of distance against the pinocchio generalized coordinates
+         *
+         * @note Requires updated forwardKinematics(), updateGlobalPlacements() and computeJointJacobians() on pinocchioInterface.
+         *
+         * @param [in] pinocchioInterface: pinocchio interface of the robot model
+         * @param [in] pinocchioGeometryInterface: pinocchio geometry interface of the robot model
+         * @return: The pair of the distance violation and the first derivative of the distance against q
+         */
+        std::pair<vector_t, matrix_t> getLinearApproximation(const PinocchioInterface &pinocchioInterface) const;
 
-  /**
-   * Evaluate the linear approximation of the distance function
-   * This method analytically computes the first derivative of distance against the pinocchio generalized coordinates
-   *
-   * @note Requires updated forwardKinematics(), updateGlobalPlacements() and computeJointJacobians() on pinocchioInterface.
-   *
-   * @param [in] pinocchioInterface: pinocchio interface of the robot model
-   * @param [in] pinocchioGeometryInterface: pinocchio geometry interface of the robot model
-   * @return: The pair of the distance violation and the first derivative of the distance against q
-   */
-  std::pair<vector_t, matrix_t> getLinearApproximation(const PinocchioInterface& pinocchioInterface) const;
-
- private:
-  PinocchioGeometryInterface pinocchioGeometryInterface_;
-  scalar_t minimumDistance_;
-};
-
-}  // namespace ocs2
+    private:
+        PinocchioGeometryInterface pinocchioGeometryInterface_;
+        scalar_t minimumDistance_;
+    };
+} // namespace ocs2

@@ -55,6 +55,7 @@ target_include_directories(${PROJECT_NAME}
 if (URDFDOM_VERSION VERSION_GREATER_EQUAL 4.0.0)
     target_link_libraries(${PROJECT_NAME} tinyxml2)
 endif ()
+ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})
 
 #############
