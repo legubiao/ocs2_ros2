@@ -4,3 +4,6 @@
 [submodule "pinocchio"]
 	path = submodules/pinocchio
 	url = https://github.com/zhengxiang94/pinocchio.git
+[submodule "submodules/plane_segmentation_ros2"]
+	path = submodules/plane_segmentation_ros2
+	url = https://github.com/legubiao/plane_segmentation_ros2

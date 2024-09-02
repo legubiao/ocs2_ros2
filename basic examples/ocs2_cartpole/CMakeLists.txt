@@ -14,6 +14,12 @@ find_package(ament_cmake REQUIRED)
 find_package(ocs2_ddp REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)
 
+# Resolve for the package path at compile time.
+configure_file(
+        "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/package_path.h.in"
+        "${PROJECT_BINARY_DIR}/include/${PROJECT_NAME}/package_path.h" @ONLY
+)
+
 ###########
 ## Build ##
 ###########

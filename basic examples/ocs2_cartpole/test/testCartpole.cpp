@@ -62,7 +62,7 @@ protected:
     TestCartpole() {
         // interface
         taskFile = getPath() + "/config/mpc/task.info";
-        const std::string libFolder = ocs2::cartpole::getPath() + "/auto_generated";
+        const std::string libFolder = getPath() + "/auto_generated";
         cartPoleInterfacePtr = std::make_unique<CartPoleInterface>(taskFile, libFolder, false /*verbose*/);
 
         // Since the problem only uses final cost for swing-up, the final cost should be scaled proportional to
@@ -85,7 +85,7 @@ protected:
         // initial command
         initTargetTrajectories.timeTrajectory.push_back(0.0);
         initTargetTrajectories.stateTrajectory.push_back(cartPoleInterfacePtr->getInitialTarget());
-        initTargetTrajectories.inputTrajectory.push_back(vector_t::Zero(ocs2::cartpole::INPUT_DIM));
+        initTargetTrajectories.inputTrajectory.emplace_back(vector_t::Zero(INPUT_DIM));
     }
 
     [[nodiscard]] std::unique_ptr<GaussNewtonDDP> getAlgorithm() const {
@@ -99,12 +99,12 @@ protected:
 
         switch (algorithm) {
             case ddp::Algorithm::SLQ:
-                return std::make_unique<SLQ>(std::move(ddpSettings), cartPoleInterfacePtr->getRollout(),
+                return std::make_unique<SLQ>(ddpSettings, cartPoleInterfacePtr->getRollout(),
                                              createOptimalControlProblem(PenaltyType::ModifiedRelaxedBarrierPenalty),
                                              cartPoleInterfacePtr->getInitializer());
 
             case ddp::Algorithm::ILQR:
-                return std::make_unique<ILQR>(std::move(ddpSettings), cartPoleInterfacePtr->getRollout(),
+                return std::make_unique<ILQR>(ddpSettings, cartPoleInterfacePtr->getRollout(),
                                               createOptimalControlProblem(PenaltyType::ModifiedRelaxedBarrierPenalty),
                                               cartPoleInterfacePtr->getInitializer());
 
@@ -194,16 +194,10 @@ private:
     std::unique_ptr<StateInputConstraint> inputLimitsConstraint;
 };
 
-constexpr scalar_t TestCartpole::timeHorizon;
-constexpr scalar_t TestCartpole::goalViolationTolerance;
-constexpr scalar_t TestCartpole::constraintViolationTolerance;
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
 TEST_P(TestCartpole, testDDP) {
     // construct solver
-    auto ddpPtr = getAlgorithm();
+    const auto ddpPtr = getAlgorithm();
 
     // set TargetTrajectories
     ddpPtr->getReferenceManager().setTargetTrajectories(initTargetTrajectories);
@@ -223,9 +217,7 @@ TEST_P(TestCartpole, testDDP) {
     testFinalState(ddpPtr->primalSolution(timeHorizon));
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 /* Test name printed in gtest results */
 std::string testName(const testing::TestParamInfo<TestCartpole::ParamType> &info) {
     std::string name;
@@ -243,9 +235,7 @@ std::string testName(const testing::TestParamInfo<TestCartpole::ParamType> &info
     return name;
 }
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
+
 INSTANTIATE_TEST_CASE_P(TestCaseCartpole, TestCartpole,
                         testing::Combine(testing::ValuesIn({ddp::Algorithm::SLQ, ddp::Algorithm::ILQR}),
                             testing::ValuesIn({PenaltyType::SlacknessSquaredHingePenalty,
