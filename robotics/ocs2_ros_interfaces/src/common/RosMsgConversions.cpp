@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 namespace ocs2::ros_msg_conversions {
-    
     ocs2_msgs::msg::MpcObservation createObservationMsg(
         const SystemObservation &observation) {
         ocs2_msgs::msg::MpcObservation observationMsg;
@@ -53,7 +52,7 @@ namespace ocs2::ros_msg_conversions {
         return observationMsg;
     }
 
-    
+
     SystemObservation readObservationMsg(
         const ocs2_msgs::msg::MpcObservation &observationMsg) {
         SystemObservation observation;
@@ -75,7 +74,7 @@ namespace ocs2::ros_msg_conversions {
         return observation;
     }
 
-    
+
     ocs2_msgs::msg::ModeSchedule createModeScheduleMsg(
         const ModeSchedule &modeSchedule) {
         ocs2_msgs::msg::ModeSchedule modeScheduleMsg;
@@ -96,7 +95,7 @@ namespace ocs2::ros_msg_conversions {
         return modeScheduleMsg;
     }
 
-    
+
     ModeSchedule readModeScheduleMsg(
         const ocs2_msgs::msg::ModeSchedule &modeScheduleMsg) {
         // event times
@@ -116,7 +115,7 @@ namespace ocs2::ros_msg_conversions {
         return {eventTimes, mode_sequence};
     }
 
-    
+
     ocs2_msgs::msg::MpcPerformanceIndices createPerformanceIndicesMsg(
         scalar_t initTime,
         const PerformanceIndex &performanceIndices) {
@@ -137,7 +136,7 @@ namespace ocs2::ros_msg_conversions {
         return performanceIndicesMsg;
     }
 
-    
+
     PerformanceIndex readPerformanceIndicesMsg(
         const ocs2_msgs::msg::MpcPerformanceIndices &performanceIndicesMsg) {
         PerformanceIndex performanceIndices;
@@ -156,7 +155,7 @@ namespace ocs2::ros_msg_conversions {
         return performanceIndices;
     }
 
-    
+
     ocs2_msgs::msg::MpcTargetTrajectories createTargetTrajectoriesMsg(
         const TargetTrajectories &targetTrajectories) {
         ocs2_msgs::msg::MpcTargetTrajectories targetTrajectoriesMsg;
@@ -188,7 +187,7 @@ namespace ocs2::ros_msg_conversions {
         return targetTrajectoriesMsg;
     }
 
-    
+
     TargetTrajectories readTargetTrajectoriesMsg(
         const ocs2_msgs::msg::MpcTargetTrajectories &targetTrajectoriesMsg) {
         size_t N = targetTrajectoriesMsg.state_trajectory.size();
@@ -227,7 +226,7 @@ namespace ocs2::ros_msg_conversions {
         };
     }
 
-    
+
     ocs2_msgs::msg::Constraint createConstraintMsg(scalar_t time,
                                                    const vector_t &constraint) {
         ocs2_msgs::msg::Constraint constraintMsg;
@@ -241,7 +240,7 @@ namespace ocs2::ros_msg_conversions {
         return constraintMsg;
     }
 
-    
+
     ocs2_msgs::msg::LagrangianMetrics createLagrangianMetricsMsg(
         scalar_t time,
         LagrangianMetricsConstRef metrics) {
@@ -258,7 +257,7 @@ namespace ocs2::ros_msg_conversions {
         return metricsMsg;
     }
 
-    
+
     ocs2_msgs::msg::Multiplier createMultiplierMsg(scalar_t time,
                                                    MultiplierConstRef multiplier) {
         ocs2_msgs::msg::Multiplier multiplierMsg;

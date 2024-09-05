@@ -36,156 +36,150 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utility>
 
 namespace ocs2 {
+    TargetTrajectoriesInteractiveMarker::TargetTrajectoriesInteractiveMarker(
+        rclcpp::Node::SharedPtr node, const std::string &topicPrefix,
+        GaolPoseToTargetTrajectories gaolPoseToTargetTrajectories)
+        : node_(std::move(node)),
+          gaolPoseToTargetTrajectories_(std::move(gaolPoseToTargetTrajectories)) {
+        server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
+            "simple_marker", node_);
+        // observation subscriber
+        auto observationCallback =
+                [this](const ocs2_msgs::msg::MpcObservation::ConstSharedPtr &msg) {
+            std::lock_guard lock(latestObservationMutex_);
+            latestObservation_ = ros_msg_conversions::readObservationMsg(*msg);
+        };
+        observationSubscriber_ =
+                node_->create_subscription<ocs2_msgs::msg::MpcObservation>(
+                    topicPrefix + "_mpc_observation", 1, observationCallback);
+
+        // Trajectories publisher
+        targetTrajectoriesPublisherPtr_ =
+                std::make_unique<TargetTrajectoriesRosPublisher>(node_, topicPrefix);
+
+        menuHandler_ = std::make_unique<interactive_markers::MenuHandler>();
+        // create an interactive marker for our server
+        auto feedback_cb =
+                [&](const visualization_msgs::msg::InteractiveMarkerFeedback::
+            ConstSharedPtr &feedback) {
+            processFeedback(feedback);
+        };
+        menuHandler_->insert("Send target pose", feedback_cb);
+
+        // create an interactive marker for our server
+        auto const interactiveMarker = createInteractiveMarker();
+        server_->insert(interactiveMarker);
+        menuHandler_->apply(*server_, interactiveMarker.name);
+        server_->applyChanges();
+        RCLCPP_INFO(node_->get_logger(), "Interactive marker is ready.");
+    }
 
 
-TargetTrajectoriesInteractiveMarker::TargetTrajectoriesInteractiveMarker(
-  rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
-    GaolPoseToTargetTrajectories gaolPoseToTargetTrajectories)
-    : node_(node),
-      gaolPoseToTargetTrajectories_(std::move(gaolPoseToTargetTrajectories)) {
-  server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
-      "simple_marker", node_);
-  // observation subscriber
-  auto observationCallback =
-      [this](const ocs2_msgs::msg::MpcObservation::ConstSharedPtr& msg) {
-        std::lock_guard lock(latestObservationMutex_);
-        latestObservation_ = ros_msg_conversions::readObservationMsg(*msg);
-      };
-  observationSubscriber_ =
-      node_->create_subscription<ocs2_msgs::msg::MpcObservation>(
-          topicPrefix + "_mpc_observation", 1, observationCallback);
+    visualization_msgs::msg::InteractiveMarker
+    TargetTrajectoriesInteractiveMarker::createInteractiveMarker() const {
+        visualization_msgs::msg::InteractiveMarker interactiveMarker;
+        interactiveMarker.header.frame_id = "world";
+        interactiveMarker.header.stamp = node_->now();
+        interactiveMarker.name = "Goal";
+        interactiveMarker.scale = 0.2;
+        interactiveMarker.description = "Right click to send command";
+        interactiveMarker.pose.position.z = 1.0;
 
-  // Trajectories publisher
-  targetTrajectoriesPublisherPtr_ =
-      std::make_unique<TargetTrajectoriesRosPublisher>(node_, topicPrefix);
+        // create a grey box marker
+        const auto boxMarker = []() {
+            visualization_msgs::msg::Marker marker;
+            marker.type = visualization_msgs::msg::Marker::CUBE;
+            marker.scale.x = 0.1;
+            marker.scale.y = 0.1;
+            marker.scale.z = 0.1;
+            marker.color.r = 0.5;
+            marker.color.g = 0.5;
+            marker.color.b = 0.5;
+            marker.color.a = 0.5;
+            return marker;
+        }();
 
-  menuHandler_ = std::make_unique<interactive_markers::MenuHandler>();
-  // create an interactive marker for our server
-  auto feedback_cb =
-      [&](const visualization_msgs::msg::InteractiveMarkerFeedback::
-              ConstSharedPtr& feedback) { processFeedback(feedback); };
-  menuHandler_->insert("Send target pose", feedback_cb);
+        // create a non-interactive control which contains the box
+        visualization_msgs::msg::InteractiveMarkerControl boxControl;
+        boxControl.always_visible = true;
+        boxControl.markers.push_back(boxMarker);
+        boxControl.interaction_mode =
+                visualization_msgs::msg::InteractiveMarkerControl::MOVE_ROTATE_3D;
 
-  // create an interactive marker for our server
-  auto const interactiveMarker = createInteractiveMarker();
-  server_->insert(interactiveMarker);
-  menuHandler_->apply(*server_, interactiveMarker.name);
-  server_->applyChanges();
-  RCLCPP_INFO(node_->get_logger(), "Interactive marker is ready.");
-}
+        // add the control to the interactive marker
+        interactiveMarker.controls.push_back(boxControl);
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-visualization_msgs::msg::InteractiveMarker
-TargetTrajectoriesInteractiveMarker::createInteractiveMarker() const {
-  visualization_msgs::msg::InteractiveMarker interactiveMarker;
-  interactiveMarker.header.frame_id = "world";
-  interactiveMarker.header.stamp = node_->now();
-  interactiveMarker.name = "Goal";
-  interactiveMarker.scale = 0.2;
-  interactiveMarker.description = "Right click to send command";
-  interactiveMarker.pose.position.z = 1.0;
+        // create a control which will move the box
+        // this control does not contain any markers,
+        // which will cause RViz to insert two arrows
+        visualization_msgs::msg::InteractiveMarkerControl control;
 
-  // create a grey box marker
-  const auto boxMarker = []() {
-    visualization_msgs::msg::Marker marker;
-    marker.type = visualization_msgs::msg::Marker::CUBE;
-    marker.scale.x = 0.1;
-    marker.scale.y = 0.1;
-    marker.scale.z = 0.1;
-    marker.color.r = 0.5;
-    marker.color.g = 0.5;
-    marker.color.b = 0.5;
-    marker.color.a = 0.5;
-    return marker;
-  }();
+        control.orientation.w = 1;
+        control.orientation.x = 1;
+        control.orientation.y = 0;
+        control.orientation.z = 0;
+        control.name = "rotate_x";
+        control.interaction_mode =
+                visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
+        interactiveMarker.controls.push_back(control);
+        control.name = "move_x";
+        control.interaction_mode =
+                visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
+        interactiveMarker.controls.push_back(control);
 
-  // create a non-interactive control which contains the box
-  visualization_msgs::msg::InteractiveMarkerControl boxControl;
-  boxControl.always_visible = true;
-  boxControl.markers.push_back(boxMarker);
-  boxControl.interaction_mode =
-      visualization_msgs::msg::InteractiveMarkerControl::MOVE_ROTATE_3D;
+        control.orientation.w = 1;
+        control.orientation.x = 0;
+        control.orientation.y = 1;
+        control.orientation.z = 0;
+        control.name = "rotate_z";
+        control.interaction_mode =
+                visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
+        interactiveMarker.controls.push_back(control);
+        control.name = "move_z";
+        control.interaction_mode =
+                visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
+        interactiveMarker.controls.push_back(control);
 
-  // add the control to the interactive marker
-  interactiveMarker.controls.push_back(boxControl);
+        control.orientation.w = 1;
+        control.orientation.x = 0;
+        control.orientation.y = 0;
+        control.orientation.z = 1;
+        control.name = "rotate_y";
+        control.interaction_mode =
+                visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
+        interactiveMarker.controls.push_back(control);
+        control.name = "move_y";
+        control.interaction_mode =
+                visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
+        interactiveMarker.controls.push_back(control);
 
-  // create a control which will move the box
-  // this control does not contain any markers,
-  // which will cause RViz to insert two arrows
-  visualization_msgs::msg::InteractiveMarkerControl control;
+        return interactiveMarker;
+    }
 
-  control.orientation.w = 1;
-  control.orientation.x = 1;
-  control.orientation.y = 0;
-  control.orientation.z = 0;
-  control.name = "rotate_x";
-  control.interaction_mode =
-      visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
-  interactiveMarker.controls.push_back(control);
-  control.name = "move_x";
-  control.interaction_mode =
-      visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
-  interactiveMarker.controls.push_back(control);
 
-  control.orientation.w = 1;
-  control.orientation.x = 0;
-  control.orientation.y = 1;
-  control.orientation.z = 0;
-  control.name = "rotate_z";
-  control.interaction_mode =
-      visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
-  interactiveMarker.controls.push_back(control);
-  control.name = "move_z";
-  control.interaction_mode =
-      visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
-  interactiveMarker.controls.push_back(control);
-
-  control.orientation.w = 1;
-  control.orientation.x = 0;
-  control.orientation.y = 0;
-  control.orientation.z = 1;
-  control.name = "rotate_y";
-  control.interaction_mode =
-      visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
-  interactiveMarker.controls.push_back(control);
-  control.name = "move_y";
-  control.interaction_mode =
-      visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
-  interactiveMarker.controls.push_back(control);
-
-  return interactiveMarker;
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-void TargetTrajectoriesInteractiveMarker::processFeedback(
-    const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr&
+    void TargetTrajectoriesInteractiveMarker::processFeedback(
+        const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr &
         feedback) {
-  // Desired state trajectory
-  const Eigen::Vector3d position(feedback->pose.position.x,
-                                 feedback->pose.position.y,
-                                 feedback->pose.position.z);
-  const Eigen::Quaterniond orientation(
-      feedback->pose.orientation.w, feedback->pose.orientation.x,
-      feedback->pose.orientation.y, feedback->pose.orientation.z);
+        // Desired state trajectory
+        const Eigen::Vector3d position(feedback->pose.position.x,
+                                       feedback->pose.position.y,
+                                       feedback->pose.position.z);
+        const Eigen::Quaterniond orientation(
+            feedback->pose.orientation.w, feedback->pose.orientation.x,
+            feedback->pose.orientation.y, feedback->pose.orientation.z);
 
-  // get the latest observation
-  SystemObservation observation;
-  {
-    std::lock_guard<std::mutex> lock(latestObservationMutex_);
-    observation = latestObservation_;
-  }
+        // get the latest observation
+        SystemObservation observation; {
+            std::lock_guard<std::mutex> lock(latestObservationMutex_);
+            observation = latestObservation_;
+        }
 
-  // get TargetTrajectories
-  const auto targetTrajectories =
-      gaolPoseToTargetTrajectories_(position, orientation, observation);
+        // get TargetTrajectories
+        const auto targetTrajectories =
+                gaolPoseToTargetTrajectories_(position, orientation, observation);
 
-  // publish TargetTrajectories
-  targetTrajectoriesPublisherPtr_->publishTargetTrajectories(
-      targetTrajectories);
-}
-
-}  // namespace ocs2
+        // publish TargetTrajectories
+        targetTrajectoriesPublisherPtr_->publishTargetTrajectories(
+            targetTrajectories);
+    }
+} // namespace ocs2

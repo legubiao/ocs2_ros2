@@ -29,64 +29,62 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <interactive_markers/interactive_marker_server.hpp>
+#include <interactive_markers/menu_handler.hpp>
 #include <ocs2_mpc/SystemObservation.h>
 #include <ocs2_ros_interfaces/command/TargetTrajectoriesRosPublisher.h>
 
-#include <functional>
-#include <interactive_markers/interactive_marker_server.hpp>
-#include <interactive_markers/menu_handler.hpp>
-#include <memory>
-#include <mutex>
-
 namespace ocs2 {
+    /**
+     * This class lets the user to command robot form interactive marker.
+     */
+    class TargetTrajectoriesInteractiveMarker final {
+    public:
+        using GaolPoseToTargetTrajectories = std::function<TargetTrajectories(
+            const Eigen::Vector3d &position, const Eigen::Quaterniond &orientation,
+            const SystemObservation &observation)>;
 
-/**
- * This class lets the user to command robot form interactive marker.
- */
-class TargetTrajectoriesInteractiveMarker final {
- public:
-  using GaolPoseToTargetTrajectories = std::function<TargetTrajectories(
-      const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation,
-      const SystemObservation& observation)>;
+        /**
+         * Constructor
+         *
+         * @param [in] node: ROS node handle.
+         * @param [in] topicPrefix: The TargetTrajectories will be published on
+         * "topicPrefix_mpc_target" topic. Moreover, the latest observation is be
+         * expected on "topicPrefix_mpc_observation" topic.
+         * @param [in] gaolPoseToTargetTrajectories: A function which transforms the
+         * commanded pose to TargetTrajectories.
+         */
+        TargetTrajectoriesInteractiveMarker(
+            rclcpp::Node::SharedPtr node, const std::string &topicPrefix,
+            GaolPoseToTargetTrajectories gaolPoseToTargetTrajectories);
 
-  /**
-   * Constructor
-   *
-   * @param [in] node: ROS node handle.
-   * @param [in] topicPrefix: The TargetTrajectories will be published on
-   * "topicPrefix_mpc_target" topic. Moreover, the latest observation is be
-   * expected on "topicPrefix_mpc_observation" topic.
-   * @param [in] gaolPoseToTargetTrajectories: A function which transforms the
-   * commanded pose to TargetTrajectories.
-   */
-  TargetTrajectoriesInteractiveMarker(
-      rclcpp::Node::SharedPtr  node, const std::string& topicPrefix,
-      GaolPoseToTargetTrajectories gaolPoseToTargetTrajectories);
+        /**
+         * Spins ROS to update the interactive markers.
+         */
+        void publishInteractiveMarker() const { spin(node_); }
 
-  /**
-   * Spins ROS to update the interactive markers.
-   */
-  void publishInteractiveMarker() const { spin(node_); }
+    private:
+        visualization_msgs::msg::InteractiveMarker createInteractiveMarker() const;
 
- private:
-  visualization_msgs::msg::InteractiveMarker createInteractiveMarker() const;
-  void processFeedback(
-      const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr&
-          feedback);
+        void processFeedback(
+            const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr &
+            feedback);
 
-  rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<interactive_markers::MenuHandler> menuHandler_;
-  std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
+        rclcpp::Node::SharedPtr node_;
+        std::shared_ptr<interactive_markers::MenuHandler> menuHandler_;
+        std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
 
-  GaolPoseToTargetTrajectories gaolPoseToTargetTrajectories_;
+        GaolPoseToTargetTrajectories gaolPoseToTargetTrajectories_;
 
-  std::unique_ptr<TargetTrajectoriesRosPublisher>
-      targetTrajectoriesPublisherPtr_;
+        std::unique_ptr<TargetTrajectoriesRosPublisher>
+        targetTrajectoriesPublisherPtr_;
 
-  rclcpp::Subscription<ocs2_msgs::msg::MpcObservation>::SharedPtr
-      observationSubscriber_;
-  mutable std::mutex latestObservationMutex_;
-  SystemObservation latestObservation_;
-};
-
-}  // namespace ocs2
+        rclcpp::Subscription<ocs2_msgs::msg::MpcObservation>::SharedPtr
+        observationSubscriber_;
+        mutable std::mutex latestObservationMutex_;
+        SystemObservation latestObservation_;
+    };
+} // namespace ocs2

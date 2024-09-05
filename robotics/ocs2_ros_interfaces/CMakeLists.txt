@@ -45,43 +45,21 @@ add_library(${PROJECT_NAME}
         src/visualization/VisualizationHelpers.cpp
         src/visualization/VisualizationColors.cpp
 )
-
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 add_executable(test_custom_callback_queue test/test_custom_callback_queue.cpp)
-ament_target_dependencies(test_custom_callback_queue ${dependencies})
 target_link_libraries(test_custom_callback_queue ${PROJECT_NAME})
 target_compile_options(test_custom_callback_queue PRIVATE ${OCS2_CXX_FLAGS})
 
 # multiplot remap node
 add_executable(multiplot_remap src/multiplot/MultiplotRemap.cpp)
-ament_target_dependencies(multiplot_remap ${dependencies})
-target_link_libraries(test_custom_callback_queue ${PROJECT_NAME})
+target_link_libraries(multiplot_remap ${PROJECT_NAME})
 target_compile_options(multiplot_remap PRIVATE ${OCS2_CXX_FLAGS})
-
-add_executable(${PROJECT_NAME}_lintTarget src/lintTarget.cpp)
-ament_target_dependencies(${PROJECT_NAME}_lintTarget ${dependencies})
-target_link_libraries(${PROJECT_NAME}_lintTarget ${PROJECT_NAME})
-
-#########################
-###   CLANG TOOLING   ###
-#########################
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling for target " ${PROJECT_NAME}_lintTarget)
-    add_clang_tooling(
-            TARGETS ${PROJECT_NAME}_lintTarget
-            SOURCE_DIRS src include
-            CT_HEADER_DIRS include
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
 
 #############
 ## Install ##
@@ -112,5 +90,10 @@ install(
 
 ament_export_dependencies(${dependencies})
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+if (BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+endif ()
 
 ament_package()

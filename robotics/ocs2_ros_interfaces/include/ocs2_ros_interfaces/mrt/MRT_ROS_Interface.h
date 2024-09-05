@@ -29,19 +29,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <chrono>
 #include <condition_variable>
-#include <csignal>
-#include <ctime>
-#include <iostream>
 #include <string>
 #include <thread>
-
-#include "rclcpp/rclcpp.hpp"
+#include <rclcpp/rclcpp.hpp>
 
 // MPC messages
 #include <ocs2_mpc/MRT_BASE.h>
-
 #include <ocs2_msgs/msg/mpc_flattened_controller.hpp>
 #include <ocs2_msgs/srv/reset.hpp>
 

@@ -46,58 +46,55 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_msgs/msg/mpc_target_trajectories.hpp>
 #include <ocs2_msgs/msg/multiplier.hpp>
 
-namespace ocs2 {
-namespace ros_msg_conversions {
 
-/** Creates the observation message. */
-ocs2_msgs::msg::MpcObservation createObservationMsg(
-    const SystemObservation& observation);
+namespace ocs2::ros_msg_conversions {
+    /** Creates the observation message. */
+    ocs2_msgs::msg::MpcObservation createObservationMsg(
+        const SystemObservation &observation);
 
-/** Reads the observation message. */
-SystemObservation readObservationMsg(
-    const ocs2_msgs::msg::MpcObservation& observationMsg);
+    /** Reads the observation message. */
+    SystemObservation readObservationMsg(
+        const ocs2_msgs::msg::MpcObservation &observationMsg);
 
-/** Creates the mode sequence message. */
-ocs2_msgs::msg::ModeSchedule createModeScheduleMsg(
-    const ModeSchedule& modeSchedule);
+    /** Creates the mode sequence message. */
+    ocs2_msgs::msg::ModeSchedule createModeScheduleMsg(
+        const ModeSchedule &modeSchedule);
 
-/** Reads the mode sequence message. */
-ModeSchedule readModeScheduleMsg(
-    const ocs2_msgs::msg::ModeSchedule& modeScheduleMsg);
+    /** Reads the mode sequence message. */
+    ModeSchedule readModeScheduleMsg(
+        const ocs2_msgs::msg::ModeSchedule &modeScheduleMsg);
 
-/** Creates the target trajectories message. */
-ocs2_msgs::msg::MpcTargetTrajectories createTargetTrajectoriesMsg(
-    const TargetTrajectories& targetTrajectories);
+    /** Creates the target trajectories message. */
+    ocs2_msgs::msg::MpcTargetTrajectories createTargetTrajectoriesMsg(
+        const TargetTrajectories &targetTrajectories);
 
-/** Returns the TargetTrajectories message. */
-TargetTrajectories readTargetTrajectoriesMsg(
-    const ocs2_msgs::msg::MpcTargetTrajectories& targetTrajectoriesMsg);
+    /** Returns the TargetTrajectories message. */
+    TargetTrajectories readTargetTrajectoriesMsg(
+        const ocs2_msgs::msg::MpcTargetTrajectories &targetTrajectoriesMsg);
 
-/**
- * Creates the performance indices message.
- *
- * @param [in] initTime: The initial time for which the MPC is computed.
- * @param [in] performanceIndices: The performance indices of the solver.
- * @return The performance indices ROS message.
- */
-ocs2_msgs::msg::MpcPerformanceIndices createPerformanceIndicesMsg(
-    scalar_t initTime, const PerformanceIndex& performanceIndices);
+    /**
+     * Creates the performance indices message.
+     *
+     * @param [in] initTime: The initial time for which the MPC is computed.
+     * @param [in] performanceIndices: The performance indices of the solver.
+     * @return The performance indices ROS message.
+     */
+    ocs2_msgs::msg::MpcPerformanceIndices createPerformanceIndicesMsg(
+        scalar_t initTime, const PerformanceIndex &performanceIndices);
 
-/** Reads the performance indices message. */
-PerformanceIndex readPerformanceIndicesMsg(
-    const ocs2_msgs::msg::MpcPerformanceIndices& performanceIndicesMsg);
+    /** Reads the performance indices message. */
+    PerformanceIndex readPerformanceIndicesMsg(
+        const ocs2_msgs::msg::MpcPerformanceIndices &performanceIndicesMsg);
 
-/** Creates constraint message. */
-ocs2_msgs::msg::Constraint createConstraintMsg(scalar_t time,
-                                               const vector_t& constraint);
+    /** Creates constraint message. */
+    ocs2_msgs::msg::Constraint createConstraintMsg(scalar_t time,
+                                                   const vector_t &constraint);
 
-/** Creates lagrangian_metrics message. */
-ocs2_msgs::msg::LagrangianMetrics createLagrangianMetricsMsg(
-    scalar_t time, LagrangianMetricsConstRef metrics);
+    /** Creates lagrangian_metrics message. */
+    ocs2_msgs::msg::LagrangianMetrics createLagrangianMetricsMsg(
+        scalar_t time, LagrangianMetricsConstRef metrics);
 
-/** Creates multiplier message. */
-ocs2_msgs::msg::Multiplier createMultiplierMsg(scalar_t time,
-                                               MultiplierConstRef multiplier);
-
-}  // namespace ros_msg_conversions
-}  // namespace ocs2
+    /** Creates multiplier message. */
+    ocs2_msgs::msg::Multiplier createMultiplierMsg(scalar_t time,
+                                                   MultiplierConstRef multiplier);
+} // namespace ocs2::ros_msg_conversions

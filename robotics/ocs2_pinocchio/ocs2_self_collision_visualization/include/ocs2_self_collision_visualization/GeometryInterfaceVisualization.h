@@ -37,24 +37,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rclcpp/rclcpp.hpp"
 
 namespace ocs2 {
+    class GeometryInterfaceVisualization : public rclcpp::Node {
+    public:
+        GeometryInterfaceVisualization(PinocchioInterface pinocchioInterface,
+                                       PinocchioGeometryInterface geometryInterface,
+                                       std::string pinocchioWorldFrame = "world");
 
-class GeometryInterfaceVisualization : public rclcpp::Node {
- public:
-  GeometryInterfaceVisualization(PinocchioInterface pinocchioInterface,
-                                 PinocchioGeometryInterface geometryInterface,
-                                 std::string pinocchioWorldFrame = "world");
-  virtual ~GeometryInterfaceVisualization() = default;
+        ~GeometryInterfaceVisualization() override = default;
 
-  void publishDistances(const ocs2::vector_t&);
+        void publishDistances(const vector_t &);
 
- private:
-  PinocchioInterface pinocchioInterface_;
-  PinocchioGeometryInterface geometryInterface_;
+    private:
+        PinocchioInterface pinocchioInterface_;
+        PinocchioGeometryInterface geometryInterface_;
 
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      markerPublisher_;
+        rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+        markerPublisher_;
 
-  std::string pinocchioWorldFrame_;
-};
-
-}  // namespace ocs2
+        std::string pinocchioWorldFrame_;
+    };
+} // namespace ocs2

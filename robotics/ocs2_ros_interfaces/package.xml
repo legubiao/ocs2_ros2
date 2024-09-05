@@ -13,9 +13,6 @@
 
     <buildtool_depend>ament_cmake</buildtool_depend>
 
-    <build_depend>cmake_modules</build_depend>
-    <build_depend>cmake_clang_tools</build_depend>
-
     <depend>rclcpp</depend>
     <depend>ocs2_msgs</depend>
     <depend>ocs2_core</depend>
@@ -26,6 +23,9 @@
     <depend>interactive_markers</depend>
     <exec_depend>rqt_multiplot</exec_depend>
     <exec_depend>ros2launch</exec_depend>
+
+    <test_depend>ament_lint_auto</test_depend>
+    <test_depend>ament_lint_common</test_depend>
 
     <export>
         <build_type>ament_cmake</build_type>

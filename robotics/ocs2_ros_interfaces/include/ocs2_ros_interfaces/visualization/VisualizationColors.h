@@ -32,9 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <array>
 
 namespace ocs2 {
+    enum class Color { blue, orange, yellow, purple, green, red, black };
 
-enum class Color { blue, orange, yellow, purple, green, red, black };
-
-std::array<double, 3> getRGB(Color color);
-
-}  // namespace ocs2
+    std::array<double, 3> getRGB(Color color);
+} // namespace ocs2
