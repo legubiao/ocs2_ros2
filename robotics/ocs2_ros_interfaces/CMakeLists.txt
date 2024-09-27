@@ -5,18 +5,9 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ## Find ament_cmake macros and libraries
-find_package(ament_cmake REQUIRED)
-
-find_package(rclcpp REQUIRED)
-find_package(ocs2_msgs REQUIRED)
-find_package(ocs2_mpc REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(visualization_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(interactive_markers REQUIRED)
-
 set(dependencies
         rclcpp
+        rclcpp_lifecycle
         ocs2_msgs
         ocs2_mpc
         std_msgs
@@ -24,6 +15,11 @@ set(dependencies
         geometry_msgs
         interactive_markers
 )
+
+find_package(ament_cmake REQUIRED)
+foreach (Dependency IN ITEMS ${dependencies})
+    find_package(${Dependency} REQUIRED)
+endforeach ()
 
 ###########
 ## Build ##

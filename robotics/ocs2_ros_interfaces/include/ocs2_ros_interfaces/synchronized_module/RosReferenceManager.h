@@ -38,6 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utility>
 
 #include "rclcpp/rclcpp.hpp"
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
 
 namespace ocs2 {
     /**
@@ -83,13 +84,14 @@ namespace ocs2 {
          */
         void subscribe(const rclcpp::Node::SharedPtr &node);
 
+        void subscribe(const rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+
     private:
-        const std::string topicPrefix_;
-        rclcpp::Node::SharedPtr node_;
+        const std::string topic_prefix_;
         rclcpp::Subscription<ocs2_msgs::msg::ModeSchedule>::SharedPtr
-        modeScheduleSubscriber_;
+        mode_schedule_subscriber_;
         rclcpp::Subscription<ocs2_msgs::msg::MpcTargetTrajectories>::SharedPtr
-        targetTrajectoriesSubscriber_;
+        target_trajectories_subscriber_;
     };
 
 
