@@ -49,7 +49,7 @@ rosdep install --from-paths src --ignore-src -r -y
 ### 2.4 Basic Examples
 Check [here](basic%20examples/) for more detailed instructions.
 
-**Video Links:** [bilibili](https://www.bilibili.com/video/BV12vv9eGEns/)
+[![](http://i0.hdslb.com/bfs/archive/1bf12ba98ed8e7fe01594bb2a713ddafdd580488.jpg)](https://www.bilibili.com/video/BV12vv9eGEns/)
 
 ## 3. Advanced Examples
 
