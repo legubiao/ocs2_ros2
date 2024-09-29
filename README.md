@@ -51,7 +51,7 @@ rosdep install --from-paths src --ignore-src -r -y
 [![](http://i0.hdslb.com/bfs/archive/1bf12ba98ed8e7fe01594bb2a713ddafdd580488.jpg)](https://www.bilibili.com/video/BV12vv9eGEns/)
 
 ## 3. Advanced Examples
-[![](http://i1.hdslb.com/bfs/archive/a53bab50141165eb452aa0763a9a5b9a51a7ca67.jpg)](https://www.bilibili.com/video/BV1gSHLe3EEv/https://www.bilibili.com/video/BV12vv9eGEns/)
+[![](http://i1.hdslb.com/bfs/archive/a53bab50141165eb452aa0763a9a5b9a51a7ca67.jpg)](https://www.bilibili.com/video/BV1gSHLe3EEv/)
 
 ### 3.1 Perceptive Locomotion
 
