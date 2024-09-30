@@ -55,13 +55,14 @@ namespace ocs2::legged_robot {
         CentroidalModelInfo centroidalModelInfo,
         const PinocchioEndEffectorKinematics &endEffectorKinematics,
         const rclcpp::Node::SharedPtr &node, scalar_t maxUpdateFrequency)
-        : node_(node),
-          pinocchioInterface_(std::move(pinocchioInterface)),
+        : pinocchioInterface_(std::move(pinocchioInterface)),
           centroidalModelInfo_(std::move(centroidalModelInfo)),
           endEffectorKinematicsPtr_(endEffectorKinematics.clone()),
           tfBroadcaster_(node),
           lastTime_(std::numeric_limits<scalar_t>::lowest()),
           minPublishTimeDifference_(1.0 / maxUpdateFrequency) {
+        clock_ = node->get_clock();
+
         endEffectorKinematicsPtr_->setPinocchioInterface(pinocchioInterface_);
         costDesiredBasePositionPublisher_ =
                 node->create_publisher<visualization_msgs::msg::Marker>(
@@ -88,7 +89,45 @@ namespace ocs2::legged_robot {
                     "/legged_robot/currentState", 1);
 
         jointPublisher_ =
-                node_->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1);
+                node->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1);
+    }
+
+    LeggedRobotVisualizer::LeggedRobotVisualizer(PinocchioInterface pinocchioInterface,
+                                                 CentroidalModelInfo centroidalModelInfo,
+                                                 const PinocchioEndEffectorKinematics &endEffectorKinematics,
+                                                 const rclcpp_lifecycle::LifecycleNode::SharedPtr &node,
+                                                 scalar_t maxUpdateFrequency) : pinocchioInterface_(
+            std::move(pinocchioInterface)),
+        centroidalModelInfo_(std::move(centroidalModelInfo)),
+        endEffectorKinematicsPtr_(endEffectorKinematics.clone()),
+        tfBroadcaster_(node),
+        lastTime_(std::numeric_limits<scalar_t>::lowest()),
+        minPublishTimeDifference_(1.0 / maxUpdateFrequency) {
+        clock_ = node->get_clock();
+        endEffectorKinematicsPtr_->setPinocchioInterface(pinocchioInterface_);
+        costDesiredBasePositionPublisher_ =
+                node->create_publisher<visualization_msgs::msg::Marker>(
+                    "/legged_robot/desiredBaseTrajectory", 1);
+        costDesiredFeetPositionPublishers_.resize(
+            centroidalModelInfo_.numThreeDofContacts);
+        costDesiredFeetPositionPublishers_[0] =
+                node->create_publisher<visualization_msgs::msg::Marker>(
+                    "/legged_robot/desiredFeetTrajectory/LF", 1);
+        costDesiredFeetPositionPublishers_[1] =
+                node->create_publisher<visualization_msgs::msg::Marker>(
+                    "/legged_robot/desiredFeetTrajectory/RF", 1);
+        costDesiredFeetPositionPublishers_[2] =
+                node->create_publisher<visualization_msgs::msg::Marker>(
+                    "/legged_robot/desiredFeetTrajectory/LH", 1);
+        costDesiredFeetPositionPublishers_[3] =
+                node->create_publisher<visualization_msgs::msg::Marker>(
+                    "/legged_robot/desiredFeetTrajectory/RH", 1);
+        stateOptimizedPublisher_ =
+                node->create_publisher<visualization_msgs::msg::MarkerArray>(
+                    "/legged_robot/optimizedStateTrajectory", 1);
+        currentStatePublisher_ =
+                node->create_publisher<visualization_msgs::msg::MarkerArray>(
+                    "/legged_robot/currentState", 1);
     };
 
 
@@ -103,7 +142,7 @@ namespace ocs2::legged_robot {
                                   observation.state, centroidalModelInfo_));
             updateFramePlacements(model, data);
 
-            const auto timeStamp = node_->get_clock()->now();
+            const auto timeStamp = clock_->now();
             publishObservation(timeStamp, observation);
             publishDesiredTrajectory(timeStamp, command.mpcTargetTrajectories_);
             publishOptimizedStateTrajectory(timeStamp, primalSolution.timeTrajectory_,
@@ -115,7 +154,7 @@ namespace ocs2::legged_robot {
 
 
     void LeggedRobotVisualizer::publishObservation(
-        rclcpp::Time timeStamp, const SystemObservation &observation) {
+        const rclcpp::Time& timeStamp, const SystemObservation &observation) {
         // Extract components from state
         const auto basePose =
                 centroidal_model::getBasePose(observation.state, centroidalModelInfo_);
@@ -140,10 +179,10 @@ namespace ocs2::legged_robot {
 
 
     void LeggedRobotVisualizer::publishJointTransforms(
-        rclcpp::Time timeStamp, const vector_t &jointAngles) const {
+        const rclcpp::Time& timeStamp, const vector_t &jointAngles) const {
         if (jointPublisher_ != nullptr) {
             sensor_msgs::msg::JointState joint_state;
-            joint_state.header.stamp = node_->get_clock()->now();
+            joint_state.header.stamp = clock_->now();
             joint_state.name.resize(12);
             joint_state.position.resize(12);
             joint_state.name[0] = "LF_HAA";
@@ -175,20 +214,18 @@ namespace ocs2::legged_robot {
     }
 
 
-    void LeggedRobotVisualizer::publishBaseTransform(rclcpp::Time timeStamp,
+    void LeggedRobotVisualizer::publishBaseTransform(const rclcpp::Time& timeStamp,
                                                      const vector_t &basePose) {
-        if (jointPublisher_ != nullptr) {
-            geometry_msgs::msg::TransformStamped baseToWorldTransform;
-            baseToWorldTransform.header = getHeaderMsg(frameId_, timeStamp);
-            baseToWorldTransform.child_frame_id = "base";
+        geometry_msgs::msg::TransformStamped baseToWorldTransform;
+        baseToWorldTransform.header = getHeaderMsg(frameId_, timeStamp);
+        baseToWorldTransform.child_frame_id = "base";
 
-            const Eigen::Quaternion<scalar_t> q_world_base =
-                    getQuaternionFromEulerAnglesZyx(vector3_t(basePose.tail<3>()));
-            baseToWorldTransform.transform.rotation = getOrientationMsg(q_world_base);
-            baseToWorldTransform.transform.translation =
-                    getVectorMsg(basePose.head<3>());
-            tfBroadcaster_.sendTransform(baseToWorldTransform);
-        }
+        const Eigen::Quaternion<scalar_t> q_world_base =
+                getQuaternionFromEulerAnglesZyx(vector3_t(basePose.tail<3>()));
+        baseToWorldTransform.transform.rotation = getOrientationMsg(q_world_base);
+        baseToWorldTransform.transform.translation =
+                getVectorMsg(basePose.head<3>());
+        tfBroadcaster_.sendTransform(baseToWorldTransform);
     }
 
 
@@ -199,7 +236,7 @@ namespace ocs2::legged_robot {
             scalar_t frameDuration = speed * (system_observation_array[k + 1].time -
                                               system_observation_array[k].time);
             scalar_t publishDuration = timedExecutionInSeconds([&]() {
-                publishObservation(node_->get_clock()->now(),
+                publishObservation(clock_->now(),
                                    system_observation_array[k]);
             });
             if (frameDuration > publishDuration) {
@@ -212,7 +249,7 @@ namespace ocs2::legged_robot {
 
 
     void LeggedRobotVisualizer::publishCartesianMarkers(
-        rclcpp::Time timeStamp, const contact_flag_t &contactFlags,
+        const rclcpp::Time &timeStamp, const contact_flag_t &contactFlags,
         const std::vector<vector3_t> &feetPositions,
         const std::vector<vector3_t> &feetForces) const {
         // Reserve message
@@ -251,7 +288,7 @@ namespace ocs2::legged_robot {
 
 
     void LeggedRobotVisualizer::publishDesiredTrajectory(
-        rclcpp::Time timeStamp, const TargetTrajectories &targetTrajectories) {
+        const rclcpp::Time &timeStamp, const TargetTrajectories &targetTrajectories) {
         const auto &stateTrajectory = targetTrajectories.stateTrajectory;
         const auto &inputTrajectory = targetTrajectories.inputTrajectory;
 
@@ -318,7 +355,7 @@ namespace ocs2::legged_robot {
 
 
     void LeggedRobotVisualizer::publishOptimizedStateTrajectory(
-        rclcpp::Time timeStamp, const scalar_array_t &mpcTimeTrajectory,
+        const rclcpp::Time &timeStamp, const scalar_array_t &mpcTimeTrajectory,
         const vector_array_t &mpcStateTrajectory,
         const ModeSchedule &modeSchedule) {
         if (mpcTimeTrajectory.empty() || mpcStateTrajectory.empty()) {

@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <visualization_msgs/msg/marker_array.hpp>
 
 #include "rclcpp/rclcpp.hpp"
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
 
 namespace ocs2::legged_robot {
     class LeggedRobotVisualizer : public DummyObserver {
@@ -72,6 +73,12 @@ namespace ocs2::legged_robot {
             const PinocchioEndEffectorKinematics &endEffectorKinematics,
             const rclcpp::Node::SharedPtr &node, scalar_t maxUpdateFrequency = 100.0);
 
+        LeggedRobotVisualizer(
+            PinocchioInterface pinocchioInterface,
+            CentroidalModelInfo centroidalModelInfo,
+            const PinocchioEndEffectorKinematics &endEffectorKinematics,
+            const rclcpp_lifecycle::LifecycleNode::SharedPtr &node, scalar_t maxUpdateFrequency = 100.0);
+
         ~LeggedRobotVisualizer() override = default;
 
         void update(const SystemObservation &observation,
@@ -82,29 +89,29 @@ namespace ocs2::legged_robot {
             const std::vector<SystemObservation> &system_observation_array,
             scalar_t speed = 1.0);
 
-        void publishObservation(rclcpp::Time timeStamp,
+        void publishObservation(const rclcpp::Time& timeStamp,
                                 const SystemObservation &observation);
 
-        void publishDesiredTrajectory(rclcpp::Time timeStamp,
+        void publishDesiredTrajectory(const rclcpp::Time& timeStamp,
                                       const TargetTrajectories &targetTrajectories);
 
-        void publishOptimizedStateTrajectory(rclcpp::Time timeStamp,
+        void publishOptimizedStateTrajectory(const rclcpp::Time& timeStamp,
                                              const scalar_array_t &mpcTimeTrajectory,
                                              const vector_array_t &mpcStateTrajectory,
                                              const ModeSchedule &modeSchedule);
 
     protected:
-        rclcpp::Node::SharedPtr node_;
+        rclcpp::Clock::SharedPtr clock_;
 
     private:
         LeggedRobotVisualizer(const LeggedRobotVisualizer &) = delete;
 
-        void publishJointTransforms(rclcpp::Time timeStamp,
+        void publishJointTransforms(const rclcpp::Time& timeStamp,
                                     const vector_t &jointAngles) const;
 
-        void publishBaseTransform(rclcpp::Time timeStamp, const vector_t &basePose);
+        void publishBaseTransform(const rclcpp::Time& timeStamp, const vector_t &basePose);
 
-        void publishCartesianMarkers(rclcpp::Time timeStamp,
+        void publishCartesianMarkers(const rclcpp::Time& timeStamp,
                                      const contact_flag_t &contactFlags,
                                      const std::vector<vector3_t> &feetPositions,
                                      const std::vector<vector3_t> &feetForces) const;

@@ -51,7 +51,7 @@ namespace ocs2::legged_robot {
                           const ReferenceManagerInterface &referenceManager) override;
 
         void postSolverRun(const PrimalSolution &primalSolution) override {
-        };
+        }
 
     private:
         void mpcModeSequenceCallback(
