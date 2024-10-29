@@ -5,4 +5,4 @@ For detailed instructions, please refer to the following link:
 * [OCS2_Anymal_MPC](ocs2_anymal_mpc/)
 * [OCS2_Anymal_Loopshaping_MPC](ocs2_anymal_loopshaping_mpc/)
 
-![image-20240806111951428](ocs2_anymal_loopshaping_mpc/assets/image-20240806111951428.png)
+![perception_basic](../../.images/perception_basic.png)

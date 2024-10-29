@@ -20,7 +20,7 @@ source ~/ocs2_ws/install/setup.bash
 ros2 launch ocs2_anymal_loopshaping_mpc perceptive_mpc_demo.launch.py
 ```
 
-![image-20240806111951428](assets/image-20240806111951428.png)
+![basic](../../../.images/perception_basic.png)
 
 ### 2.2 side gap
 
@@ -31,7 +31,7 @@ ros2 launch ocs2_anymal_loopshaping_mpc perceptive_mpc_demo.launch.py terrain_na
 
 
 
-![image-20240806112246922](assets/image-20240806112246922.png)
+![side](../../../.images/perception_side.png)
 
 ### 2.3 gaps
 
@@ -40,7 +40,7 @@ source ~/ocs2_ws/install/setup.bash
 ros2 launch ocs2_anymal_loopshaping_mpc perceptive_mpc_demo.launch.py terrain_name:=gaps.png terrain_scale:=1.0 forward_distance:=7.0
 ```
 
-![image-20240806112745153](assets/image-20240806112745153.png)
+![gap](../../../.images/perception_gap.png)
 
 ### 2.4 hurdles
 
@@ -49,7 +49,7 @@ source ~/ocs2_ws/install/setup.bash
 ros2 launch ocs2_anymal_loopshaping_mpc perceptive_mpc_demo.launch.py terrain_name:=hurdles.png terrain_scale:=0.7 forward_distance:=7.0
 ```
 
-![image-20240806113300029](assets/image-20240806113300029.png)
+![hurdles](../../../.images/perception_hurdles.png)
 
 ### 2.5 stepping stones
 
@@ -58,4 +58,4 @@ source ~/ocs2_ws/install/setup.bash
 ros2 launch ocs2_anymal_loopshaping_mpc perceptive_mpc_demo.launch.py terrain_name:=stepping_stones.png terrain_scale:=1.0 forward_distance:=7.0
 ```
 
-![image-20240806111749035](assets/image-20240806111749035.png)
+![stones](../../../.images/perception_stones.png)

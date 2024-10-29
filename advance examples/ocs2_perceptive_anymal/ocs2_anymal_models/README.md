@@ -4,7 +4,7 @@ Since the [anymal_c package](https://github.com/ANYbotics/anymal_c_simple_descri
 
 This package provide a visualization of the quadruped robot, in the rviz you can adjust the parameter and check robot configuration.
 
-![image-20240806093456198](assets/image-20240806093456198.png)
+![image-20240806093456198](../../../.images/anymal_model.png)
 
 * build command
 ```bash

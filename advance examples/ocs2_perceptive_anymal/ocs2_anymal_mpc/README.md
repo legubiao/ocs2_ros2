@@ -2,7 +2,7 @@
 
 This package provide a mpc example for Anymal quadruped robot. Besides the basic movement like ocs2_legged_robot_ros, this example provided "demo_motion" example.
 
-![image-20240806094724070](assets/image-20240806094724070.png)
+![image-20240806094724070](../../../.images/anymal_mpc.png)
 
 * build command
 ```bash

@@ -5,9 +5,9 @@ This directory contains an example of an OCS2 simulation of the Anymal robot in 
 Raisim provided education license for free, you can apply it from [here](https://www.raisim.com/education). After you get the license, you can follow the instructions to install the RaiSim and RaiSimUnity.
 
 
-![Anymal In RaiSim](assets/raisim.png)
+![Anymal In RaiSim](../../.images/raisim.png)
 
-![Anymal In Rviz2](assets/rviz.png)
+![Anymal In Rviz2](../../.images/raisim_rviz.png)
 
 * build the package
 
