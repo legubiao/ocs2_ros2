@@ -18,6 +18,17 @@ ROS2 and modern cmake. Below is the current todolist of the project:
 The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up
 the IDE.
 
+Below is my tested platform:
+* Intel Nuc X15 (i7-11800H):
+    * Ubuntu 22.04 ROS2 Humble (WSL2)
+    * Ubuntu 24.04 ROS2 Jazzy
+* Lenovo P16v (i7-13800H):
+    * Ubuntu 24.04 ROS2 Jazzy
+* Jetson Orin Nano
+    * Ubuntu 22.04 ROS2 Humble (JetPack 6.1)
+
+
+
 ## 2. Installation
 
 ### 2.1 Prerequisites

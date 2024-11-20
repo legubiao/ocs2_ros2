@@ -3,6 +3,18 @@ project(hpipm_colcon)
 
 set(CMAKE_BUILD_TYPE Release)
 
+# Set TARGET based on the processor architecture
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    message(STATUS "Building for Intel x86_64 architecture")
+    set(TARGET "AVX")
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+    message(STATUS "Building for ARM64 architecture")
+    set(TARGET "GENERIC")
+else()
+    message(STATUS "Building for unknown architecture")
+    set(TARGET "GENERIC")
+endif()
+
 ## Find ament_cmake macros and libraries
 find_package(ament_cmake REQUIRED)
 find_package(blasfeo_colcon REQUIRED)
@@ -33,11 +45,10 @@ set(HPIPM_TESTING OFF CACHE BOOL "Examples enabled")
 # Download & build source
 FetchContent_Declare(hpipmDownload
         GIT_REPOSITORY https://github.com/giaf/hpipm
-        GIT_TAG 255ffdf38d3a5e2c3285b29568ce65ae286e5faf
         UPDATE_COMMAND ""
         SOURCE_DIR ${HPIPM_DOWNLOAD_DIR}
         BINARY_DIR ${HPIPM_BUILD_DIR}
-        BUILD_COMMAND $(MAKE)
+        BUILD_COMMAND $(MAKE)  TARGET=${TARGET}
         INSTALL_COMMAND "$(MAKE) install"
 )
 FetchContent_MakeAvailable(hpipmDownload)
@@ -73,21 +84,6 @@ target_include_directories(${PROJECT_NAME}
 
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
-
-#########################
-###   CLANG TOOLING   ###
-#########################
-find_package(cmake_clang_tools QUIET)
-if (cmake_clang_tools_FOUND)
-    message(STATUS "Run clang tooling for target " ${PROJECT_NAME})
-    add_clang_tooling(
-            TARGETS
-            ${PROJECT_NAME}
-            SOURCE_DIRS src include
-            CT_HEADER_DIRS include
-            CF_WERROR
-    )
-endif (cmake_clang_tools_FOUND)
 
 #############
 ## Install ##
