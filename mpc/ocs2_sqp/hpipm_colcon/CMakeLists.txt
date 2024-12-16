@@ -7,6 +7,7 @@ set(CMAKE_BUILD_TYPE Release)
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     message(STATUS "Building for Intel x86_64 architecture")
     set(TARGET "AVX")
+    set(GIT_TAG "255ffdf38d3a5e2c3285b29568ce65ae286e5faf")
 elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
     message(STATUS "Building for ARM64 architecture")
     set(TARGET "GENERIC")
@@ -45,7 +46,7 @@ set(HPIPM_TESTING OFF CACHE BOOL "Examples enabled")
 # Download & build source
 FetchContent_Declare(hpipmDownload
         GIT_REPOSITORY https://github.com/giaf/hpipm
-        GIT_TAG 255ffdf38d3a5e2c3285b29568ce65ae286e5faf
+        GIT_TAG ${GIT_TAG}
         UPDATE_COMMAND ""
         SOURCE_DIR ${HPIPM_DOWNLOAD_DIR}
         BINARY_DIR ${HPIPM_BUILD_DIR}
