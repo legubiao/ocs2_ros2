@@ -33,70 +33,60 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
 
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-template <>
-template <>
-PinocchioInterfaceCppAd PinocchioInterface::toCppAd() const {
-  auto cppAdModel = getModel().cast<ad_scalar_t>();
+    template<>
+    template<>
+    PinocchioInterfaceCppAd PinocchioInterface::toCppAd() const {
+        auto cppAdModel = getModel().cast<ad_scalar_t>();
 
-  // TODO (rgrandia) : remove after bug fix. The cast function forgets to copy this member.
-  cppAdModel.supports = getModel().supports;
+        // TODO (rgrandia) : remove after bug fix. The cast function forgets to copy this member.
+        cppAdModel.supports = getModel().supports;
 
-  return PinocchioInterfaceCppAd(cppAdModel);
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-// explicit instantiation
-template class PinocchioInterfaceTpl<scalar_t>;
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::ostream& operator<<(std::ostream& os, const PinocchioInterface& p) {
-  const auto& model = p.getModel();
-  os << "model.nv = " << model.nv << '\n';
-  os << "model.nq = " << model.nq << '\n';
-  os << "model.njoints = " << model.njoints << '\n';
-  os << "model.nbodies = " << model.nbodies << '\n';
-  os << "model.nframes = " << model.nframes << '\n';
-
-  os << "\nJoints:\n";
-  for (int k = 0; k < model.njoints; ++k) {
-    os << std::setw(20) << model.names[k] << ":  ";
-    os << " ID = " << k;
-    os << '\n';
-  }
-
-  os << "\nFrames:\n";
-  for (int k = 0; k < model.nframes; ++k) {
-    os << std::setw(20) << model.frames[k].name << ":  ";
-    os << " ID = " << k;
-    os << ", parent = " << model.frames[k].parent;
-    os << ", type = ";
-
-    std::string frameType;
-    if ((model.frames[k].type & pinocchio::FrameType::OP_FRAME) != 0) {
-      frameType += "OP_FRAME ";
+        return PinocchioInterfaceCppAd(cppAdModel);
     }
-    if ((model.frames[k].type & pinocchio::FrameType::JOINT) != 0) {
-      frameType += "JOINT ";
-    }
-    if ((model.frames[k].type & pinocchio::FrameType::FIXED_JOINT) != 0) {
-      frameType += "FIXED_JOINT ";
-    }
-    if ((model.frames[k].type & pinocchio::FrameType::BODY) != 0) {
-      frameType += "BODY ";
-    }
-    if ((model.frames[k].type & pinocchio::FrameType::SENSOR) != 0) {
-      frameType += "SENSOR ";
-    }
-    os << "\"" << frameType << "\"\n";
-  }
-  return os;
-}
 
-}  // namespace ocs2
+    // explicit instantiation
+    template class PinocchioInterfaceTpl<scalar_t>;
+
+    std::ostream &operator<<(std::ostream &os, const PinocchioInterface &p) {
+        const auto &model = p.getModel();
+        os << "model.nv = " << model.nv << '\n';
+        os << "model.nq = " << model.nq << '\n';
+        os << "model.njoints = " << model.njoints << '\n';
+        os << "model.nbodies = " << model.nbodies << '\n';
+        os << "model.nframes = " << model.nframes << '\n';
+
+        os << "\nJoints:\n";
+        for (int k = 0; k < model.njoints; ++k) {
+            os << std::setw(20) << model.names[k] << ":  ";
+            os << " ID = " << k;
+            os << '\n';
+        }
+
+        os << "\nFrames:\n";
+        for (int k = 0; k < model.nframes; ++k) {
+            os << std::setw(20) << model.frames[k].name << ":  ";
+            os << " ID = " << k;
+            os << ", parent = " << model.frames[k].parentJoint;
+            os << ", type = ";
+
+            std::string frameType;
+            if ((model.frames[k].type & pinocchio::FrameType::OP_FRAME) != 0) {
+                frameType += "OP_FRAME ";
+            }
+            if ((model.frames[k].type & pinocchio::FrameType::JOINT) != 0) {
+                frameType += "JOINT ";
+            }
+            if ((model.frames[k].type & pinocchio::FrameType::FIXED_JOINT) != 0) {
+                frameType += "FIXED_JOINT ";
+            }
+            if ((model.frames[k].type & pinocchio::FrameType::BODY) != 0) {
+                frameType += "BODY ";
+            }
+            if ((model.frames[k].type & pinocchio::FrameType::SENSOR) != 0) {
+                frameType += "SENSOR ";
+            }
+            os << "\"" << frameType << "\"\n";
+        }
+        return os;
+    }
+} // namespace ocs2

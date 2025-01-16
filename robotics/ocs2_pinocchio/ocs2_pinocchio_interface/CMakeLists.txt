@@ -6,7 +6,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(dependencies
         ocs2_robotic_tools
-        hpp-fcl
         pinocchio
         urdf
         urdfdom
@@ -16,8 +15,6 @@ find_package(ament_cmake REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)
 find_package(urdf REQUIRED)
 find_package(urdfdom REQUIRED)
-
-find_package(hpp-fcl REQUIRED)
 find_package(pinocchio REQUIRED)
 
 # Add pinocchio configurations

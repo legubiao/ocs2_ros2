@@ -93,7 +93,7 @@ namespace ocs2 {
             const vector3_t joint2Position = data.oMi[joint2].translation();
             const vector3_t pt2Offset = distanceArray[i].nearest_points[1] - joint2Position;
             matrix_t joint2Jacobian = matrix_t::Zero(6, model.nv);
-            pinocchio::getJointJacobian(model, data, joint2, pinocchio::ReferenceFrame::LOCAL_WORLD_ALIGNED,
+            getJointJacobian(model, data, joint2, pinocchio::ReferenceFrame::LOCAL_WORLD_ALIGNED,
                                         joint2Jacobian);
             const matrix_t pt2Jacobian = joint2Jacobian.topRows(3) - skewSymmetricMatrix(pt2Offset) * joint2Jacobian.
                                          bottomRows(3);

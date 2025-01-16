@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pinocchio/multibody/geometry.hpp>
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/parsers/urdf.hpp>
+#include <pinocchio/collision/distance.hpp>
 
 #ifdef URDFDOM_VERSION_GT_4
 #include <tinyxml2.h>
@@ -68,7 +69,7 @@ namespace ocs2 {
         const PinocchioInterface &pinocchioInterface) const {
         pinocchio::GeometryData geometryData(*geometryModelPtr_);
 
-        pinocchio::updateGeometryPlacements(pinocchioInterface.getModel(),
+        updateGeometryPlacements(pinocchioInterface.getModel(),
                                             pinocchioInterface.getData(),
                                             *geometryModelPtr_, geometryData);
         pinocchio::computeDistances(*geometryModelPtr_, geometryData);

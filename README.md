@@ -14,6 +14,7 @@ ROS2 and modern cmake. Below is the current todolist of the project:
 - [x] tinyxml2 problem in Ubuntu 24.04 ROS2 Jazzy
 - [x] raisim demo
 - [x] mpc_net demo
+- [x] **[2025-01-16]** Pinnochio 3 support, removed hpp-fcl dependency
 
 The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up
 the IDE.
@@ -46,6 +47,8 @@ Tested system and ROS2 version:
 * C++ compiler with C++17 support
 * Eigen (v3.4)
 * Boost C++ (v1.74)
+* [Pinocchio](https://stack-of-tasks.github.io/pinocchio/download.html)
+> **Warm Reminder**: Please follow the guide in the link to install Pinocchio before building the project
 
 ### 2.3 Clone Repositories
 

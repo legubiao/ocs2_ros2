@@ -31,8 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_pinocchio_interface/implementation/PinocchioInterface.h>
 
 namespace ocs2 {
-
-// explicit instantiation
-template class PinocchioInterfaceTpl<ad_scalar_t>;
-
-}  // namespace ocs2
+    // explicit instantiation
+    template class PinocchioInterfaceTpl<ad_scalar_t>;
+} // namespace ocs2
