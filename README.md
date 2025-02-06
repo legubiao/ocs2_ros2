@@ -97,7 +97,7 @@ Quick start guide:
 
 [![](http://i1.hdslb.com/bfs/archive/a53bab50141165eb452aa0763a9a5b9a51a7ca67.jpg)](https://www.bilibili.com/video/BV1gSHLe3EEv/)
 
-### 3.1 [Perceptive Locomotion](advance%20examples/ocs2_raisim/)
+### 3.1 [Perceptive Locomotion](advance%20examples/ocs2_perceptive_anymal/)
 
 ![perceptive_side](.images/perception_side.png)
 
