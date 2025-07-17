@@ -31,6 +31,10 @@ def generate_launch_description():
             default_value='true'
         ),
         DeclareLaunchArgument(
+            name='dual_arm_mode',
+            default_value='false'
+        ),
+        DeclareLaunchArgument(
             name='urdfFile',
             default_value=''
         ),
@@ -112,6 +116,11 @@ def generate_launch_description():
             executable='mobile_manipulator_target',
             name='mobile_manipulator_target',
             condition=IfCondition(LaunchConfiguration("rviz")),
+            parameters=[
+                {
+                    'dual_arm_mode': LaunchConfiguration('dual_arm_mode'),
+                }
+            ],
             output='screen',
         )
     ])

@@ -101,12 +101,13 @@ int main(int argc, char* argv[])
         // Create dual arm interactive marker
         RCLCPP_INFO(node->get_logger(), "Dual arm mode enabled - creating dual arm interactive markers");
         DualArmTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &dualArmGoalPoseToTargetTrajectories);
-    } else {
-        // Single arm mode
-        RCLCPP_INFO(node->get_logger(), "Single arm mode enabled");
-        TargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &goalPoseToTargetTrajectories);
+        spin(node);
+        return 0;
     }
-    
+
+    // Single arm mode
+    RCLCPP_INFO(node->get_logger(), "Single arm mode enabled");
+    TargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &goalPoseToTargetTrajectories);
     spin(node);
     return 0;
 }

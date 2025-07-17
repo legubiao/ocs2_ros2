@@ -146,7 +146,8 @@ namespace ocs2::mobile_manipulator
     ManipulatorModelInfo createManipulatorModelInfo(const PinocchioInterface& interface,
                                                     const ManipulatorModelType& type,
                                                     const std::string& baseFrame,
-                                                    const std::string& eeFrame)
+                                                    const std::string& eeFrame,
+                                                    const std::string& eeFrame1)
     {
         const auto& model = interface.getModel();
 
@@ -190,6 +191,7 @@ namespace ocs2::mobile_manipulator
         }
         // store frame names for using later.
         info.eeFrame = eeFrame;
+        info.eeFrame1 = eeFrame1;
         info.baseFrame = baseFrame;
         // get name of arm joints.
         const auto& jointNames = model.names;

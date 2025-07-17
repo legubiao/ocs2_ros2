@@ -8,18 +8,9 @@ colcon build --packages-up-to ocs2_mobile_manipulator_ros --symlink-install
 ```
 
 ## 2. Launch
-### AgileX Piper
-* Visualize Test
-    ```bash
-    source ~/ros2_ws/install/setup.bash
-    ros2 launch ocs2_mobile_manipulator_ros agileX_piper.launch.py visualize_only:=true
-    ```
-* Launch with Sim
-    ```bash
-    source ~/ros2_ws/install/setup.bash
-    ros2 launch ocs2_mobile_manipulator_ros agileX_piper.launch.py
-    ```
+
 ### Franka Panda
+
 * Visualize Test
     ```bash
     source ~/ros2_ws/install/setup.bash
@@ -47,10 +38,16 @@ ros2 launch ocs2_mobile_manipulator_ros manipulator_kinova_j2n6.launch.py
 
 ### Willow Garage PR2
 
-```bash
-source ~/ros2_ws/install/setup.bash
-ros2 launch ocs2_mobile_manipulator_ros manipulator_pr2.launch.py
-```
+* Single Arm
+  ```bash
+  source ~/ros2_ws/install/setup.bash
+  ros2 launch ocs2_mobile_manipulator_ros pr2.launch.py
+  ```
+* Dual Arm
+  ```bash
+  source ~/ros2_ws/install/setup.bash
+  ros2 launch ocs2_mobile_manipulator_ros pr2_dual.launch.py
+  ```
 
 ### Clearpath Ridgeback with UR-5
 

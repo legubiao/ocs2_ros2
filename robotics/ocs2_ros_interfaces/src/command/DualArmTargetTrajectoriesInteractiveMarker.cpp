@@ -19,7 +19,7 @@ namespace ocs2
           rightArmOrientation_(1.0, 0.0, 0.0, 0.0) // Default right arm orientation
     {
         server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
-            "dual_arm_marker", node_);
+            "simple_marker", node_);
 
         // observation subscriber
         auto observationCallback =
@@ -273,7 +273,7 @@ namespace ocs2
         // get the latest observation
         SystemObservation observation;
         {
-            std::lock_guard<std::mutex> lock(latestObservationMutex_);
+            std::lock_guard lock(latestObservationMutex_);
             observation = latestObservation_;
         }
 

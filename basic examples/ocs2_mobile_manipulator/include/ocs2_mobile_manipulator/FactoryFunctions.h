@@ -64,11 +64,14 @@ namespace ocs2::mobile_manipulator
     * @param [in] type: Type of template model (default-arm or wheel-based or floating-arm)
     * @param [in] baseFrame: Name of the root frame.
     * @param [in] eeFrame: Name of the end-effector frame.
+    * @param [in] eeFrame1: Name of the second end-effector frame (optional, used for dual-arm robots).
     * @return ManipulatorModelInfo
     */
     ManipulatorModelInfo createManipulatorModelInfo(const PinocchioInterface& interface,
                                                     const ManipulatorModelType& type,
-                                                    const std::string& baseFrame, const std::string& eeFrame);
+                                                    const std::string& baseFrame,
+                                                    const std::string& eeFrame,
+                                                    const std::string& eeFrame1 = "");
 
     /** Load ManipulatorModelType for a config file */
     ManipulatorModelType loadManipulatorType(const std::string& configFilePath,

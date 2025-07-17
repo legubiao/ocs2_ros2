@@ -112,7 +112,7 @@ namespace ocs2::mobile_manipulator
         std::string baseFrame, eeFrame, eeFrame1;
         loadData::loadPtreeValue<std::string>(pt, baseFrame, "model_information.baseFrame", false);
         loadData::loadPtreeValue<std::string>(pt, eeFrame, "model_information.eeFrame", false);
-        // loadData::loadPtreeValue<std::string>(pt, eeFrame1, "model_information.eeFrame1", false);
+        loadData::loadPtreeValue<std::string>(pt, eeFrame1, "model_information.eeFrame1", false);
 
         std::cerr << "\n #### Model Information:";
         std::cerr << "\n #### =============================================================================\n";
@@ -134,7 +134,7 @@ namespace ocs2::mobile_manipulator
 
         // ManipulatorModelInfo
         manipulatorModelInfo_ = createManipulatorModelInfo(
-            *pinocchioInterfacePtr_, modelType, baseFrame, eeFrame);
+            *pinocchioInterfacePtr_, modelType, baseFrame, eeFrame, eeFrame1);
 
         bool usePreComputation = true;
         bool recompileLibraries = true;
@@ -321,7 +321,7 @@ namespace ocs2::mobile_manipulator
             if (dualArmMode) {
                 // 双臂模式：创建包含两个末端执行器的运动学
                 PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
-                                                            {"l_gripper_tool_frame", "r_gripper_tool_frame"});
+                                                            {manipulatorModelInfo_.eeFrame, manipulatorModelInfo_.eeFrame1});
                 constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true);
             } else {
                 // 单臂模式：保持原有逻辑
@@ -337,7 +337,7 @@ namespace ocs2::mobile_manipulator
             if (dualArmMode) {
                 // 双臂模式：创建包含两个末端执行器的CppAd运动学
                 PinocchioEndEffectorKinematicsCppAd eeKinematics(pinocchioInterface, pinocchioMappingCppAd,
-                                                                {"l_gripper_tool_frame", "r_gripper_tool_frame"},
+                                                                {manipulatorModelInfo_.eeFrame, manipulatorModelInfo_.eeFrame1},
                                                                 manipulatorModelInfo_.stateDim,
                                                                 manipulatorModelInfo_.inputDim,
                                                                 "end_effector_kinematics", libraryFolder,
