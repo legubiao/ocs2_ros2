@@ -29,6 +29,7 @@ endforeach ()
 add_library(${PROJECT_NAME}
         src/command/TargetTrajectoriesRosPublisher.cpp
         src/command/TargetTrajectoriesInteractiveMarker.cpp
+        src/command/DualArmTargetTrajectoriesInteractiveMarker.cpp
         src/command/TargetTrajectoriesKeyboardPublisher.cpp
         src/common/RosMsgConversions.cpp
         src/common/RosMsgHelpers.cpp

@@ -28,11 +28,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
 #include <ocs2_ros_interfaces/command/TargetTrajectoriesInteractiveMarker.h>
+#include <ocs2_ros_interfaces/command/DualArmTargetTrajectoriesInteractiveMarker.h>
 
 using namespace ocs2;
 
 /**
- * Converts the pose of the interactive marker to TargetTrajectories.
+ * Converts the pose of the interactive marker to TargetTrajectories (single arm).
  */
 TargetTrajectories goalPoseToTargetTrajectories(
     const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation,
@@ -53,6 +54,35 @@ TargetTrajectories goalPoseToTargetTrajectories(
     return {timeTrajectory, stateTrajectory, inputTrajectory};
 }
 
+/**
+ * Converts the poses of dual arm interactive markers to TargetTrajectories.
+ * This function combines both left and right arm target poses into a single trajectory.
+ */
+TargetTrajectories dualArmGoalPoseToTargetTrajectories(
+    const Eigen::Vector3d& leftPosition, const Eigen::Quaterniond& leftOrientation,
+    const Eigen::Vector3d& rightPosition, const Eigen::Quaterniond& rightOrientation,
+    const SystemObservation& observation)
+{
+    // time trajectory
+    const scalar_array_t timeTrajectory{observation.time};
+    
+    // state trajectory: 14 dimensions (7 for left arm + 7 for right arm)
+    // [left_x, left_y, left_z, left_qw, left_qx, left_qy, left_qz,
+    //  right_x, right_y, right_z, right_qw, right_qx, right_qy, right_qz]
+    const vector_t target = (vector_t(14) << 
+        leftPosition, leftOrientation.coeffs(),
+        rightPosition, rightOrientation.coeffs()).finished();
+    
+    const vector_array_t stateTrajectory{target};
+    
+    // input trajectory
+    const vector_array_t inputTrajectory{
+        vector_t::Zero(observation.input.size())
+    };
+
+    return {timeTrajectory, stateTrajectory, inputTrajectory};
+}
+
 int main(int argc, char* argv[])
 {
     const std::string robotName = "mobile_manipulator";
@@ -63,7 +93,20 @@ int main(int argc, char* argv[])
         .allow_undeclared_parameters(true)
         .automatically_declare_parameters_from_overrides(true));
 
-    TargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &goalPoseToTargetTrajectories);
+    // Check if dual arm mode is enabled
+    bool dualArmMode = false;
+    node->get_parameter_or("dual_arm_mode", dualArmMode, false);
+    
+    if (dualArmMode) {
+        // Create dual arm interactive marker
+        RCLCPP_INFO(node->get_logger(), "Dual arm mode enabled - creating dual arm interactive markers");
+        DualArmTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &dualArmGoalPoseToTargetTrajectories);
+    } else {
+        // Single arm mode
+        RCLCPP_INFO(node->get_logger(), "Single arm mode enabled");
+        TargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &goalPoseToTargetTrajectories);
+    }
+    
     spin(node);
     return 0;
 }

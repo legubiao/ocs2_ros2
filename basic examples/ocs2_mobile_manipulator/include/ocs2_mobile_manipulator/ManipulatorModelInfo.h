@@ -59,7 +59,8 @@ namespace ocs2::mobile_manipulator
         size_t inputDim; // number of inputs needed to define the system flow map
         size_t armDim; // number of DOFs in the robot arm
         std::string baseFrame; // name of the root frame of the robot
-        std::string eeFrame; // name of the end-effector frame of the robot
+        std::string eeFrame; // name of the end-effector frame of the robot. If dual arm, means the right arm.
+        std::string eeFrame1; // name of the left end-effector frame of the robot
         std::vector<std::string> dofNames; // name of the actuated DOFs in the robot
     };
 

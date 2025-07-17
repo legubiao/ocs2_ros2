@@ -145,7 +145,8 @@ namespace ocs2::mobile_manipulator
 
     ManipulatorModelInfo createManipulatorModelInfo(const PinocchioInterface& interface,
                                                     const ManipulatorModelType& type,
-                                                    const std::string& baseFrame, const std::string& eeFrame)
+                                                    const std::string& baseFrame,
+                                                    const std::string& eeFrame)
     {
         const auto& model = interface.getModel();
 
@@ -192,7 +193,7 @@ namespace ocs2::mobile_manipulator
         info.baseFrame = baseFrame;
         // get name of arm joints.
         const auto& jointNames = model.names;
-        info.dofNames = std::vector<std::string>(jointNames.end() - info.armDim, jointNames.end());
+        info.dofNames = std::vector(jointNames.end() - info.armDim, jointNames.end());
 
         return info;
     }

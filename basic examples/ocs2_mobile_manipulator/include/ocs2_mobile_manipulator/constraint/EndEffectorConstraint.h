@@ -46,12 +46,13 @@ namespace ocs2::mobile_manipulator
         using quaternion_t = Eigen::Quaternion<scalar_t>;
 
         EndEffectorConstraint(const EndEffectorKinematics<scalar_t>& endEffectorKinematics,
-                              const ReferenceManager& referenceManager);
+                              const ReferenceManager& referenceManager,
+                              bool dualArmMode = false);
         ~EndEffectorConstraint() override = default;
 
         EndEffectorConstraint* clone() const override
         {
-            return new EndEffectorConstraint(*endEffectorKinematicsPtr_, *referenceManagerPtr_);
+            return new EndEffectorConstraint(*endEffectorKinematicsPtr_, *referenceManagerPtr_, dualArmMode_);
         }
 
         size_t getNumConstraints(scalar_t time) const override;
@@ -61,7 +62,13 @@ namespace ocs2::mobile_manipulator
 
     private:
         EndEffectorConstraint(const EndEffectorConstraint& other) = default;
+        
+        // 单臂模式的目标轨迹插值
         std::pair<vector_t, quaternion_t> interpolateEndEffectorPose(scalar_t time) const;
+        
+        // 双臂模式的目标轨迹插值
+        std::pair<vector_t, quaternion_t> interpolateLeftArmPose(scalar_t time) const;
+        std::pair<vector_t, quaternion_t> interpolateRightArmPose(scalar_t time) const;
 
         /** Cached pointer to the pinocchio end effector kinematics. Is set to nullptr if not used. */
         PinocchioEndEffectorKinematics* pinocchioEEKinPtr_ = nullptr;
@@ -70,5 +77,8 @@ namespace ocs2::mobile_manipulator
         quaternion_t eeDesiredOrientation_;
         std::unique_ptr<EndEffectorKinematics<scalar_t>> endEffectorKinematicsPtr_;
         const ReferenceManager* referenceManagerPtr_;
+        
+        // 双臂模式标志
+        bool dualArmMode_;
     };
 }
