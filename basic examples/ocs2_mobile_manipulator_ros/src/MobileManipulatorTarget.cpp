@@ -29,8 +29,33 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_ros_interfaces/command/TargetTrajectoriesInteractiveMarker.h>
 #include <ocs2_ros_interfaces/command/DualArmTargetTrajectoriesInteractiveMarker.h>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/info_parser.hpp>
+#include <ocs2_core/misc/LoadData.h>
 
 using namespace ocs2;
+
+/**
+ * 从taskFile中读取dualArmMode配置
+ */
+bool readDualArmModeFromTaskFile(const std::string& taskFile) {
+    try {
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_info(taskFile, pt);
+        
+        bool dualArmMode = false;
+        // 尝试从endEffector或finalEndEffector配置中读取dualArmMode
+        loadData::loadPtreeValue(pt, dualArmMode, "endEffector.dualArmMode", false);
+        if (!dualArmMode) {
+            loadData::loadPtreeValue(pt, dualArmMode, "finalEndEffector.dualArmMode", false);
+        }
+        
+        return dualArmMode;
+    } catch (const std::exception& e) {
+        std::cerr << "Error reading dualArmMode from task file: " << e.what() << std::endl;
+        return false;
+    }
+}
 
 /**
  * Converts the pose of the interactive marker to TargetTrajectories (single arm).
@@ -93,9 +118,9 @@ int main(int argc, char* argv[])
         .allow_undeclared_parameters(true)
         .automatically_declare_parameters_from_overrides(true));
 
-    // Check if dual arm mode is enabled
-    bool dualArmMode = false;
-    node->get_parameter_or("dual_arm_mode", dualArmMode, false);
+    // 从taskFile读取双臂模式配置
+    std::string taskFile = node->get_parameter("taskFile").as_string();
+    bool dualArmMode = readDualArmModeFromTaskFile(taskFile);
     
     if (dualArmMode) {
         // Create dual arm interactive marker

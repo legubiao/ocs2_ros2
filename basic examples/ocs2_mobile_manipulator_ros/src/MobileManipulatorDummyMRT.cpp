@@ -57,8 +57,7 @@ int main(int argc, char** argv)
     std::cerr << "Loading library folder: " << libFolder << std::endl;
     std::cerr << "Loading urdf file: " << urdfFile << std::endl;
     // Robot Interface
-    mobile_manipulator::MobileManipulatorInterface interface(taskFile, libFolder,
-                                                             urdfFile);
+    MobileManipulatorInterface interface(taskFile, libFolder, urdfFile);
 
     // MRT
     MRT_ROS_Interface mrt(robotName);
@@ -67,7 +66,7 @@ int main(int argc, char** argv)
 
     // Visualization
     auto dummyVisualization =
-        std::make_shared<mobile_manipulator::MobileManipulatorDummyVisualization>(
+        std::make_shared<MobileManipulatorDummyVisualization>(
             node, interface);
 
     // Dummy MRT
@@ -82,9 +81,24 @@ int main(int argc, char** argv)
     initObservation.time = 0.0;
 
     // initial command
-    vector_t initTarget(7);
-    initTarget.head(3) << 1, 0, 1;
-    initTarget.tail(4) << Eigen::Quaternion<scalar_t>(1, 0, 0, 0).coeffs();
+    vector_t initTarget;
+    if (interface.dual_arm_)
+    {
+        initTarget.resize(14);
+        // First arm target: (0.0, 0.5, 1.0)
+        initTarget.head(3) << 0.0, 0.5, 1.0;
+        // Second arm target: (0.0, -0.5, 1.0)
+        initTarget.segment(3, 4) << Eigen::Quaternion<scalar_t>(1, 0, 0, 0).coeffs();
+        // Quaternion for both arms (identity quaternion)
+        initTarget.segment(7, 3) << 0.0, -0.5, 1.0;
+        initTarget.tail(4) << Eigen::Quaternion<scalar_t>(1, 0, 0, 0).coeffs();
+    }
+    else
+    {
+        initTarget.resize(7);
+        initTarget.head(3) << 1, 0, 1;
+        initTarget.tail(4) << Eigen::Quaternion<scalar_t>(1, 0, 0, 0).coeffs();
+    }
     const vector_t zeroInput =
         vector_t::Zero(interface.getManipulatorModelInfo().inputDim);
     const TargetTrajectories initTargetTrajectories({initObservation.time},

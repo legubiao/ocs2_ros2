@@ -83,6 +83,8 @@ namespace ocs2::mobile_manipulator
 
         const ManipulatorModelInfo& getManipulatorModelInfo() const { return manipulatorModelInfo_; }
 
+        bool dual_arm_ = false;
+
     private:
         std::unique_ptr<StateInputCost> getQuadraticInputCost(const std::string& taskFile);
         std::unique_ptr<StateCost> getEndEffectorConstraint(const PinocchioInterface& pinocchioInterface,

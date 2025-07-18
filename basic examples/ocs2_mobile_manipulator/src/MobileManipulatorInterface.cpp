@@ -291,7 +291,6 @@ namespace ocs2::mobile_manipulator
     {
         scalar_t muPosition = 1.0;
         scalar_t muOrientation = 1.0;
-        bool dualArmMode = false;  // 默认为单臂模式
 
         boost::property_tree::ptree pt;
         boost::property_tree::read_info(taskFile, pt);
@@ -299,13 +298,13 @@ namespace ocs2::mobile_manipulator
         std::cerr << "\n #### =============================================================================\n";
         
         // 读取双臂模式配置，默认为false（单臂模式）
-        loadData::loadPtreeValue(pt, dualArmMode, prefix + ".dualArmMode", false);
+        loadData::loadPtreeValue(pt, dual_arm_, prefix + ".dualArmMode", false);
         
         // 读取单臂模式的原有配置
         loadData::loadPtreeValue(pt, muPosition, prefix + ".muPosition", true);
         loadData::loadPtreeValue(pt, muOrientation, prefix + ".muOrientation", true);
         
-        std::cerr << " #### Dual arm mode: " << (dualArmMode ? "enabled" : "disabled") << std::endl;
+        std::cerr << " #### Dual arm mode: " << (dual_arm_ ? "enabled" : "disabled") << std::endl;
         std::cerr << " #### =============================================================================\n";
 
         if (referenceManagerPtr_ == nullptr)
@@ -318,7 +317,7 @@ namespace ocs2::mobile_manipulator
         {
             MobileManipulatorPinocchioMapping pinocchioMapping(manipulatorModelInfo_);
             
-            if (dualArmMode) {
+            if (dual_arm_) {
                 // 双臂模式：创建包含两个末端执行器的运动学
                 PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
                                                             {manipulatorModelInfo_.eeFrame, manipulatorModelInfo_.eeFrame1});
@@ -334,7 +333,7 @@ namespace ocs2::mobile_manipulator
         {
             MobileManipulatorPinocchioMappingCppAd pinocchioMappingCppAd(manipulatorModelInfo_);
             
-            if (dualArmMode) {
+            if (dual_arm_) {
                 // 双臂模式：创建包含两个末端执行器的CppAd运动学
                 PinocchioEndEffectorKinematicsCppAd eeKinematics(pinocchioInterface, pinocchioMappingCppAd,
                                                                 {manipulatorModelInfo_.eeFrame, manipulatorModelInfo_.eeFrame1},
@@ -357,7 +356,7 @@ namespace ocs2::mobile_manipulator
 
         std::vector<std::unique_ptr<PenaltyBase>> penaltyArray;
         
-        if (dualArmMode) {
+        if (dual_arm_) {
             // 双臂模式：读取双臂特定配置，如果没有则使用默认配置
             scalar_t leftMuPosition = muPosition;
             scalar_t leftMuOrientation = muOrientation;

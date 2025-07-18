@@ -39,16 +39,23 @@ namespace ocs2 {
         void publishInteractiveMarker() const { spin(node_); }
 
     private:
-        visualization_msgs::msg::InteractiveMarker createLeftArmInteractiveMarker() const;
-        visualization_msgs::msg::InteractiveMarker createRightArmInteractiveMarker() const;
+        // Helper enum to distinguish between arms
+        enum class ArmType { LEFT, RIGHT };
 
-        void processLeftArmFeedback(
-            const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback);
-        void processRightArmFeedback(
-            const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback);
+        // Unified methods to reduce code duplication
+        visualization_msgs::msg::InteractiveMarker createArmInteractiveMarker(ArmType armType) const;
+        visualization_msgs::msg::Marker createBoxMarker(ArmType armType) const;
+        void addMovementControls(visualization_msgs::msg::InteractiveMarker& interactiveMarker) const;
+        void processArmFeedback(
+            const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback,
+            ArmType armType);
+        
+        // Helper method to get current poses from interactive markers
+        std::pair<Eigen::Vector3d, Eigen::Quaterniond> getCurrentPose(ArmType armType) const;
 
         rclcpp::Node::SharedPtr node_;
-        std::shared_ptr<interactive_markers::MenuHandler> menuHandler_;
+        std::shared_ptr<interactive_markers::MenuHandler> leftMenuHandler_;
+        std::shared_ptr<interactive_markers::MenuHandler> rightMenuHandler_;
         std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
 
         DualArmGoalPoseToTargetTrajectories dualArmGoalPoseToTargetTrajectories_;

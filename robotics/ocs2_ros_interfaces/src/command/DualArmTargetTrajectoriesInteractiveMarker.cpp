@@ -8,6 +8,9 @@
 
 namespace ocs2
 {
+    // Helper enum to distinguish between arms
+    enum class ArmType { LEFT, RIGHT };
+
     DualArmTargetTrajectoriesInteractiveMarker::DualArmTargetTrajectoriesInteractiveMarker(
         rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
         DualArmGoalPoseToTargetTrajectories dualArmGoalPoseToTargetTrajectories)
@@ -36,186 +39,147 @@ namespace ocs2
         targetTrajectoriesPublisherPtr_ =
             std::make_unique<TargetTrajectoriesRosPublisher>(node_, topicPrefix);
 
-        menuHandler_ = std::make_unique<interactive_markers::MenuHandler>();
+        // Create separate menu handlers for left and right arms
+        leftMenuHandler_ = std::make_unique<interactive_markers::MenuHandler>();
+        rightMenuHandler_ = std::make_unique<interactive_markers::MenuHandler>();
 
-        // create menu items
+        // create menu items for left arm
         auto leftArmFeedbackCb = [this](
             const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback)
         {
-            processLeftArmFeedback(feedback);
+            processArmFeedback(feedback, ArmType::LEFT);
         };
+
+        // create menu items for right arm
         auto rightArmFeedbackCb = [this](
             const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback)
         {
-            processRightArmFeedback(feedback);
+            processArmFeedback(feedback, ArmType::RIGHT);
         };
 
-        menuHandler_->insert("Send left arm target", leftArmFeedbackCb);
-        menuHandler_->insert("Send right arm target", rightArmFeedbackCb);
-        menuHandler_->insert("Send both arms target",
-                             [this](const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback)
-                             {
-                                 // Send both arms target
-                                 SystemObservation observation;
-                                 {
-                                     std::lock_guard<std::mutex> lock(latestObservationMutex_);
-                                     observation = latestObservation_;
-                                 }
+        // Common callback for sending both arms target
+        auto sendBothArmsCb = [this](
+            const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback)
+        {
+            // Get current poses from stored values (updated by feedback callbacks)
+            const auto [leftPosition, leftOrientation] = getCurrentPose(ArmType::LEFT);
+            const auto [rightPosition, rightOrientation] = getCurrentPose(ArmType::RIGHT);
+            
+            // Send both arms target
+            SystemObservation observation;
+            {
+                std::lock_guard lock(latestObservationMutex_);
+                observation = latestObservation_;
+            }
 
-                                 const auto targetTrajectories = dualArmGoalPoseToTargetTrajectories_(
-                                     leftArmPosition_, leftArmOrientation_,
-                                     rightArmPosition_, rightArmOrientation_,
-                                     observation);
+            const auto targetTrajectories = dualArmGoalPoseToTargetTrajectories_(
+                leftPosition, leftOrientation,
+                rightPosition, rightOrientation,
+                observation);
 
-                                 targetTrajectoriesPublisherPtr_->publishTargetTrajectories(targetTrajectories);
-                             });
+            targetTrajectoriesPublisherPtr_->publishTargetTrajectories(targetTrajectories);
+        };
+
+        // Add menu items to left arm menu
+        leftMenuHandler_->insert("Send left arm target", leftArmFeedbackCb);
+        leftMenuHandler_->insert("Send both arms target", sendBothArmsCb);
+
+        // Add menu items to right arm menu
+        rightMenuHandler_->insert("Send right arm target", rightArmFeedbackCb);
+        rightMenuHandler_->insert("Send both arms target", sendBothArmsCb);
 
         // create interactive markers for both arms
-        auto leftArmMarker = createLeftArmInteractiveMarker();
-        auto rightArmMarker = createRightArmInteractiveMarker();
+        auto leftArmMarker = createArmInteractiveMarker(ArmType::LEFT);
+        auto rightArmMarker = createArmInteractiveMarker(ArmType::RIGHT);
 
         server_->insert(leftArmMarker);
         server_->insert(rightArmMarker);
 
-        menuHandler_->apply(*server_, leftArmMarker.name);
-        menuHandler_->apply(*server_, rightArmMarker.name);
+        // Set up feedback callbacks for both markers to track their positions
+        server_->setCallback(leftArmMarker.name, leftArmFeedbackCb);
+        server_->setCallback(rightArmMarker.name, rightArmFeedbackCb);
+
+        // Apply menu handlers to respective markers
+        leftMenuHandler_->apply(*server_, leftArmMarker.name);
+        rightMenuHandler_->apply(*server_, rightArmMarker.name);
 
         server_->applyChanges();
         RCLCPP_INFO(node_->get_logger(), "Dual arm interactive markers are ready.");
     }
 
     visualization_msgs::msg::InteractiveMarker
-    DualArmTargetTrajectoriesInteractiveMarker::createLeftArmInteractiveMarker() const
+    DualArmTargetTrajectoriesInteractiveMarker::createArmInteractiveMarker(ArmType armType) const
     {
+        const bool isLeftArm = armType == ArmType::LEFT;
+        
         visualization_msgs::msg::InteractiveMarker interactiveMarker;
         interactiveMarker.header.frame_id = "world";
         interactiveMarker.header.stamp = node_->now();
-        interactiveMarker.name = "LeftArmGoal";
+        interactiveMarker.name = isLeftArm ? "LeftArmGoal" : "RightArmGoal";
         interactiveMarker.scale = 0.2;
-        interactiveMarker.description = "Left arm target - Right click to send command";
-        interactiveMarker.pose.position.x = leftArmPosition_.x();
-        interactiveMarker.pose.position.y = leftArmPosition_.y();
-        interactiveMarker.pose.position.z = leftArmPosition_.z();
-        interactiveMarker.pose.orientation.w = leftArmOrientation_.w();
-        interactiveMarker.pose.orientation.x = leftArmOrientation_.x();
-        interactiveMarker.pose.orientation.y = leftArmOrientation_.y();
-        interactiveMarker.pose.orientation.z = leftArmOrientation_.z();
+        interactiveMarker.description = (isLeftArm ? "Left" : "Right") + std::string(" arm target - Right click to send command");
+        
+        // Set position and orientation based on arm type
+        const auto& position = isLeftArm ? leftArmPosition_ : rightArmPosition_;
+        const auto& orientation = isLeftArm ? leftArmOrientation_ : rightArmOrientation_;
+        
+        interactiveMarker.pose.position.x = position.x();
+        interactiveMarker.pose.position.y = position.y();
+        interactiveMarker.pose.position.z = position.z();
+        interactiveMarker.pose.orientation.w = orientation.w();
+        interactiveMarker.pose.orientation.x = orientation.x();
+        interactiveMarker.pose.orientation.y = orientation.y();
+        interactiveMarker.pose.orientation.z = orientation.z();
 
-        // create a blue box marker for left arm
-        const auto boxMarker = []()
-        {
-            visualization_msgs::msg::Marker marker;
-            marker.type = visualization_msgs::msg::Marker::CUBE;
-            marker.scale.x = 0.1;
-            marker.scale.y = 0.1;
-            marker.scale.z = 0.1;
+        // create a colored box marker
+        const auto boxMarker = createBoxMarker(armType);
+
+        // create a non-interactive control which contains the box
+        visualization_msgs::msg::InteractiveMarkerControl boxControl;
+        boxControl.always_visible = true;
+        boxControl.markers.push_back(boxMarker);
+        boxControl.interaction_mode =
+            visualization_msgs::msg::InteractiveMarkerControl::MOVE_ROTATE_3D;
+
+        // add the control to the interactive marker
+        interactiveMarker.controls.push_back(boxControl);
+
+        // add movement and rotation controls
+        addMovementControls(interactiveMarker);
+
+        return interactiveMarker;
+    }
+
+    visualization_msgs::msg::Marker
+    DualArmTargetTrajectoriesInteractiveMarker::createBoxMarker(ArmType armType) const
+    {
+        const bool isLeftArm = (armType == ArmType::LEFT);
+        
+        visualization_msgs::msg::Marker marker;
+        marker.type = visualization_msgs::msg::Marker::CUBE;
+        marker.scale.x = 0.1;
+        marker.scale.y = 0.1;
+        marker.scale.z = 0.1;
+        
+        if (isLeftArm) {
             marker.color.r = 0.0;
             marker.color.g = 0.0;
             marker.color.b = 1.0; // Blue for left arm
-            marker.color.a = 0.7;
-            return marker;
-        }();
-
-        // create a non-interactive control which contains the box
-        visualization_msgs::msg::InteractiveMarkerControl boxControl;
-        boxControl.always_visible = true;
-        boxControl.markers.push_back(boxMarker);
-        boxControl.interaction_mode =
-            visualization_msgs::msg::InteractiveMarkerControl::MOVE_ROTATE_3D;
-
-        // add the control to the interactive marker
-        interactiveMarker.controls.push_back(boxControl);
-
-        // create controls for movement and rotation
-        visualization_msgs::msg::InteractiveMarkerControl control;
-
-        control.orientation.w = 1;
-        control.orientation.x = 1;
-        control.orientation.y = 0;
-        control.orientation.z = 0;
-        control.name = "rotate_x";
-        control.interaction_mode =
-            visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
-        interactiveMarker.controls.push_back(control);
-        control.name = "move_x";
-        control.interaction_mode =
-            visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
-        interactiveMarker.controls.push_back(control);
-
-        control.orientation.w = 1;
-        control.orientation.x = 0;
-        control.orientation.y = 1;
-        control.orientation.z = 0;
-        control.name = "rotate_z";
-        control.interaction_mode =
-            visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
-        interactiveMarker.controls.push_back(control);
-        control.name = "move_z";
-        control.interaction_mode =
-            visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
-        interactiveMarker.controls.push_back(control);
-
-        control.orientation.w = 1;
-        control.orientation.x = 0;
-        control.orientation.y = 0;
-        control.orientation.z = 1;
-        control.name = "rotate_y";
-        control.interaction_mode =
-            visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
-        interactiveMarker.controls.push_back(control);
-        control.name = "move_y";
-        control.interaction_mode =
-            visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
-        interactiveMarker.controls.push_back(control);
-
-        return interactiveMarker;
-    }
-
-    visualization_msgs::msg::InteractiveMarker
-    DualArmTargetTrajectoriesInteractiveMarker::createRightArmInteractiveMarker() const
-    {
-        visualization_msgs::msg::InteractiveMarker interactiveMarker;
-        interactiveMarker.header.frame_id = "world";
-        interactiveMarker.header.stamp = node_->now();
-        interactiveMarker.name = "RightArmGoal";
-        interactiveMarker.scale = 0.2;
-        interactiveMarker.description = "Right arm target - Right click to send command";
-        interactiveMarker.pose.position.x = rightArmPosition_.x();
-        interactiveMarker.pose.position.y = rightArmPosition_.y();
-        interactiveMarker.pose.position.z = rightArmPosition_.z();
-        interactiveMarker.pose.orientation.w = rightArmOrientation_.w();
-        interactiveMarker.pose.orientation.x = rightArmOrientation_.x();
-        interactiveMarker.pose.orientation.y = rightArmOrientation_.y();
-        interactiveMarker.pose.orientation.z = rightArmOrientation_.z();
-
-        // create a red box marker for right arm
-        const auto boxMarker = []()
-        {
-            visualization_msgs::msg::Marker marker;
-            marker.type = visualization_msgs::msg::Marker::CUBE;
-            marker.scale.x = 0.1;
-            marker.scale.y = 0.1;
-            marker.scale.z = 0.1;
+        } else {
             marker.color.r = 1.0; // Red for right arm
             marker.color.g = 0.0;
             marker.color.b = 0.0;
-            marker.color.a = 0.7;
-            return marker;
-        }();
+        }
+        marker.color.a = 0.7;
+        
+        return marker;
+    }
 
-        // create a non-interactive control which contains the box
-        visualization_msgs::msg::InteractiveMarkerControl boxControl;
-        boxControl.always_visible = true;
-        boxControl.markers.push_back(boxMarker);
-        boxControl.interaction_mode =
-            visualization_msgs::msg::InteractiveMarkerControl::MOVE_ROTATE_3D;
-
-        // add the control to the interactive marker
-        interactiveMarker.controls.push_back(boxControl);
-
-        // create controls for movement and rotation
+    void DualArmTargetTrajectoriesInteractiveMarker::addMovementControls(
+        visualization_msgs::msg::InteractiveMarker& interactiveMarker) const
+    {
+        // X-axis controls
         visualization_msgs::msg::InteractiveMarkerControl control;
-
         control.orientation.w = 1;
         control.orientation.x = 1;
         control.orientation.y = 0;
@@ -229,6 +193,7 @@ namespace ocs2
             visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
         interactiveMarker.controls.push_back(control);
 
+        // Z-axis controls
         control.orientation.w = 1;
         control.orientation.x = 0;
         control.orientation.y = 1;
@@ -242,6 +207,7 @@ namespace ocs2
             visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
         interactiveMarker.controls.push_back(control);
 
+        // Y-axis controls
         control.orientation.w = 1;
         control.orientation.x = 0;
         control.orientation.y = 0;
@@ -254,65 +220,53 @@ namespace ocs2
         control.interaction_mode =
             visualization_msgs::msg::InteractiveMarkerControl::MOVE_AXIS;
         interactiveMarker.controls.push_back(control);
-
-        return interactiveMarker;
     }
 
-    void DualArmTargetTrajectoriesInteractiveMarker::processLeftArmFeedback(
-        const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback)
+    std::pair<Eigen::Vector3d, Eigen::Quaterniond>
+    DualArmTargetTrajectoriesInteractiveMarker::getCurrentPose(ArmType armType) const
     {
-        // Update left arm pose
-        leftArmPosition_ = Eigen::Vector3d(feedback->pose.position.x,
-                                           feedback->pose.position.y,
-                                           feedback->pose.position.z);
-        leftArmOrientation_ = Eigen::Quaterniond(feedback->pose.orientation.w,
-                                                 feedback->pose.orientation.x,
-                                                 feedback->pose.orientation.y,
-                                                 feedback->pose.orientation.z);
-
-        // get the latest observation
-        SystemObservation observation;
-        {
-            std::lock_guard lock(latestObservationMutex_);
-            observation = latestObservation_;
+        // Return the stored values which are kept up-to-date by feedback callbacks
+        if (armType == ArmType::LEFT) {
+            return {leftArmPosition_, leftArmOrientation_};
         }
-
-        // get TargetTrajectories for both arms
-        const auto targetTrajectories = dualArmGoalPoseToTargetTrajectories_(
-            leftArmPosition_, leftArmOrientation_,
-            rightArmPosition_, rightArmOrientation_,
-            observation);
-
-        // publish TargetTrajectories
-        targetTrajectoriesPublisherPtr_->publishTargetTrajectories(targetTrajectories);
+        return {rightArmPosition_, rightArmOrientation_};
     }
 
-    void DualArmTargetTrajectoriesInteractiveMarker::processRightArmFeedback(
-        const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback)
+    void DualArmTargetTrajectoriesInteractiveMarker::processArmFeedback(
+        const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback,
+        ArmType armType)
     {
-        // Update right arm pose
-        rightArmPosition_ = Eigen::Vector3d(feedback->pose.position.x,
-                                            feedback->pose.position.y,
-                                            feedback->pose.position.z);
-        rightArmOrientation_ = Eigen::Quaterniond(feedback->pose.orientation.w,
-                                                  feedback->pose.orientation.x,
-                                                  feedback->pose.orientation.y,
-                                                  feedback->pose.orientation.z);
+        const bool isLeftArm = (armType == ArmType::LEFT);
+        
+        // Update arm pose
+        Eigen::Vector3d& position = isLeftArm ? leftArmPosition_ : rightArmPosition_;
+        Eigen::Quaterniond& orientation = isLeftArm ? leftArmOrientation_ : rightArmOrientation_;
+        
+        position = Eigen::Vector3d(feedback->pose.position.x,
+                                   feedback->pose.position.y,
+                                   feedback->pose.position.z);
+        orientation = Eigen::Quaterniond(feedback->pose.orientation.w,
+                                         feedback->pose.orientation.x,
+                                         feedback->pose.orientation.y,
+                                         feedback->pose.orientation.z);
 
-        // get the latest observation
-        SystemObservation observation;
-        {
-            std::lock_guard<std::mutex> lock(latestObservationMutex_);
-            observation = latestObservation_;
+        // Only publish trajectories if this is a menu feedback (not just position update)
+        if (feedback->event_type == visualization_msgs::msg::InteractiveMarkerFeedback::MENU_SELECT) {
+            // get the latest observation
+            SystemObservation observation;
+            {
+                std::lock_guard lock(latestObservationMutex_);
+                observation = latestObservation_;
+            }
+
+            // get TargetTrajectories for both arms
+            const auto targetTrajectories = dualArmGoalPoseToTargetTrajectories_(
+                leftArmPosition_, leftArmOrientation_,
+                rightArmPosition_, rightArmOrientation_,
+                observation);
+
+            // publish TargetTrajectories
+            targetTrajectoriesPublisherPtr_->publishTargetTrajectories(targetTrajectories);
         }
-
-        // get TargetTrajectories for both arms
-        const auto targetTrajectories = dualArmGoalPoseToTargetTrajectories_(
-            leftArmPosition_, leftArmOrientation_,
-            rightArmPosition_, rightArmOrientation_,
-            observation);
-
-        // publish TargetTrajectories
-        targetTrajectoriesPublisherPtr_->publishTargetTrajectories(targetTrajectories);
     }
 } // namespace ocs2
