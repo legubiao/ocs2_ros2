@@ -27,8 +27,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-#include <ocs2_ros_interfaces/command/TargetTrajectoriesInteractiveMarker.h>
-#include <ocs2_ros_interfaces/command/DualArmTargetTrajectoriesInteractiveMarker.h>
+#include <ocs2_ros_interfaces/command/UnifiedTargetTrajectoriesInteractiveMarker.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/info_parser.hpp>
 #include <ocs2_core/misc/LoadData.h>
@@ -125,14 +124,14 @@ int main(int argc, char* argv[])
     if (dualArmMode) {
         // Create dual arm interactive marker
         RCLCPP_INFO(node->get_logger(), "Dual arm mode enabled - creating dual arm interactive markers");
-        DualArmTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &dualArmGoalPoseToTargetTrajectories);
+        UnifiedTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &dualArmGoalPoseToTargetTrajectories, 10.0);
         spin(node);
         return 0;
     }
 
     // Single arm mode
     RCLCPP_INFO(node->get_logger(), "Single arm mode enabled");
-    TargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &goalPoseToTargetTrajectories);
+    UnifiedTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &goalPoseToTargetTrajectories, 10.0);
     spin(node);
     return 0;
 }
