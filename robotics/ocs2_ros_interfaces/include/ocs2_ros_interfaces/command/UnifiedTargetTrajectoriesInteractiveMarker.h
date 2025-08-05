@@ -3,15 +3,12 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <atomic>
-#include <chrono>
 #include <interactive_markers/interactive_marker_server.hpp>
 #include <interactive_markers/menu_handler.hpp>
 #include <ocs2_mpc/SystemObservation.h>
 #include <ocs2_ros_interfaces/command/TargetTrajectoriesRosPublisher.h>
+#include <ocs2_ros_interfaces/command/IMarkerControl.h>
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/joy.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <ocs2_msgs/msg/mpc_observation.hpp>
 #include <visualization_msgs/msg/interactive_marker.hpp>
 #include <visualization_msgs/msg/interactive_marker_feedback.hpp>
@@ -23,7 +20,7 @@ namespace ocs2 {
      * This class combines the functionality of both TargetTrajectoriesInteractiveMarker 
      * and DualArmTargetTrajectoriesInteractiveMarker.
      */
-    class UnifiedTargetTrajectoriesInteractiveMarker final {
+    class UnifiedTargetTrajectoriesInteractiveMarker final : public IMarkerControl {
     public:
         // Function types for different modes
         using SingleArmGoalPoseToTargetTrajectories = std::function<TargetTrajectories(
@@ -67,31 +64,33 @@ namespace ocs2 {
             DualArmGoalPoseToTargetTrajectories dualArmGoalPoseToTargetTrajectories,
             double publishRate = 10.0);
 
-        /**
-         * Spins ROS to update the interactive markers.
-         */
-        void publishInteractiveMarker() const { spin(node_); }
+        ~UnifiedTargetTrajectoriesInteractiveMarker();
 
         // Public methods
-        void resetMarkerUpdateCooldown();
-        void setMarkerUpdateCooldown(double cooldown);
+
+        // IMarkerControl interface implementation
+        void setSingleArmPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation) override;
+        void setDualArmPose(ArmType armType, const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation) override;
+        std::pair<Eigen::Vector3d, Eigen::Quaterniond> getSingleArmPose() const override;
+        std::pair<Eigen::Vector3d, Eigen::Quaterniond> getDualArmPose(ArmType armType) const override;
+        void sendSingleArmTrajectories() override;
+        void sendDualArmTrajectories() override;
+        void togglePublishMode() override;
+        bool isContinuousMode() const override;
+        Mode getMode() const override;
+        ArmType getActiveArm() const override;
+        void setActiveArm(ArmType armType) override;
+        void updateMarkerDisplay(const std::string& markerName, const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation) override;
 
     private:
-        // Mode enum
-        enum class Mode { SINGLE_ARM, DUAL_ARM };
-
-        // Helper enum for dual arm
-        enum class ArmType { LEFT, RIGHT };
 
         // Core setup methods
         void setupCommon();
         void setupSingleArmMode();
         void setupDualArmMode();
         void setupObservationSubscriber();
-        void setupEndEffectorPoseSubscriber();
         void setupTrajectoriesPublisher();
         void setupTimer();
-        void setupJoystickSubscriber();
 
         // Marker creation methods
         visualization_msgs::msg::InteractiveMarker createSingleArmMarker() const;
@@ -102,7 +101,6 @@ namespace ocs2 {
         // Feedback processing methods
         void processSingleArmFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback);
         void processDualArmFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback, ArmType armType);
-        void processDualArmMenuFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback);
 
         // Menu handling methods
         void setupSingleArmMenu();
@@ -110,14 +108,8 @@ namespace ocs2 {
         void updateSingleArmMenuVisibility();
         void updateDualArmMenuVisibility();
 
-        // Trajectory sending methods
-        void sendSingleArmTrajectories();
-        void sendDualArmTrajectories();
-        void togglePublishMode();
         // Timer and callback methods
         void continuousPublishCallback();
-        void checkCooldownCallback();
-        void joystickCallback(sensor_msgs::msg::Joy::SharedPtr msg);
         void updateMarkerShape();
 
         // Core members
@@ -125,7 +117,6 @@ namespace ocs2 {
         std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
         std::unique_ptr<TargetTrajectoriesRosPublisher> targetTrajectoriesPublisherPtr_;
         rclcpp::Subscription<ocs2_msgs::msg::MpcObservation>::SharedPtr observationSubscriber_;
-        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr endEffectorPoseSubscriber_;
         mutable std::mutex latestObservationMutex_;
         SystemObservation latestObservation_;
 
@@ -135,7 +126,6 @@ namespace ocs2 {
         bool continuousMode_;
         // Timer and publishing
         rclcpp::TimerBase::SharedPtr publishTimer_;
-        rclcpp::TimerBase::SharedPtr cooldownCheckTimer_;
         std::string topicPrefix_;
 
         // Function objects
@@ -168,29 +158,10 @@ namespace ocs2 {
         Eigen::Vector3d rightArmPosition_;
         Eigen::Quaterniond rightArmOrientation_;
         
-        // Joystick control for both single and dual arm modes
-        rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joystickSubscriber_;
-        bool joystickEnabled_;
-        double joystickLinearScale_;
-        double joystickAngularScale_;
-        Eigen::Vector3d joystickPosition_;
-        Eigen::Quaterniond joystickOrientation_;
+        // Active arm for dual arm mode
         ArmType activeArm_;  // 当前激活的手臂（双臂模式）
-        
-        // Button cooldown control (shared by all buttons)
-        bool anyButtonPressed_;
-        rclcpp::Time lastButtonTime_;
-        double buttonCooldownDuration_;
-        
-        // Joystick update rate control
-        rclcpp::Time lastJoystickUpdateTime_;
-        double joystickUpdateRate_;
 
         // Marker initialization
-        bool markerInitialized_{false};
-        rclcpp::Time lastMpcObservationTime_;
-        rclcpp::Time lastEndEffectorPoseTime_;
-        double markerUpdateCooldown_{3.0}; // 3秒冷却时间
-        bool markerUpdateEnabled_{true}; // 第一次启动时允许更新marker位置
+
     };
 } // namespace ocs2 

@@ -28,6 +28,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
 #include <ocs2_ros_interfaces/command/UnifiedTargetTrajectoriesInteractiveMarker.h>
+#include <ocs2_ros_interfaces/command/JoystickMarkerWrapper.h>
+#include <ocs2_ros_interfaces/command/MarkerAutoPositionWrapper.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/info_parser.hpp>
 #include <ocs2_core/misc/LoadData.h>
@@ -121,10 +123,46 @@ int main(int argc, char* argv[])
     std::string taskFile = node->get_parameter("taskFile").as_string();
     bool dualArmMode = readDualArmModeFromTaskFile(taskFile);
     
+    // 检查是否启用手柄控制
+    bool enableJoystick = false;
+    try {
+        enableJoystick = node->get_parameter("enableJoystick").as_bool();
+    } catch (const rclcpp::exceptions::ParameterNotDeclaredException&) {
+        // 参数未声明，使用默认值false
+        enableJoystick = false;
+    }
+    
+    // 检查是否启用自动位置更新
+    bool enableAutoPosition = false;
+    try {
+        enableAutoPosition = node->get_parameter("enableAutoPosition").as_bool();
+    } catch (const rclcpp::exceptions::ParameterNotDeclaredException&) {
+        // 参数未声明，使用默认值false
+        enableAutoPosition = false;
+    }
+    
+    std::unique_ptr<JoystickMarkerWrapper> joystickControl;
+    std::unique_ptr<MarkerAutoPositionWrapper> autoPositionWrapper;
+    
     if (dualArmMode) {
         // Create dual arm interactive marker
         RCLCPP_INFO(node->get_logger(), "Dual arm mode enabled - creating dual arm interactive markers");
         UnifiedTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &dualArmGoalPoseToTargetTrajectories, 10.0);
+        
+            // 如果启用手柄控制，创建JoystickMarkerWrapper实例
+    if (enableJoystick) {
+        RCLCPP_INFO(node->get_logger(), "Joystick marker wrapper enabled");
+        joystickControl = std::make_unique<JoystickMarkerWrapper>(node, &targetPoseCommand);
+    }
+    
+    // 如果启用自动位置更新，创建MarkerAutoPositionWrapper实例
+    if (enableAutoPosition) {
+        RCLCPP_INFO(node->get_logger(), "Marker auto position wrapper enabled");
+        autoPositionWrapper = std::make_unique<MarkerAutoPositionWrapper>(
+            node, robotName, &targetPoseCommand, 
+            MarkerAutoPositionWrapper::UpdateMode::INITIALIZATION);
+    }
+        
         spin(node);
         return 0;
     }
@@ -132,6 +170,21 @@ int main(int argc, char* argv[])
     // Single arm mode
     RCLCPP_INFO(node->get_logger(), "Single arm mode enabled");
     UnifiedTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &goalPoseToTargetTrajectories, 10.0);
+    
+    // 如果启用手柄控制，创建JoystickMarkerWrapper实例
+    if (enableJoystick) {
+        RCLCPP_INFO(node->get_logger(), "Joystick marker wrapper enabled");
+        joystickControl = std::make_unique<JoystickMarkerWrapper>(node, &targetPoseCommand);
+    }
+    
+    // 如果启用自动位置更新，创建MarkerAutoPositionWrapper实例
+    if (enableAutoPosition) {
+        RCLCPP_INFO(node->get_logger(), "Marker auto position wrapper enabled");
+        autoPositionWrapper = std::make_unique<MarkerAutoPositionWrapper>(
+            node, robotName, &targetPoseCommand, 
+            MarkerAutoPositionWrapper::UpdateMode::CONTINUOUS);
+    }
+    
     spin(node);
     return 0;
 }

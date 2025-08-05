@@ -47,6 +47,16 @@ def generate_launch_description():
             name='debug',
             default_value='false'
         ),
+        DeclareLaunchArgument(
+            name='enableJoystick',
+            default_value='false',
+            description='Whether to enable joystick control'
+        ),
+        DeclareLaunchArgument(
+            name='enableAutoPosition',
+            default_value='false',
+            description='Whether to enable automatic marker position updates'
+        ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory(
@@ -121,6 +131,12 @@ def generate_launch_description():
             parameters=[
                 {
                     'taskFile': LaunchConfiguration('taskFile')
+                },
+                {
+                    'enableJoystick': LaunchConfiguration('enableJoystick')
+                },
+                {
+                    'enableAutoPosition': LaunchConfiguration('enableAutoPosition')
                 },
             ],
             output='screen',

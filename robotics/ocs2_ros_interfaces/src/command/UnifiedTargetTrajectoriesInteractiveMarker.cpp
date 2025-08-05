@@ -4,7 +4,6 @@
 #include <memory>
 #include <mutex>
 #include <ocs2_msgs/msg/mpc_observation.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <visualization_msgs/msg/interactive_marker.hpp>
 #include <visualization_msgs/msg/interactive_marker_feedback.hpp>
 #include <visualization_msgs/msg/marker.hpp>
@@ -25,26 +24,13 @@ namespace ocs2
           singleArmFunction_(std::move(goalPoseToTargetTrajectories)),
           singleArmPosition_(0.0, 0.0, 1.0),
           singleArmOrientation_(1.0, 0.0, 0.0, 0.0),
-          joystickEnabled_(false),
-          joystickLinearScale_(0.01),
-          joystickAngularScale_(0.01),
-          joystickPosition_(0.0, 0.0, 1.0),
-          joystickOrientation_(1.0, 0.0, 0.0, 0.0),
-          activeArm_(ArmType::RIGHT), // Default active arm
-          anyButtonPressed_(false),
-          lastButtonTime_(node_->now()),
-          buttonCooldownDuration_(0.5), // 0.5 second cooldown
-          lastJoystickUpdateTime_(node_->now()),
-          joystickUpdateRate_(20.0),
-          lastMpcObservationTime_(node_->now()),
-          lastEndEffectorPoseTime_(node_->now()) // 第一次启动时允许更新一次
+          activeArm_(ArmType::RIGHT) // Default active arm
     {
         // 20Hz update rate
 
         topicPrefix_ = topicPrefix;
         setupCommon();
         setupSingleArmMode();
-        setupJoystickSubscriber();
     }
 
     // Dual arm constructor
@@ -61,26 +47,13 @@ namespace ocs2
           leftArmOrientation_(1.0, 0.0, 0.0, 0.0),
           rightArmPosition_(0.0, -0.5, 1.0),
           rightArmOrientation_(1.0, 0.0, 0.0, 0.0),
-          joystickEnabled_(false),
-          joystickLinearScale_(0.01),
-          joystickAngularScale_(0.01),
-          joystickPosition_(0.0, 0.0, 1.0),
-          joystickOrientation_(1.0, 0.0, 0.0, 0.0),
-          activeArm_(ArmType::RIGHT), // Default active arm
-          anyButtonPressed_(false),
-          lastButtonTime_(node_->now()),
-          buttonCooldownDuration_(0.5), // 0.5 second cooldown
-          lastJoystickUpdateTime_(node_->now()),
-          joystickUpdateRate_(20.0),
-          lastMpcObservationTime_(node_->now()),
-          lastEndEffectorPoseTime_(node_->now()) // 第一次启动时允许更新一次
+          activeArm_(ArmType::RIGHT) // Default active arm
     {
         // 20Hz update rate
 
         topicPrefix_ = topicPrefix;
         setupCommon();
         setupDualArmMode();
-        setupJoystickSubscriber();
     }
 
     void UnifiedTargetTrajectoriesInteractiveMarker::setupCommon()
@@ -88,7 +61,6 @@ namespace ocs2
         server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
             "simple_marker", node_);
         setupObservationSubscriber();
-        setupEndEffectorPoseSubscriber();
         setupTrajectoriesPublisher();
         setupTimer();
     }
@@ -154,12 +126,6 @@ namespace ocs2
     {
         auto observationCallback = [this](const ocs2_msgs::msg::MpcObservation::ConstSharedPtr& msg)
         {
-            const auto currentTime = node_->now();
-            lastMpcObservationTime_ = currentTime;
-
-            // 当收到MPC observation时，禁用marker位置更新（进入冷却期）
-            markerUpdateEnabled_ = false;
-
             std::lock_guard lock(latestObservationMutex_);
             latestObservation_ = ros_msg_conversions::readObservationMsg(*msg);
         };
@@ -167,87 +133,6 @@ namespace ocs2
             topicPrefix_ + "_mpc_observation", 1, observationCallback);
     }
 
-    void UnifiedTargetTrajectoriesInteractiveMarker::setupEndEffectorPoseSubscriber()
-    {
-        auto endEffectorPoseCallback = [this](const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
-        {
-            auto currentTime = node_->now();
-            lastEndEffectorPoseTime_ = msg->header.stamp;
-
-            bool shouldUpdate = false;
-
-            // 判断是否应该更新marker
-            if (!markerInitialized_)
-            {
-                // 第一次启动，需要初始化
-                shouldUpdate = true;
-                RCLCPP_INFO(node_->get_logger(), "First startup - will initialize marker position");
-            }
-            else if (markerUpdateEnabled_)
-            {
-                // 当前允许更新（冷却期已过）
-                shouldUpdate = true;
-                RCLCPP_INFO(node_->get_logger(), "Cooldown period passed - will update marker position");
-            }
-
-            // 执行更新
-            if (shouldUpdate)
-            {
-                if (mode_ == Mode::SINGLE_ARM)
-                {
-                    std::lock_guard lock(markerPoseMutex_);
-                    singleArmPosition_ = Eigen::Vector3d(msg->pose.position.x,
-                                                         msg->pose.position.y,
-                                                         msg->pose.position.z);
-                    singleArmOrientation_ = Eigen::Quaterniond(msg->pose.orientation.w,
-                                                               msg->pose.orientation.x,
-                                                               msg->pose.orientation.y,
-                                                               msg->pose.orientation.z);
-
-                    // 更新marker显示
-                    geometry_msgs::msg::Pose markerPose;
-                    markerPose.position = msg->pose.position;
-                    markerPose.orientation = msg->pose.orientation;
-                    server_->setPose("Goal", markerPose);
-                    server_->applyChanges();
-
-                    if (!markerInitialized_)
-                    {
-                        markerInitialized_ = true;
-                    }
-                }
-                else
-                {
-                    // 双臂模式：使用第一个位置初始化右臂
-                    std::lock_guard lock(markerPoseMutex_);
-                    rightArmPosition_ = Eigen::Vector3d(msg->pose.position.x,
-                                                        msg->pose.position.y,
-                                                        msg->pose.position.z);
-                    rightArmOrientation_ = Eigen::Quaterniond(msg->pose.orientation.w,
-                                                              msg->pose.orientation.x,
-                                                              msg->pose.orientation.y,
-                                                              msg->pose.orientation.z);
-
-                    // 更新marker显示
-                    geometry_msgs::msg::Pose markerPose;
-                    markerPose.position = msg->pose.position;
-                    markerPose.orientation = msg->pose.orientation;
-                    server_->setPose("RightArmGoal", markerPose);
-                    server_->applyChanges();
-
-                    if (!markerInitialized_)
-                    {
-                        markerInitialized_ = true;
-                    }
-                }
-
-                // 更新后立即禁用，等待下次冷却期
-                markerUpdateEnabled_ = false;
-            }
-        };
-        endEffectorPoseSubscriber_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-            topicPrefix_ + "_end_effector_pose", 1, endEffectorPoseCallback);
-    }
 
     void UnifiedTargetTrajectoriesInteractiveMarker::setupTrajectoriesPublisher()
     {
@@ -259,38 +144,8 @@ namespace ocs2
         publishTimer_ = node_->create_wall_timer(
             std::chrono::duration<double>(1.0 / publishRate_),
             std::bind(&UnifiedTargetTrajectoriesInteractiveMarker::continuousPublishCallback, this));
-
-        // 添加冷却期检查定时器
-        cooldownCheckTimer_ = node_->create_wall_timer(
-            std::chrono::duration<double>(1.0), // 每秒检查一次
-            std::bind(&UnifiedTargetTrajectoriesInteractiveMarker::checkCooldownCallback, this));
     }
 
-    void UnifiedTargetTrajectoriesInteractiveMarker::setupJoystickSubscriber()
-    {
-        auto joystickCallback = [this](const sensor_msgs::msg::Joy::SharedPtr msg)
-        {
-            this->joystickCallback(msg);
-        };
-        joystickSubscriber_ = node_->create_subscription<sensor_msgs::msg::Joy>(
-            "joy", 10, joystickCallback);
-
-        if (mode_ == Mode::SINGLE_ARM)
-        {
-            RCLCPP_INFO(node_->get_logger(), "🎮 Joystick subscriber created for single arm mode");
-            RCLCPP_INFO(node_->get_logger(), "🎮 Joystick control is DISABLED by default. Press Y button to enable.");
-            RCLCPP_INFO(node_->get_logger(),
-                        "🎮 Controls: Y=toggle joystick, X=toggle continuous mode, A=send position (non-continuous)");
-        }
-        else
-        {
-            RCLCPP_INFO(node_->get_logger(), "🎮 Joystick subscriber created for dual arm mode");
-            RCLCPP_INFO(node_->get_logger(), "🎮 Joystick control is DISABLED by default. Press Y button to enable.");
-            RCLCPP_INFO(node_->get_logger(),
-                        "🎮 Controls: Y=toggle joystick, X=toggle continuous mode, A=send position (non-continuous), B=switch active arm")
-            ;
-        }
-    }
 
     visualization_msgs::msg::InteractiveMarker
     UnifiedTargetTrajectoriesInteractiveMarker::createSingleArmMarker() const
@@ -725,302 +580,91 @@ namespace ocs2
         server_->applyChanges();
     }
 
-    void UnifiedTargetTrajectoriesInteractiveMarker::joystickCallback(const sensor_msgs::msg::Joy::SharedPtr msg)
+
+    // IMarkerControl interface implementation
+    void UnifiedTargetTrajectoriesInteractiveMarker::setSingleArmPose(const Eigen::Vector3d& position,
+                                                                      const Eigen::Quaterniond& orientation)
     {
-        // Check button input
-        if (msg->buttons.size() > 3)
+        std::lock_guard lock(markerPoseMutex_);
+        singleArmPosition_ = position;
+        singleArmOrientation_ = orientation;
+    }
+
+    void UnifiedTargetTrajectoriesInteractiveMarker::setDualArmPose(ArmType armType, const Eigen::Vector3d& position,
+                                                                    const Eigen::Quaterniond& orientation)
+    {
+        std::lock_guard lock(markerPoseMutex_);
+        if (armType == ArmType::LEFT)
         {
-            auto currentTime = node_->now();
-            double timeSinceLastButton = (currentTime - lastButtonTime_).seconds();
-            bool cooldownActive = timeSinceLastButton < buttonCooldownDuration_;
-
-            // Check if any functional button is pressed
-            bool yPressed = msg->buttons[3];
-            bool xPressed = msg->buttons[2];
-            bool aPressed = msg->buttons[0] && !continuousMode_;
-            bool bPressed = msg->buttons[1]; // B button to switch active arm (dual arm mode)
-
-            // If any button is pressed and no button was pressed before
-            if ((yPressed || xPressed || aPressed || bPressed) && !anyButtonPressed_)
-            {
-                if (!cooldownActive)
-                {
-                    lastButtonTime_ = currentTime;
-
-                    // Y button to enable/disable joystick control (button 3)
-                    if (yPressed)
-                    {
-                        joystickEnabled_ = !joystickEnabled_; // Toggle state
-
-                        if (joystickEnabled_)
-                        {
-                            // When switching to joystick mode, use current marker position
-                            {
-                                std::lock_guard lock(markerPoseMutex_);
-                                if (mode_ == Mode::SINGLE_ARM)
-                                {
-                                    joystickPosition_ = singleArmPosition_;
-                                    joystickOrientation_ = singleArmOrientation_;
-                                }
-                                else
-                                {
-                                    // Dual arm mode: use current active arm position
-                                    const auto& currentPos = (activeArm_ == ArmType::LEFT)
-                                                                 ? leftArmPosition_
-                                                                 : rightArmPosition_;
-                                    const auto& currentOrient = (activeArm_ == ArmType::LEFT)
-                                                                    ? leftArmOrientation_
-                                                                    : rightArmOrientation_;
-                                    joystickPosition_ = currentPos;
-                                    joystickOrientation_ = currentOrient;
-                                }
-                            }
-                            RCLCPP_INFO(node_->get_logger(),
-                                        "🎮 Joystick control ENABLED! Starting from current marker position.");
-                            if (mode_ == Mode::SINGLE_ARM)
-                            {
-                                RCLCPP_INFO(node_->get_logger(), "🎮 Current position: [%.3f, %.3f, %.3f]",
-                                            singleArmPosition_.x(), singleArmPosition_.y(), singleArmPosition_.z());
-                            }
-                            else
-                            {
-                                RCLCPP_INFO(node_->get_logger(), "🎮 Active arm: %s",
-                                            (activeArm_ == ArmType::LEFT) ? "LEFT" : "RIGHT");
-                            }
-                        }
-                        else
-                        {
-                            RCLCPP_INFO(node_->get_logger(),
-                                        "🎮 Joystick control DISABLED! Manual marker control restored.");
-                        }
-                    }
-
-                    if (joystickEnabled_)
-                    {
-                        // X button to toggle continuous input mode (button 2)
-                        if (xPressed)
-                        {
-                            togglePublishMode();
-                        }
-
-                        // A button to send current position in non-continuous mode (button 0)
-                        if (aPressed)
-                        {
-                            if (mode_ == Mode::SINGLE_ARM)
-                            {
-                                sendSingleArmTrajectories();
-                                RCLCPP_INFO(node_->get_logger(), "🎮 Sending single arm position via A button.");
-                            }
-                            else
-                            {
-                                sendDualArmTrajectories();
-                                RCLCPP_INFO(node_->get_logger(), "🎮 Sending dual arm positions via A button.");
-                            }
-                        }
-
-                        // B button to switch active arm (dual arm mode, button 1)
-                        if (bPressed && mode_ == Mode::DUAL_ARM)
-                        {
-                            activeArm_ = activeArm_ == ArmType::LEFT ? ArmType::RIGHT : ArmType::LEFT;
-                            RCLCPP_INFO(node_->get_logger(), "🎮 Switched active arm to: %s",
-                                        activeArm_ == ArmType::LEFT ? "LEFT" : "RIGHT");
-
-                            // Update joystick position to newly active arm position
-                            std::lock_guard lock(markerPoseMutex_);
-                            const auto& currentPos = activeArm_ == ArmType::LEFT
-                                                         ? leftArmPosition_
-                                                         : rightArmPosition_;
-                            const auto& currentOrient = activeArm_ == ArmType::LEFT
-                                                            ? leftArmOrientation_
-                                                            : rightArmOrientation_;
-                            joystickPosition_ = currentPos;
-                            joystickOrientation_ = currentOrient;
-                        }
-                    }
-                }
-                else
-                {
-                    RCLCPP_DEBUG(node_->get_logger(), "🎮 Button cooldown active (%.2f seconds remaining)",
-                                 buttonCooldownDuration_ - timeSinceLastButton);
-                }
-            }
-
-            // Update button state
-            anyButtonPressed_ = yPressed || xPressed || aPressed || bPressed;
+            leftArmPosition_ = position;
+            leftArmOrientation_ = orientation;
         }
-
-        // If joystick control is enabled, check update frequency
-        if (joystickEnabled_)
+        else
         {
-            auto currentTime = node_->now();
-            double timeSinceLastUpdate = (currentTime - lastJoystickUpdateTime_).seconds();
-            double updateInterval = 1.0 / joystickUpdateRate_;
-
-            // If too short time since last update, skip this update
-            if (timeSinceLastUpdate < updateInterval)
-            {
-                return;
-            }
-
-            lastJoystickUpdateTime_ = currentTime;
-            // Reference moveit_teleop mapping
-            // Right stick controls position (axes[3], axes[4], axes[5])
-            // axes[4]: up/down movement (Z-axis) - RIGHT_STICK_Y
-            // axes[3]: left/right movement (Y-axis) - RIGHT_STICK_X
-            // axes[5]: forward/backward movement (X-axis) - using triggers
-            if (msg->axes.size() > 5)
-            {
-                // Check if there is valid joystick input (avoid deadzone)
-                bool hasValidInput = false;
-
-                // Triggers control forward/backward movement (X-axis)
-                double lin_x_right = -0.5 * (msg->axes[5] - 1.0); // RIGHT_TRIGGER
-                double lin_x_left = 0.5 * (msg->axes[2] - 1.0); // LEFT_TRIGGER
-                double x_movement = (lin_x_right + lin_x_left) * joystickLinearScale_;
-
-                if (std::abs(msg->axes[4]) > 0.1 || std::abs(msg->axes[3]) > 0.1 ||
-                    std::abs(lin_x_right) > 0.1 || std::abs(lin_x_left) > 0.1)
-                {
-                    hasValidInput = true;
-                    // Only update position when there is valid input
-                    joystickPosition_.x() += x_movement;
-                    joystickPosition_.y() += msg->axes[3] * joystickLinearScale_; // Right stick X-axis
-                    joystickPosition_.z() += msg->axes[4] * joystickLinearScale_; // Right stick Y-axis
-                }
-
-                // Left stick controls orientation (axes[0], axes[1])
-                // axes[1]: rotation around Y-axis (pitch) - LEFT_STICK_Y
-                // axes[0]: rotation around X-axis (roll) - LEFT_STICK_X
-                // Buttons control rotation around Z-axis (yaw)
-                double pitch = 0.0;
-                double roll = 0.0;
-                double yaw = 0.0;
-
-                // Check left stick input
-                if (msg->axes.size() > 1)
-                {
-                    if (std::abs(msg->axes[0]) > 0.1 || std::abs(msg->axes[1]) > 0.1)
-                    {
-                        hasValidInput = true;
-                        pitch = msg->axes[1] * joystickAngularScale_; // Left stick Y-axis
-                        roll = msg->axes[0] * joystickAngularScale_; // Left stick X-axis
-                    }
-                }
-
-                // Buttons control yaw (independent of stick input)
-                if (msg->buttons.size() > 5)
-                {
-                    if (msg->buttons[5])
-                    {
-                        // RIGHT_BUMPER
-                        hasValidInput = true;
-                        yaw = joystickAngularScale_;
-                    }
-                    if (msg->buttons[4])
-                    {
-                        // LEFT_BUMPER
-                        hasValidInput = true;
-                        yaw = -joystickAngularScale_;
-                    }
-                }
-
-                // If there is any rotation input, update orientation
-                if (std::abs(pitch) > 0.001 || std::abs(roll) > 0.001 || std::abs(yaw) > 0.001)
-                {
-                    // Create rotation increment
-                    Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitZ());
-                    Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitX());
-                    Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitY());
-
-                    Eigen::Quaterniond rotationIncrement = yawAngle * pitchAngle * rollAngle;
-                    joystickOrientation_ = joystickOrientation_ * rotationIncrement;
-                    joystickOrientation_.normalize();
-                }
-
-                // Only update marker when there is valid input
-                if (hasValidInput)
-                {
-                    // Update marker position
-                    {
-                        std::lock_guard lock(markerPoseMutex_);
-                        if (mode_ == Mode::SINGLE_ARM)
-                        {
-                            singleArmPosition_ = joystickPosition_;
-                            singleArmOrientation_ = joystickOrientation_;
-                        }
-                        else
-                        {
-                            // Dual arm mode: only update current active arm
-                            if (activeArm_ == ArmType::LEFT)
-                            {
-                                leftArmPosition_ = joystickPosition_;
-                                leftArmOrientation_ = joystickOrientation_;
-                            }
-                            else
-                            {
-                                rightArmPosition_ = joystickPosition_;
-                                rightArmOrientation_ = joystickOrientation_;
-                            }
-                        }
-                    }
-
-                    // Update marker display in RViz
-                    geometry_msgs::msg::Pose markerPose;
-                    markerPose.position.x = joystickPosition_.x();
-                    markerPose.position.y = joystickPosition_.y();
-                    markerPose.position.z = joystickPosition_.z();
-                    markerPose.orientation.w = joystickOrientation_.w();
-                    markerPose.orientation.x = joystickOrientation_.x();
-                    markerPose.orientation.y = joystickOrientation_.y();
-                    markerPose.orientation.z = joystickOrientation_.z();
-
-                    if (mode_ == Mode::SINGLE_ARM)
-                    {
-                        server_->setPose("Goal", markerPose);
-                    }
-                    else
-                    {
-                        // Dual arm mode: update current active arm marker
-                        const std::string markerName = activeArm_ == ArmType::LEFT ? "LeftArmGoal" : "RightArmGoal";
-                        server_->setPose(markerName, markerPose);
-                    }
-                    server_->applyChanges();
-
-                    // Output debug information
-                    RCLCPP_DEBUG(node_->get_logger(), "🎮 Updated %s marker position: [%.3f, %.3f, %.3f]",
-                                 mode_ == Mode::SINGLE_ARM ? "single arm" :
-                                 activeArm_ == ArmType::LEFT ? "left arm" : "right arm",
-                                 joystickPosition_.x(), joystickPosition_.y(), joystickPosition_.z());
-                }
-            }
+            rightArmPosition_ = position;
+            rightArmOrientation_ = orientation;
         }
     }
 
-    void UnifiedTargetTrajectoriesInteractiveMarker::resetMarkerUpdateCooldown()
+    std::pair<Eigen::Vector3d, Eigen::Quaterniond> UnifiedTargetTrajectoriesInteractiveMarker::getSingleArmPose() const
     {
-        markerUpdateEnabled_ = false; // 重置为禁用状态，等待下次冷却期
-        lastMpcObservationTime_ = node_->now();
-        RCLCPP_INFO(node_->get_logger(), "Marker update cooldown reset - waiting for next cooldown period");
+        std::lock_guard lock(markerPoseMutex_);
+        return {singleArmPosition_, singleArmOrientation_};
     }
 
-    void UnifiedTargetTrajectoriesInteractiveMarker::setMarkerUpdateCooldown(const double cooldown)
+    std::pair<Eigen::Vector3d, Eigen::Quaterniond> UnifiedTargetTrajectoriesInteractiveMarker::getDualArmPose(
+        ArmType armType) const
     {
-        markerUpdateCooldown_ = cooldown;
-        RCLCPP_INFO(node_->get_logger(), "Marker update cooldown set to %.1f seconds", cooldown);
-    }
-
-    void UnifiedTargetTrajectoriesInteractiveMarker::checkCooldownCallback()
-    {
-        auto currentTime = node_->now();
-
-        // 如果当前禁用更新，且超过冷却时间没有收到MPC observation，则重新启用
-        if (!markerUpdateEnabled_ && markerInitialized_ &&
-            (currentTime - lastMpcObservationTime_).seconds() > markerUpdateCooldown_)
+        std::lock_guard lock(markerPoseMutex_);
+        if (armType == ArmType::LEFT)
         {
-            markerUpdateEnabled_ = true;
-            RCLCPP_INFO(node_->get_logger(),
-                        "Cooldown period passed - marker updates enabled (%.1f seconds since last MPC observation)",
-                        (currentTime - lastMpcObservationTime_).seconds());
+            return {leftArmPosition_, leftArmOrientation_};
+        }
+        return {rightArmPosition_, rightArmOrientation_};
+    }
+
+    bool UnifiedTargetTrajectoriesInteractiveMarker::isContinuousMode() const
+    {
+        return continuousMode_;
+    }
+
+    IMarkerControl::Mode UnifiedTargetTrajectoriesInteractiveMarker::getMode() const
+    {
+        return mode_;
+    }
+
+    IMarkerControl::ArmType UnifiedTargetTrajectoriesInteractiveMarker::getActiveArm() const
+    {
+        return activeArm_;
+    }
+
+    void UnifiedTargetTrajectoriesInteractiveMarker::setActiveArm(ArmType armType)
+    {
+        activeArm_ = armType;
+    }
+
+    void UnifiedTargetTrajectoriesInteractiveMarker::updateMarkerDisplay(
+        const std::string& markerName, const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation)
+    {
+        geometry_msgs::msg::Pose markerPose;
+        markerPose.position.x = position.x();
+        markerPose.position.y = position.y();
+        markerPose.position.z = position.z();
+        markerPose.orientation.w = orientation.w();
+        markerPose.orientation.x = orientation.x();
+        markerPose.orientation.y = orientation.y();
+        markerPose.orientation.z = orientation.z();
+
+        server_->setPose(markerName, markerPose);
+        server_->applyChanges();
+    }
+
+    UnifiedTargetTrajectoriesInteractiveMarker::~UnifiedTargetTrajectoriesInteractiveMarker()
+    {
+        // 清理定时器
+        if (publishTimer_)
+        {
+            publishTimer_->cancel();
         }
     }
 } // namespace ocs2
