@@ -2,7 +2,14 @@
 
 #include <ocs2_ros_interfaces/common/RosMsgConversions.h>
 #include <memory>
+#include <mutex>
 #include <ocs2_msgs/msg/mpc_observation.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <visualization_msgs/msg/interactive_marker.hpp>
+#include <visualization_msgs/msg/interactive_marker_feedback.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 namespace ocs2
 {
@@ -10,7 +17,7 @@ namespace ocs2
     UnifiedTargetTrajectoriesInteractiveMarker::UnifiedTargetTrajectoriesInteractiveMarker(
         rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
         SingleArmGoalPoseToTargetTrajectories goalPoseToTargetTrajectories,
-        double publishRate)
+        const double publishRate)
         : node_(std::move(node)),
           mode_(Mode::SINGLE_ARM),
           publishRate_(publishRate),
@@ -28,7 +35,9 @@ namespace ocs2
           lastButtonTime_(node_->now()),
           buttonCooldownDuration_(0.5), // 0.5 second cooldown
           lastJoystickUpdateTime_(node_->now()),
-          joystickUpdateRate_(20.0)
+          joystickUpdateRate_(20.0),
+          lastMpcObservationTime_(node_->now()),
+          lastEndEffectorPoseTime_(node_->now()) // 第一次启动时允许更新一次
     {
         // 20Hz update rate
 
@@ -42,7 +51,7 @@ namespace ocs2
     UnifiedTargetTrajectoriesInteractiveMarker::UnifiedTargetTrajectoriesInteractiveMarker(
         rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
         DualArmGoalPoseToTargetTrajectories dualArmGoalPoseToTargetTrajectories,
-        double publishRate)
+        const double publishRate)
         : node_(std::move(node)),
           mode_(Mode::DUAL_ARM),
           publishRate_(publishRate),
@@ -62,7 +71,9 @@ namespace ocs2
           lastButtonTime_(node_->now()),
           buttonCooldownDuration_(0.5), // 0.5 second cooldown
           lastJoystickUpdateTime_(node_->now()),
-          joystickUpdateRate_(20.0)
+          joystickUpdateRate_(20.0),
+          lastMpcObservationTime_(node_->now()),
+          lastEndEffectorPoseTime_(node_->now()) // 第一次启动时允许更新一次
     {
         // 20Hz update rate
 
@@ -77,6 +88,7 @@ namespace ocs2
         server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
             "simple_marker", node_);
         setupObservationSubscriber();
+        setupEndEffectorPoseSubscriber();
         setupTrajectoriesPublisher();
         setupTimer();
     }
@@ -142,11 +154,99 @@ namespace ocs2
     {
         auto observationCallback = [this](const ocs2_msgs::msg::MpcObservation::ConstSharedPtr& msg)
         {
+            const auto currentTime = node_->now();
+            lastMpcObservationTime_ = currentTime;
+
+            // 当收到MPC observation时，禁用marker位置更新（进入冷却期）
+            markerUpdateEnabled_ = false;
+
             std::lock_guard lock(latestObservationMutex_);
             latestObservation_ = ros_msg_conversions::readObservationMsg(*msg);
         };
         observationSubscriber_ = node_->create_subscription<ocs2_msgs::msg::MpcObservation>(
             topicPrefix_ + "_mpc_observation", 1, observationCallback);
+    }
+
+    void UnifiedTargetTrajectoriesInteractiveMarker::setupEndEffectorPoseSubscriber()
+    {
+        auto endEffectorPoseCallback = [this](const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
+        {
+            auto currentTime = node_->now();
+            lastEndEffectorPoseTime_ = msg->header.stamp;
+
+            bool shouldUpdate = false;
+
+            // 判断是否应该更新marker
+            if (!markerInitialized_)
+            {
+                // 第一次启动，需要初始化
+                shouldUpdate = true;
+                RCLCPP_INFO(node_->get_logger(), "First startup - will initialize marker position");
+            }
+            else if (markerUpdateEnabled_)
+            {
+                // 当前允许更新（冷却期已过）
+                shouldUpdate = true;
+                RCLCPP_INFO(node_->get_logger(), "Cooldown period passed - will update marker position");
+            }
+
+            // 执行更新
+            if (shouldUpdate)
+            {
+                if (mode_ == Mode::SINGLE_ARM)
+                {
+                    std::lock_guard lock(markerPoseMutex_);
+                    singleArmPosition_ = Eigen::Vector3d(msg->pose.position.x,
+                                                         msg->pose.position.y,
+                                                         msg->pose.position.z);
+                    singleArmOrientation_ = Eigen::Quaterniond(msg->pose.orientation.w,
+                                                               msg->pose.orientation.x,
+                                                               msg->pose.orientation.y,
+                                                               msg->pose.orientation.z);
+
+                    // 更新marker显示
+                    geometry_msgs::msg::Pose markerPose;
+                    markerPose.position = msg->pose.position;
+                    markerPose.orientation = msg->pose.orientation;
+                    server_->setPose("Goal", markerPose);
+                    server_->applyChanges();
+
+                    if (!markerInitialized_)
+                    {
+                        markerInitialized_ = true;
+                    }
+                }
+                else
+                {
+                    // 双臂模式：使用第一个位置初始化右臂
+                    std::lock_guard lock(markerPoseMutex_);
+                    rightArmPosition_ = Eigen::Vector3d(msg->pose.position.x,
+                                                        msg->pose.position.y,
+                                                        msg->pose.position.z);
+                    rightArmOrientation_ = Eigen::Quaterniond(msg->pose.orientation.w,
+                                                              msg->pose.orientation.x,
+                                                              msg->pose.orientation.y,
+                                                              msg->pose.orientation.z);
+
+                    // 更新marker显示
+                    geometry_msgs::msg::Pose markerPose;
+                    markerPose.position = msg->pose.position;
+                    markerPose.orientation = msg->pose.orientation;
+                    server_->setPose("RightArmGoal", markerPose);
+                    server_->applyChanges();
+
+                    if (!markerInitialized_)
+                    {
+                        markerInitialized_ = true;
+                    }
+                }
+
+                // 更新后立即禁用，等待下次冷却期
+                markerUpdateEnabled_ = false;
+            }
+        };
+        endEffectorPoseSubscriber_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+            topicPrefix_ + "_end_effector_pose", 1, endEffectorPoseCallback);
     }
 
     void UnifiedTargetTrajectoriesInteractiveMarker::setupTrajectoriesPublisher()
@@ -159,6 +259,11 @@ namespace ocs2
         publishTimer_ = node_->create_wall_timer(
             std::chrono::duration<double>(1.0 / publishRate_),
             std::bind(&UnifiedTargetTrajectoriesInteractiveMarker::continuousPublishCallback, this));
+
+        // 添加冷却期检查定时器
+        cooldownCheckTimer_ = node_->create_wall_timer(
+            std::chrono::duration<double>(1.0), // 每秒检查一次
+            std::bind(&UnifiedTargetTrajectoriesInteractiveMarker::checkCooldownCallback, this));
     }
 
     void UnifiedTargetTrajectoriesInteractiveMarker::setupJoystickSubscriber()
@@ -376,7 +481,7 @@ namespace ocs2
         const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback,
         ArmType armType)
     {
-        const bool isLeftArm = (armType == ArmType::LEFT);
+        const bool isLeftArm = armType == ArmType::LEFT;
 
         // Update arm pose
         Eigen::Vector3d& position = isLeftArm ? leftArmPosition_ : rightArmPosition_;
@@ -406,7 +511,7 @@ namespace ocs2
             const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback)
         {
             // Use stored current position for menu actions
-            std::lock_guard<std::mutex> lock(markerPoseMutex_);
+            std::lock_guard lock(markerPoseMutex_);
             sendSingleArmTrajectories();
         };
 
@@ -690,37 +795,37 @@ namespace ocs2
                         }
                     }
 
-                    // X button to toggle continuous input mode (button 2)
-                    if (xPressed)
+                    if (joystickEnabled_)
                     {
-                        togglePublishMode();
-                    }
-
-                    // A button to send current position in non-continuous mode (button 0)
-                    if (aPressed)
-                    {
-                        if (mode_ == Mode::SINGLE_ARM)
+                        // X button to toggle continuous input mode (button 2)
+                        if (xPressed)
                         {
-                            sendSingleArmTrajectories();
-                            RCLCPP_INFO(node_->get_logger(), "🎮 Sending single arm position via A button.");
+                            togglePublishMode();
                         }
-                        else
+
+                        // A button to send current position in non-continuous mode (button 0)
+                        if (aPressed)
                         {
-                            sendDualArmTrajectories();
-                            RCLCPP_INFO(node_->get_logger(), "🎮 Sending dual arm positions via A button.");
+                            if (mode_ == Mode::SINGLE_ARM)
+                            {
+                                sendSingleArmTrajectories();
+                                RCLCPP_INFO(node_->get_logger(), "🎮 Sending single arm position via A button.");
+                            }
+                            else
+                            {
+                                sendDualArmTrajectories();
+                                RCLCPP_INFO(node_->get_logger(), "🎮 Sending dual arm positions via A button.");
+                            }
                         }
-                    }
 
-                    // B button to switch active arm (dual arm mode, button 1)
-                    if (bPressed && mode_ == Mode::DUAL_ARM)
-                    {
-                        activeArm_ = activeArm_ == ArmType::LEFT ? ArmType::RIGHT : ArmType::LEFT;
-                        RCLCPP_INFO(node_->get_logger(), "🎮 Switched active arm to: %s",
-                                    activeArm_ == ArmType::LEFT ? "LEFT" : "RIGHT");
-
-                        // Update joystick position to newly active arm position
-                        if (joystickEnabled_)
+                        // B button to switch active arm (dual arm mode, button 1)
+                        if (bPressed && mode_ == Mode::DUAL_ARM)
                         {
+                            activeArm_ = activeArm_ == ArmType::LEFT ? ArmType::RIGHT : ArmType::LEFT;
+                            RCLCPP_INFO(node_->get_logger(), "🎮 Switched active arm to: %s",
+                                        activeArm_ == ArmType::LEFT ? "LEFT" : "RIGHT");
+
+                            // Update joystick position to newly active arm position
                             std::lock_guard lock(markerPoseMutex_);
                             const auto& currentPos = activeArm_ == ArmType::LEFT
                                                          ? leftArmPosition_
@@ -876,7 +981,7 @@ namespace ocs2
                     else
                     {
                         // Dual arm mode: update current active arm marker
-                        std::string markerName = activeArm_ == ArmType::LEFT ? "LeftArmGoal" : "RightArmGoal";
+                        const std::string markerName = activeArm_ == ArmType::LEFT ? "LeftArmGoal" : "RightArmGoal";
                         server_->setPose(markerName, markerPose);
                     }
                     server_->applyChanges();
@@ -888,6 +993,34 @@ namespace ocs2
                                  joystickPosition_.x(), joystickPosition_.y(), joystickPosition_.z());
                 }
             }
+        }
+    }
+
+    void UnifiedTargetTrajectoriesInteractiveMarker::resetMarkerUpdateCooldown()
+    {
+        markerUpdateEnabled_ = false; // 重置为禁用状态，等待下次冷却期
+        lastMpcObservationTime_ = node_->now();
+        RCLCPP_INFO(node_->get_logger(), "Marker update cooldown reset - waiting for next cooldown period");
+    }
+
+    void UnifiedTargetTrajectoriesInteractiveMarker::setMarkerUpdateCooldown(const double cooldown)
+    {
+        markerUpdateCooldown_ = cooldown;
+        RCLCPP_INFO(node_->get_logger(), "Marker update cooldown set to %.1f seconds", cooldown);
+    }
+
+    void UnifiedTargetTrajectoriesInteractiveMarker::checkCooldownCallback()
+    {
+        auto currentTime = node_->now();
+
+        // 如果当前禁用更新，且超过冷却时间没有收到MPC observation，则重新启用
+        if (!markerUpdateEnabled_ && markerInitialized_ &&
+            (currentTime - lastMpcObservationTime_).seconds() > markerUpdateCooldown_)
+        {
+            markerUpdateEnabled_ = true;
+            RCLCPP_INFO(node_->get_logger(),
+                        "Cooldown period passed - marker updates enabled (%.1f seconds since last MPC observation)",
+                        (currentTime - lastMpcObservationTime_).seconds());
         }
     }
 } // namespace ocs2

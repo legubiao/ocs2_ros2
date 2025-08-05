@@ -3,12 +3,19 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <atomic>
+#include <chrono>
 #include <interactive_markers/interactive_marker_server.hpp>
 #include <interactive_markers/menu_handler.hpp>
 #include <ocs2_mpc/SystemObservation.h>
 #include <ocs2_ros_interfaces/command/TargetTrajectoriesRosPublisher.h>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joy.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <ocs2_msgs/msg/mpc_observation.hpp>
+#include <visualization_msgs/msg/interactive_marker.hpp>
+#include <visualization_msgs/msg/interactive_marker_feedback.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 namespace ocs2 {
     /**
@@ -65,6 +72,10 @@ namespace ocs2 {
          */
         void publishInteractiveMarker() const { spin(node_); }
 
+        // Public methods
+        void resetMarkerUpdateCooldown();
+        void setMarkerUpdateCooldown(double cooldown);
+
     private:
         // Mode enum
         enum class Mode { SINGLE_ARM, DUAL_ARM };
@@ -77,6 +88,7 @@ namespace ocs2 {
         void setupSingleArmMode();
         void setupDualArmMode();
         void setupObservationSubscriber();
+        void setupEndEffectorPoseSubscriber();
         void setupTrajectoriesPublisher();
         void setupTimer();
         void setupJoystickSubscriber();
@@ -102,7 +114,9 @@ namespace ocs2 {
         void sendSingleArmTrajectories();
         void sendDualArmTrajectories();
         void togglePublishMode();
+        // Timer and callback methods
         void continuousPublishCallback();
+        void checkCooldownCallback();
         void joystickCallback(sensor_msgs::msg::Joy::SharedPtr msg);
         void updateMarkerShape();
 
@@ -111,6 +125,7 @@ namespace ocs2 {
         std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
         std::unique_ptr<TargetTrajectoriesRosPublisher> targetTrajectoriesPublisherPtr_;
         rclcpp::Subscription<ocs2_msgs::msg::MpcObservation>::SharedPtr observationSubscriber_;
+        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr endEffectorPoseSubscriber_;
         mutable std::mutex latestObservationMutex_;
         SystemObservation latestObservation_;
 
@@ -118,7 +133,9 @@ namespace ocs2 {
         Mode mode_;
         double publishRate_;
         bool continuousMode_;
+        // Timer and publishing
         rclcpp::TimerBase::SharedPtr publishTimer_;
+        rclcpp::TimerBase::SharedPtr cooldownCheckTimer_;
         std::string topicPrefix_;
 
         // Function objects
@@ -168,5 +185,12 @@ namespace ocs2 {
         // Joystick update rate control
         rclcpp::Time lastJoystickUpdateTime_;
         double joystickUpdateRate_;
+
+        // Marker initialization
+        bool markerInitialized_{false};
+        rclcpp::Time lastMpcObservationTime_;
+        rclcpp::Time lastEndEffectorPoseTime_;
+        double markerUpdateCooldown_{3.0}; // 3秒冷却时间
+        bool markerUpdateEnabled_{true}; // 第一次启动时允许更新marker位置
     };
 } // namespace ocs2 

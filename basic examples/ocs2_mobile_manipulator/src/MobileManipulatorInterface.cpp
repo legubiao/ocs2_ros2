@@ -410,7 +410,7 @@ namespace ocs2::mobile_manipulator
         loadData::loadStdVectorOfPair(taskFile, prefix + ".collisionLinkPairs", collisionLinkPairs, true);
         std::cerr << " #### =============================================================================\n";
 
-        PinocchioGeometryInterface geometryInterface(pinocchioInterface, collisionLinkPairs, collisionObjectPairs);
+        PinocchioGeometryInterface geometryInterface(pinocchioInterface, urdfFile, collisionLinkPairs, collisionObjectPairs);
 
         const size_t numCollisionPairs = geometryInterface.getNumCollisionPairs();
         std::cerr << "SelfCollision: Testing for " << numCollisionPairs << " collision pairs\n";
