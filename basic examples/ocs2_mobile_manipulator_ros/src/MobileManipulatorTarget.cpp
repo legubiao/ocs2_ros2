@@ -39,20 +39,25 @@ using namespace ocs2;
 /**
  * 从taskFile中读取dualArmMode配置
  */
-bool readDualArmModeFromTaskFile(const std::string& taskFile) {
-    try {
+bool readDualArmModeFromTaskFile(const std::string& taskFile)
+{
+    try
+    {
         boost::property_tree::ptree pt;
         boost::property_tree::read_info(taskFile, pt);
-        
+
         bool dualArmMode = false;
         // 尝试从endEffector或finalEndEffector配置中读取dualArmMode
         loadData::loadPtreeValue(pt, dualArmMode, "endEffector.dualArmMode", false);
-        if (!dualArmMode) {
+        if (!dualArmMode)
+        {
             loadData::loadPtreeValue(pt, dualArmMode, "finalEndEffector.dualArmMode", false);
         }
-        
+
         return dualArmMode;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
         std::cerr << "Error reading dualArmMode from task file: " << e.what() << std::endl;
         return false;
     }
@@ -91,16 +96,16 @@ TargetTrajectories dualArmGoalPoseToTargetTrajectories(
 {
     // time trajectory
     const scalar_array_t timeTrajectory{observation.time};
-    
+
     // state trajectory: 14 dimensions (7 for left arm + 7 for right arm)
     // [left_x, left_y, left_z, left_qw, left_qx, left_qy, left_qz,
     //  right_x, right_y, right_z, right_qw, right_qx, right_qy, right_qz]
-    const vector_t target = (vector_t(14) << 
+    const vector_t target = (vector_t(14) <<
         leftPosition, leftOrientation.coeffs(),
         rightPosition, rightOrientation.coeffs()).finished();
-    
+
     const vector_array_t stateTrajectory{target};
-    
+
     // input trajectory
     const vector_array_t inputTrajectory{
         vector_t::Zero(observation.input.size())
@@ -122,47 +127,58 @@ int main(int argc, char* argv[])
     // 从taskFile读取双臂模式配置
     std::string taskFile = node->get_parameter("taskFile").as_string();
     bool dualArmMode = readDualArmModeFromTaskFile(taskFile);
-    
+
     // 检查是否启用手柄控制
     bool enableJoystick = false;
-    try {
+    try
+    {
         enableJoystick = node->get_parameter("enableJoystick").as_bool();
-    } catch (const rclcpp::exceptions::ParameterNotDeclaredException&) {
+    }
+    catch (const rclcpp::exceptions::ParameterNotDeclaredException&)
+    {
         // 参数未声明，使用默认值false
         enableJoystick = false;
     }
-    
+
     // 检查是否启用自动位置更新
     bool enableAutoPosition = false;
-    try {
+    try
+    {
         enableAutoPosition = node->get_parameter("enableAutoPosition").as_bool();
-    } catch (const rclcpp::exceptions::ParameterNotDeclaredException&) {
+    }
+    catch (const rclcpp::exceptions::ParameterNotDeclaredException&)
+    {
         // 参数未声明，使用默认值false
         enableAutoPosition = false;
     }
-    
+
     std::unique_ptr<JoystickMarkerWrapper> joystickControl;
     std::unique_ptr<MarkerAutoPositionWrapper> autoPositionWrapper;
-    
-    if (dualArmMode) {
+
+    if (dualArmMode)
+    {
         // Create dual arm interactive marker
         RCLCPP_INFO(node->get_logger(), "Dual arm mode enabled - creating dual arm interactive markers");
-        UnifiedTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &dualArmGoalPoseToTargetTrajectories, 10.0);
-        
-            // 如果启用手柄控制，创建JoystickMarkerWrapper实例
-    if (enableJoystick) {
-        RCLCPP_INFO(node->get_logger(), "Joystick marker wrapper enabled");
-        joystickControl = std::make_unique<JoystickMarkerWrapper>(node, &targetPoseCommand);
-    }
-    
-    // 如果启用自动位置更新，创建MarkerAutoPositionWrapper实例
-    if (enableAutoPosition) {
-        RCLCPP_INFO(node->get_logger(), "Marker auto position wrapper enabled");
-        autoPositionWrapper = std::make_unique<MarkerAutoPositionWrapper>(
-            node, robotName, &targetPoseCommand, 
-            MarkerAutoPositionWrapper::UpdateMode::INITIALIZATION);
-    }
-        
+        UnifiedTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName,
+                                                                     &dualArmGoalPoseToTargetTrajectories, 10.0);
+
+        // 如果启用手柄控制，创建JoystickMarkerWrapper实例
+        if (enableJoystick)
+        {
+            RCLCPP_INFO(node->get_logger(), "Joystick marker wrapper enabled");
+            joystickControl = std::make_unique<JoystickMarkerWrapper>(node, &targetPoseCommand);
+        }
+
+        // 如果启用自动位置更新，创建MarkerAutoPositionWrapper实例
+        if (enableAutoPosition)
+        {
+            RCLCPP_INFO(node->get_logger(), "Marker auto position wrapper enabled");
+            autoPositionWrapper = std::make_unique<MarkerAutoPositionWrapper>(
+                node, robotName, &targetPoseCommand,
+                MarkerAutoPositionWrapper::UpdateMode::CONTINUOUS,
+                dualArmMode); // dualArmMode
+        }
+
         spin(node);
         return 0;
     }
@@ -170,21 +186,27 @@ int main(int argc, char* argv[])
     // Single arm mode
     RCLCPP_INFO(node->get_logger(), "Single arm mode enabled");
     UnifiedTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &goalPoseToTargetTrajectories, 10.0);
-    
+
     // 如果启用手柄控制，创建JoystickMarkerWrapper实例
-    if (enableJoystick) {
+    if (enableJoystick)
+    {
         RCLCPP_INFO(node->get_logger(), "Joystick marker wrapper enabled");
         joystickControl = std::make_unique<JoystickMarkerWrapper>(node, &targetPoseCommand);
     }
-    
+
     // 如果启用自动位置更新，创建MarkerAutoPositionWrapper实例
-    if (enableAutoPosition) {
+    if (enableAutoPosition)
+    {
         RCLCPP_INFO(node->get_logger(), "Marker auto position wrapper enabled");
         autoPositionWrapper = std::make_unique<MarkerAutoPositionWrapper>(
-            node, robotName, &targetPoseCommand, 
-            MarkerAutoPositionWrapper::UpdateMode::CONTINUOUS);
+            node, robotName, &targetPoseCommand,
+            MarkerAutoPositionWrapper::UpdateMode::CONTINUOUS,  // updateMode
+            dualArmMode,  // dualArmMode (false for single arm)
+            3.0,          // cooldownDuration
+            1.0           // maxUpdateFrequency
+        );
     }
-    
+
     spin(node);
     return 0;
 }

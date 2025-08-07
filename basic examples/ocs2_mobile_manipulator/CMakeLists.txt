@@ -5,15 +5,16 @@ project(ocs2_mobile_manipulator)
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Set BUILD_TESTING to OFF by default
+option(BUILD_TESTING "Build the testing tree." OFF)
+
 set(dependencies
         ocs2_ddp
-        ocs2_robotic_assets
         ocs2_self_collision
 )
 
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_ddp REQUIRED)
-find_package(ocs2_robotic_assets REQUIRED)
 find_package(ocs2_self_collision REQUIRED)
 
 ###########
@@ -84,11 +85,11 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 #############
 ## Testing ##
 #############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
-
 if (BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
     find_package(ament_cmake_gtest)
+    find_package(ocs2_robotic_assets REQUIRED)
 
     ament_add_gtest(${PROJECT_NAME}_test
             test/testSelfCollision.cpp
@@ -99,7 +100,7 @@ if (BUILD_TESTING)
             test/include
             ${PROJECT_BINARY_DIR}/include
     )
-    ament_target_dependencies(${PROJECT_NAME}_test ${dependencies})
+    ament_target_dependencies(${PROJECT_NAME}_test ${dependencies} ocs2_robotic_assets)
     target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
     target_compile_options(${PROJECT_NAME}_test PRIVATE ${FLAGS})
 

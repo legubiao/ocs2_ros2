@@ -17,6 +17,7 @@ namespace ocs2 {
     /**
      * Marker auto position wrapper that automatically updates marker positions based on end effector poses.
      * This class provides automatic marker position synchronization with robot end effector positions.
+     * Supports both single arm and dual arm modes.
      */
     class MarkerAutoPositionWrapper {
     public:
@@ -37,12 +38,14 @@ namespace ocs2 {
          * @param updateMode Update mode
          * @param cooldownDuration Cooldown duration (seconds)
          * @param maxUpdateFrequency Maximum update frequency (Hz)
+         * @param dualArmMode Whether to enable dual arm mode
          */
         MarkerAutoPositionWrapper(
             rclcpp::Node::SharedPtr node,
             const std::string& topicPrefix,
             IMarkerControl* markerControl,
             UpdateMode updateMode = UpdateMode::INITIALIZATION,
+            bool dualArmMode = false,
             double cooldownDuration = 3.0,
             double maxUpdateFrequency = 1.0);
 
@@ -51,49 +54,18 @@ namespace ocs2 {
          */
         ~MarkerAutoPositionWrapper() = default;
 
-
-
-        /**
-         * Set update mode
-         * @param mode Update mode
-         */
-        void setUpdateMode(UpdateMode mode);
-
-        /**
-         * Set cooldown duration
-         * @param duration Cooldown duration (seconds)
-         */
-        void setCooldownDuration(double duration);
-
-        /**
-         * Set maximum update frequency
-         * @param frequency Maximum update frequency (Hz)
-         */
-        void setMaxUpdateFrequency(double frequency);
-
-        /**
-         * Reset cooldown
-         */
-        void resetCooldown();
-
-        /**
-         * Get current update mode
-         * @return Current update mode
-         */
-        UpdateMode getUpdateMode() const { return updateMode_; }
-
-        /**
-         * Get cooldown duration
-         * @return Cooldown duration (seconds)
-         */
-        double getCooldownDuration() const { return cooldownDuration_; }
-
     private:
         /**
-         * End effector pose callback
+         * Left arm end effector pose callback (dual arm mode)
          * @param msg Pose message
          */
-        void endEffectorPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg);
+        void leftEndEffectorPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg);
+
+        /**
+         * Right arm end effector pose callback (dual arm mode)
+         * @param msg Pose message
+         */
+        void rightEndEffectorPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg);
 
         /**
          * MPC observation callback
@@ -107,10 +79,45 @@ namespace ocs2 {
         void checkCooldownCallback();
 
         /**
-         * Update marker position
-         * @param msg Pose message
+         * Update left arm marker position
+         * @param msg Left arm pose message
          */
-        void updateMarkerPosition(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg);
+        void updateLeftArmMarkerPosition(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg);
+
+        /**
+         * Update right arm marker position
+         * @param msg Right arm pose message
+         */
+        void updateRightArmMarkerPosition(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg);
+
+        /**
+         * Common pose callback logic
+         * @param msg Pose message
+         * @param isLeftArm Whether this is for left arm
+         * @return true if should update
+         */
+        bool processPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg, bool isLeftArm);
+
+        /**
+         * Common marker update logic
+         * @param msg Pose message
+         * @param armType Arm type (LEFT or RIGHT)
+         * @param markerName Marker name for display
+         */
+        void updateMarkerPosition(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg, 
+                                 IMarkerControl::ArmType armType, 
+                                 const std::string& markerName);
+
+        /**
+         * Handle initialization logic
+         * @param isLeftArm Whether this is for left arm
+         */
+        void handleInitialization(bool isLeftArm);
+
+        /**
+         * Handle INITIALIZATION mode logic
+         */
+        void handleInitializationMode();
 
         /**
          * Check if position should be updated
@@ -120,7 +127,8 @@ namespace ocs2 {
 
         // ROS components
         rclcpp::Node::SharedPtr node_;
-        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr endEffectorPoseSubscriber_;
+        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr leftEndEffectorPoseSubscriber_;
+        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr rightEndEffectorPoseSubscriber_;
         rclcpp::Subscription<ocs2_msgs::msg::MpcObservation>::SharedPtr observationSubscriber_;
         rclcpp::TimerBase::SharedPtr cooldownCheckTimer_;
 
@@ -133,13 +141,16 @@ namespace ocs2 {
         double cooldownDuration_;
         double maxUpdateFrequency_;
         double minUpdateInterval_;  // Minimum update interval (seconds)
-
+        bool dualArmMode_;
 
         bool initialized_;
         bool updateEnabled_;
         rclcpp::Time lastMpcObservationTime_;
-        rclcpp::Time lastEndEffectorPoseTime_;
         rclcpp::Time lastUpdateTime_;  // Last update time
+
+        // Dual arm mode state
+        bool leftArmPoseReceived_;
+        bool rightArmPoseReceived_;
 
         // Thread safety
         mutable std::mutex stateMutex_;

@@ -20,6 +20,7 @@
     <depend>ocs2_self_collision_visualization</depend>
     <depend>ocs2_mobile_manipulator</depend>
     <depend>ocs2_ros_interfaces</depend>
+    <depend>ocs2_robotic_assets</depend>
 
     <export>
         <build_type>ament_cmake</build_type>

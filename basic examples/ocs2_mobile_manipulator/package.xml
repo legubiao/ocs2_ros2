@@ -13,10 +13,10 @@
     <buildtool_depend>ament_cmake</buildtool_depend>
 
     <depend>ocs2_ddp</depend>
-    <depend>ocs2_robotic_assets</depend>
     <depend>ocs2_self_collision</depend>
 
     <test_depend>ament_cmake_gtest</test_depend>
+    <test_depend>ocs2_robotic_assets</test_depend>
 
     <export>
         <build_type>ament_cmake</build_type>

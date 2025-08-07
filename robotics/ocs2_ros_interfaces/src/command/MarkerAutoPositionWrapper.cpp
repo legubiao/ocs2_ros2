@@ -13,8 +13,10 @@ namespace ocs2
         const std::string& topicPrefix,
         IMarkerControl* markerControl,
         const UpdateMode updateMode,
+        const bool dualArmMode,
         const double cooldownDuration,
-        const double maxUpdateFrequency)
+        const double maxUpdateFrequency
+    )
         : node_(std::move(node)),
           markerControl_(markerControl),
           topicPrefix_(topicPrefix),
@@ -22,28 +24,39 @@ namespace ocs2
           cooldownDuration_(cooldownDuration),
           maxUpdateFrequency_(maxUpdateFrequency),
           minUpdateInterval_(1.0 / maxUpdateFrequency),
+          dualArmMode_(dualArmMode),
 
           initialized_(false),
           updateEnabled_(true),
           lastMpcObservationTime_(node_->now()),
-          lastEndEffectorPoseTime_(node_->now()),
-          lastUpdateTime_(node_->now())
+          lastUpdateTime_(rclcpp::Time(0, 0, RCL_ROS_TIME)),  // 设置为很早的时间，避免第一次检查被频率限制
+          leftArmPoseReceived_(false),
+          rightArmPoseReceived_(false)
     {
-        // Create end effector pose subscriber
-        auto endEffectorPoseCallback = [this](const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
+        // Create pose subscribers
+        if (dualArmMode_)
         {
-            this->endEffectorPoseCallback(msg);
-        };
-        endEffectorPoseSubscriber_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-            topicPrefix_ + "_end_effector_pose", 1, endEffectorPoseCallback);
+            // Dual arm mode: subscribe to left and right arm end effector poses
+            leftEndEffectorPoseSubscriber_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+                topicPrefix_ + "_left_end_effector_pose", 1,
+                std::bind(&MarkerAutoPositionWrapper::leftEndEffectorPoseCallback, this, std::placeholders::_1));
+
+            rightEndEffectorPoseSubscriber_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+                topicPrefix_ + "_right_end_effector_pose", 1,
+                std::bind(&MarkerAutoPositionWrapper::rightEndEffectorPoseCallback, this, std::placeholders::_1));
+        }
+        else
+        {
+            // Single arm mode: subscribe to left arm end effector pose (default to left arm)
+            leftEndEffectorPoseSubscriber_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+                topicPrefix_ + "_left_end_effector_pose", 1,
+                std::bind(&MarkerAutoPositionWrapper::leftEndEffectorPoseCallback, this, std::placeholders::_1));
+        }
 
         // Create MPC observation subscriber
-        auto observationCallback = [this](const ocs2_msgs::msg::MpcObservation::ConstSharedPtr& msg)
-        {
-            this->observationCallback(msg);
-        };
         observationSubscriber_ = node_->create_subscription<ocs2_msgs::msg::MpcObservation>(
-            topicPrefix_ + "_mpc_observation", 1, observationCallback);
+            topicPrefix_ + "_mpc_observation", 1,
+            std::bind(&MarkerAutoPositionWrapper::observationCallback, this, std::placeholders::_1));
 
         // Create cooldown check timer
         cooldownCheckTimer_ = node_->create_wall_timer(
@@ -52,38 +65,81 @@ namespace ocs2
     }
 
 
-    void MarkerAutoPositionWrapper::setUpdateMode(UpdateMode mode)
-    {
-        updateMode_ = mode;
-    }
-
-    void MarkerAutoPositionWrapper::setCooldownDuration(double duration)
-    {
-        cooldownDuration_ = duration;
-    }
-
-    void MarkerAutoPositionWrapper::setMaxUpdateFrequency(double frequency)
-    {
-        maxUpdateFrequency_ = frequency;
-        minUpdateInterval_ = 1.0 / frequency;
-    }
-
-    void MarkerAutoPositionWrapper::resetCooldown()
-    {
-        std::lock_guard lock(stateMutex_);
-        updateEnabled_ = false;
-        lastMpcObservationTime_ = node_->now();
-    }
-
-    void MarkerAutoPositionWrapper::endEffectorPoseCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
+    bool MarkerAutoPositionWrapper::processPoseCallback(
+        const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg, bool isLeftArm)
     {
         auto currentTime = node_->now();
-        lastEndEffectorPoseTime_ = msg->header.stamp;
 
-        if (shouldUpdatePosition())
+        // 先检查是否应该更新，避免在锁内调用shouldUpdatePosition
+        bool shouldUpdate = false;
         {
-            updateMarkerPosition(msg);
+            std::lock_guard lock(stateMutex_);
+            
+            // Check frequency limit
+            double timeSinceLastUpdate = (currentTime - lastUpdateTime_).seconds();
+            
+            if (timeSinceLastUpdate >= minUpdateInterval_)
+            {
+                switch (updateMode_)
+                {
+                case UpdateMode::DISABLED:
+                    break;
+
+                case UpdateMode::INITIALIZATION:
+                    shouldUpdate = !initialized_;
+                    break;
+
+                case UpdateMode::CONTINUOUS:
+                    shouldUpdate = updateEnabled_ || !initialized_;
+                    break;
+
+                default:
+                    break;
+                }
+            }
+
+            // 更新状态
+            if (isLeftArm)
+            {
+                leftArmPoseReceived_ = true;
+            }
+            else
+            {
+                rightArmPoseReceived_ = true;
+            }
         }
+
+        return shouldUpdate;
+    }
+
+    void MarkerAutoPositionWrapper::leftEndEffectorPoseCallback(
+        const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
+    {
+        bool shouldUpdate = processPoseCallback(msg, true);
+        if (!shouldUpdate)
+        {
+            return;
+        }
+
+        updateLeftArmMarkerPosition(msg);
+        
+        // 在单臂模式下，处理INITIALIZATION模式
+        if (!dualArmMode_)
+        {
+            handleInitializationMode();
+        }
+    }
+
+    void MarkerAutoPositionWrapper::rightEndEffectorPoseCallback(
+        const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
+    {
+        bool shouldUpdate = processPoseCallback(msg, false);
+        if (!shouldUpdate)
+        {
+            return;
+        }
+
+        updateRightArmMarkerPosition(msg);
     }
 
     void MarkerAutoPositionWrapper::observationCallback(const ocs2_msgs::msg::MpcObservation::ConstSharedPtr& msg)
@@ -130,42 +186,71 @@ namespace ocs2
         }
     }
 
-    void MarkerAutoPositionWrapper::updateMarkerPosition(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
-    {
-        if (markerControl_->getMode() == IMarkerControl::Mode::SINGLE_ARM)
-        {
-            // Single arm mode
-            Eigen::Vector3d position(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
-            Eigen::Quaterniond orientation(msg->pose.orientation.w, msg->pose.orientation.x,
-                                           msg->pose.orientation.y, msg->pose.orientation.z);
 
+    void MarkerAutoPositionWrapper::updateMarkerPosition(
+        const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg,
+        IMarkerControl::ArmType armType,
+        const std::string& markerName)
+    {
+        if (!markerControl_)
+        {
+            RCLCPP_WARN(node_->get_logger(), "Marker control not available");
+            return;
+        }
+
+        // Convert pose to Eigen types
+        Eigen::Vector3d position(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
+        Eigen::Quaterniond orientation(msg->pose.orientation.w, msg->pose.orientation.x,
+                                       msg->pose.orientation.y, msg->pose.orientation.z);
+
+        // Update marker based on mode
+        if (dualArmMode_)
+        {
+            markerControl_->setDualArmPose(armType, position, orientation);
+            markerControl_->updateMarkerDisplay(markerName, position, orientation);
+        }
+        else
+        {
             markerControl_->setSingleArmPose(position, orientation);
             markerControl_->updateMarkerDisplay("Goal", position, orientation);
+        }
+    }
 
-            if (!initialized_)
+    void MarkerAutoPositionWrapper::handleInitialization(bool isLeftArm)
+    {
+        if (dualArmMode_)
+        {
+            // 在双臂模式下，只有当两个臂都收到消息后才设置initialized
+            if (isLeftArm)
             {
-                initialized_ = true;
+                if (rightArmPoseReceived_ && !initialized_)
+                {
+                    initialized_ = true;
+                }
+            }
+            else
+            {
+                if (leftArmPoseReceived_ && !initialized_)
+                {
+                    initialized_ = true;
+                }
             }
         }
         else
         {
-            // Dual arm mode: use first position to initialize right arm
-            Eigen::Vector3d position(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
-            Eigen::Quaterniond orientation(msg->pose.orientation.w, msg->pose.orientation.x,
-                                           msg->pose.orientation.y, msg->pose.orientation.z);
-
-            markerControl_->setDualArmPose(IMarkerControl::ArmType::RIGHT, position, orientation);
-            markerControl_->updateMarkerDisplay("RightArmGoal", position, orientation);
-
+            // 单臂模式下，立即初始化
             if (!initialized_)
             {
                 initialized_ = true;
             }
+            
+            // 在单臂模式下，更新lastUpdateTime_
+            lastUpdateTime_ = node_->now();
         }
+    }
 
-        // Update last update time
-        lastUpdateTime_ = node_->now();
-
+    void MarkerAutoPositionWrapper::handleInitializationMode()
+    {
         // Decide whether to disable based on update mode
         std::lock_guard lock(stateMutex_);
         if (updateMode_ == UpdateMode::INITIALIZATION)
@@ -176,32 +261,29 @@ namespace ocs2
         // Other modes: maintain current state, managed by cooldown mechanism
     }
 
-    bool MarkerAutoPositionWrapper::shouldUpdatePosition() const
+    void MarkerAutoPositionWrapper::updateLeftArmMarkerPosition(
+        const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
     {
-        std::lock_guard lock(stateMutex_);
-
-        // Check frequency limit
-        auto currentTime = node_->now();
-        if ((currentTime - lastUpdateTime_).seconds() < minUpdateInterval_)
+        updateMarkerPosition(msg, IMarkerControl::ArmType::LEFT, "LeftArmGoal");
+        handleInitialization(true);
+        
+        // 在单臂模式下，处理INITIALIZATION模式
+        if (!dualArmMode_)
         {
-            return false;
+            handleInitializationMode();
         }
+    }
 
-        switch (updateMode_)
-        {
-        case UpdateMode::DISABLED:
-            return false;
+    void MarkerAutoPositionWrapper::updateRightArmMarkerPosition(
+        const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
+    {
+        updateMarkerPosition(msg, IMarkerControl::ArmType::RIGHT, "RightArmGoal");
+        handleInitialization(false);
 
-        case UpdateMode::INITIALIZATION:
-            // Update only during initialization
-            return !initialized_;
+        // Update last update time
+        lastUpdateTime_ = node_->now();
 
-        case UpdateMode::CONTINUOUS:
-            // Continuous updates (including initialization and after cooldown)
-            return updateEnabled_ || !initialized_;
-
-        default:
-            return false;
-        }
+        // Handle INITIALIZATION mode
+        handleInitializationMode();
     }
 } // namespace ocs2

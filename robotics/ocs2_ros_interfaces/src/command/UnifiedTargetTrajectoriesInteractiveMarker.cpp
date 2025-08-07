@@ -24,7 +24,7 @@ namespace ocs2
           singleArmFunction_(std::move(goalPoseToTargetTrajectories)),
           singleArmPosition_(0.0, 0.0, 1.0),
           singleArmOrientation_(1.0, 0.0, 0.0, 0.0),
-          activeArm_(ArmType::RIGHT) // Default active arm
+          activeArm_(ArmType::LEFT) // Default active arm
     {
         // 20Hz update rate
 
@@ -47,7 +47,7 @@ namespace ocs2
           leftArmOrientation_(1.0, 0.0, 0.0, 0.0),
           rightArmPosition_(0.0, -0.5, 1.0),
           rightArmOrientation_(1.0, 0.0, 0.0, 0.0),
-          activeArm_(ArmType::RIGHT) // Default active arm
+          activeArm_(ArmType::LEFT) // Default active arm
     {
         // 20Hz update rate
 
