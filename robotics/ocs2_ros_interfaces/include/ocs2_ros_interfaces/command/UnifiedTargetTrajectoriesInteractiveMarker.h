@@ -42,11 +42,13 @@ namespace ocs2 {
          * @param [in] goalPoseToTargetTrajectories: A function which transforms the
          * commanded pose to TargetTrajectories.
          * @param [in] publishRate: Publishing rate for continuous mode (Hz), default 10Hz.
+         * @param [in] frameId: Frame ID for the interactive marker, default "world".
          */
         UnifiedTargetTrajectoriesInteractiveMarker(
             rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
             SingleArmGoalPoseToTargetTrajectories goalPoseToTargetTrajectories,
-            double publishRate = 10.0);
+            double publishRate = 10.0,
+            const std::string& frameId = "world");
 
         /**
          * Constructor for dual arm mode
@@ -58,11 +60,13 @@ namespace ocs2 {
          * @param [in] dualArmGoalPoseToTargetTrajectories: A function which transforms the
          * commanded poses to TargetTrajectories.
          * @param [in] publishRate: Publishing rate for continuous mode (Hz), default 10Hz.
+         * @param [in] frameId: Frame ID for the interactive marker, default "world".
          */
         UnifiedTargetTrajectoriesInteractiveMarker(
             rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
             DualArmGoalPoseToTargetTrajectories dualArmGoalPoseToTargetTrajectories,
-            double publishRate = 10.0);
+            double publishRate = 10.0,
+            const std::string& frameId = "world");
 
         ~UnifiedTargetTrajectoriesInteractiveMarker();
 
@@ -127,6 +131,9 @@ namespace ocs2 {
         // Timer and publishing
         rclcpp::TimerBase::SharedPtr publishTimer_;
         std::string topicPrefix_;
+
+        // Frame information
+        std::string frameId_;
 
         // Function objects
         std::function<TargetTrajectories(const Eigen::Vector3d&, const Eigen::Quaterniond&, const SystemObservation&)> singleArmFunction_;

@@ -16,7 +16,7 @@ namespace ocs2
     UnifiedTargetTrajectoriesInteractiveMarker::UnifiedTargetTrajectoriesInteractiveMarker(
         rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
         SingleArmGoalPoseToTargetTrajectories goalPoseToTargetTrajectories,
-        const double publishRate)
+        const double publishRate, const std::string& frameId)
         : node_(std::move(node)),
           mode_(Mode::SINGLE_ARM),
           publishRate_(publishRate),
@@ -24,7 +24,8 @@ namespace ocs2
           singleArmFunction_(std::move(goalPoseToTargetTrajectories)),
           singleArmPosition_(0.0, 0.0, 1.0),
           singleArmOrientation_(1.0, 0.0, 0.0, 0.0),
-          activeArm_(ArmType::LEFT) // Default active arm
+          activeArm_(ArmType::LEFT), // Default active arm
+          frameId_(frameId)
     {
         // 20Hz update rate
 
@@ -37,7 +38,7 @@ namespace ocs2
     UnifiedTargetTrajectoriesInteractiveMarker::UnifiedTargetTrajectoriesInteractiveMarker(
         rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
         DualArmGoalPoseToTargetTrajectories dualArmGoalPoseToTargetTrajectories,
-        const double publishRate)
+        const double publishRate, const std::string& frameId)
         : node_(std::move(node)),
           mode_(Mode::DUAL_ARM),
           publishRate_(publishRate),
@@ -47,7 +48,8 @@ namespace ocs2
           leftArmOrientation_(1.0, 0.0, 0.0, 0.0),
           rightArmPosition_(0.0, -0.5, 1.0),
           rightArmOrientation_(1.0, 0.0, 0.0, 0.0),
-          activeArm_(ArmType::LEFT) // Default active arm
+          activeArm_(ArmType::LEFT), // Default active arm
+          frameId_(frameId)
     {
         // 20Hz update rate
 
@@ -151,7 +153,7 @@ namespace ocs2
     UnifiedTargetTrajectoriesInteractiveMarker::createSingleArmMarker() const
     {
         visualization_msgs::msg::InteractiveMarker interactiveMarker;
-        interactiveMarker.header.frame_id = "world";
+        interactiveMarker.header.frame_id = frameId_;
         interactiveMarker.header.stamp = node_->now();
         interactiveMarker.name = "Goal";
         interactiveMarker.scale = 0.2;
@@ -190,7 +192,7 @@ namespace ocs2
         const bool isLeftArm = armType == ArmType::LEFT;
 
         visualization_msgs::msg::InteractiveMarker interactiveMarker;
-        interactiveMarker.header.frame_id = "world";
+        interactiveMarker.header.frame_id = frameId_;
         interactiveMarker.header.stamp = node_->now();
         interactiveMarker.name = isLeftArm ? "LeftArmGoal" : "RightArmGoal";
         interactiveMarker.scale = 0.2;
