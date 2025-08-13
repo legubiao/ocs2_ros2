@@ -29,7 +29,7 @@ namespace ocs2
           initialized_(false),
           updateEnabled_(true),
           lastMpcObservationTime_(node_->now()),
-          lastUpdateTime_(rclcpp::Time(0, 0, RCL_ROS_TIME)),  // 设置为很早的时间，避免第一次检查被频率限制
+          lastUpdateTime_(rclcpp::Time(0, 0, RCL_ROS_TIME)),  // Set to very early time to avoid frequency limit on first check
           leftArmPoseReceived_(false),
           rightArmPoseReceived_(false)
     {
@@ -70,7 +70,7 @@ namespace ocs2
     {
         auto currentTime = node_->now();
 
-        // 先检查是否应该更新，避免在锁内调用shouldUpdatePosition
+        // Check if update should occur first, avoid calling shouldUpdatePosition inside lock
         bool shouldUpdate = false;
         {
             std::lock_guard lock(stateMutex_);
@@ -98,7 +98,7 @@ namespace ocs2
                 }
             }
 
-            // 更新状态
+            // Update state
             if (isLeftArm)
             {
                 leftArmPoseReceived_ = true;
@@ -123,7 +123,7 @@ namespace ocs2
 
         updateLeftArmMarkerPosition(msg);
         
-        // 在单臂模式下，处理INITIALIZATION模式
+        // Handle INITIALIZATION mode in single-arm mode
         if (!dualArmMode_)
         {
             handleInitializationMode();
@@ -220,7 +220,7 @@ namespace ocs2
     {
         if (dualArmMode_)
         {
-            // 在双臂模式下，只有当两个臂都收到消息后才设置initialized
+            // In dual-arm mode, only set initialized when both arms have received messages
             if (isLeftArm)
             {
                 if (rightArmPoseReceived_ && !initialized_)
@@ -238,13 +238,13 @@ namespace ocs2
         }
         else
         {
-            // 单臂模式下，立即初始化
+            // In single-arm mode, initialize immediately
             if (!initialized_)
             {
                 initialized_ = true;
             }
             
-            // 在单臂模式下，更新lastUpdateTime_
+            // In single-arm mode, update lastUpdateTime_
             lastUpdateTime_ = node_->now();
         }
     }
@@ -267,7 +267,7 @@ namespace ocs2
         updateMarkerPosition(msg, IMarkerControl::ArmType::LEFT, "LeftArmGoal");
         handleInitialization(true);
         
-        // 在单臂模式下，处理INITIALIZATION模式
+        // Handle INITIALIZATION mode in single-arm mode
         if (!dualArmMode_)
         {
             handleInitializationMode();

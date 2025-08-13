@@ -63,10 +63,10 @@ namespace ocs2::mobile_manipulator
     private:
         EndEffectorConstraint(const EndEffectorConstraint& other) = default;
         
-        // 单臂模式的目标轨迹插值
+        // Single-arm mode target trajectory interpolation
         std::pair<vector_t, quaternion_t> interpolateEndEffectorPose(scalar_t time) const;
         
-        // 双臂模式的目标轨迹插值
+        // Dual-arm mode target trajectory interpolation
         std::pair<vector_t, quaternion_t> interpolateLeftArmPose(scalar_t time) const;
         std::pair<vector_t, quaternion_t> interpolateRightArmPose(scalar_t time) const;
 
@@ -78,7 +78,7 @@ namespace ocs2::mobile_manipulator
         std::unique_ptr<EndEffectorKinematics<scalar_t>> endEffectorKinematicsPtr_;
         const ReferenceManager* referenceManagerPtr_;
         
-        // 双臂模式标志
+        // Dual-arm mode flag
         bool dualArmMode_;
     };
 }

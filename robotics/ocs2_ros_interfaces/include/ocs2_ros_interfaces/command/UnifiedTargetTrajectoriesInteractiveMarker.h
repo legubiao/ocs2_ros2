@@ -166,7 +166,7 @@ namespace ocs2 {
         Eigen::Quaterniond rightArmOrientation_;
         
         // Active arm for dual arm mode
-        ArmType activeArm_;  // 当前激活的手臂（双臂模式）
+        ArmType activeArm_;  // Currently active arm (dual-arm mode)
 
         // Marker initialization
 

@@ -44,7 +44,7 @@ namespace ocs2::mobile_manipulator
           dualArmMode_(dualArmMode)
     {
         if (dualArmMode_) {
-            // 双臂模式：检查是否有两个末端执行器
+            // Dual-arm mode: check if there are exactly 2 end effectors
             if (endEffectorKinematics.getIds().size() != 2)
             {
                 throw std::runtime_error(
@@ -52,7 +52,6 @@ namespace ocs2::mobile_manipulator
                     std::to_string(endEffectorKinematics.getIds().size()));
             }
         } else {
-            // 单臂模式：检查是否只有一个末端执行器
             if (endEffectorKinematics.getIds().size() != 1)
             {
                 throw std::runtime_error(
@@ -66,7 +65,7 @@ namespace ocs2::mobile_manipulator
 
     size_t EndEffectorConstraint::getNumConstraints(scalar_t time) const
     {
-        return dualArmMode_ ? 12 : 6;  // 双臂12维，单臂6维
+        return dualArmMode_ ? 12 : 6;  // Dual-arm: 12D, Single-arm: 6D
     }
 
 
@@ -81,7 +80,7 @@ namespace ocs2::mobile_manipulator
         }
 
         if (dualArmMode_) {
-            // 双臂模式：计算左臂和右臂的约束
+            // Dual-arm mode: calculate constraints for left and right arms
             const auto leftArmPose = interpolateLeftArmPose(time);
             const auto rightArmPose = interpolateRightArmPose(time);
             
@@ -90,16 +89,15 @@ namespace ocs2::mobile_manipulator
                 {leftArmPose.second, rightArmPose.second});
             
             vector_t constraint(12);
-            // 左臂约束：位置 + 姿态
+            // Left arm constraints: position + orientation
             constraint.head<3>() = positions[0] - leftArmPose.first;
             constraint.segment<3>(3) = orientationErrors[0];
-            // 右臂约束：位置 + 姿态
+            // Right arm constraints: position + orientation
             constraint.segment<3>(6) = positions[1] - rightArmPose.first;
             constraint.tail<3>() = orientationErrors[1];
             
             return constraint;
         } else {
-            // 单臂模式：保持原有逻辑
             const auto desiredPositionOrientation = interpolateEndEffectorPose(time);
 
             vector_t constraint(6);
@@ -122,7 +120,7 @@ namespace ocs2::mobile_manipulator
         }
 
         if (dualArmMode_) {
-            // 双臂模式：计算左臂和右臂的线性近似
+            // Dual-arm mode: calculate linear approximation for left and right arms
             const auto leftArmPose = interpolateLeftArmPose(time);
             const auto rightArmPose = interpolateRightArmPose(time);
             
@@ -132,13 +130,13 @@ namespace ocs2::mobile_manipulator
             
             auto approximation = VectorFunctionLinearApproximation(12, state.rows(), 0);
             
-            // 左臂线性近似
+            // Left arm linear approximation
             approximation.f.head<3>() = positions[0].f - leftArmPose.first;
             approximation.dfdx.topRows<3>() = positions[0].dfdx;
             approximation.f.segment<3>(3) = orientationErrors[0].f;
             approximation.dfdx.middleRows<3>(3) = orientationErrors[0].dfdx;
             
-            // 右臂线性近似
+            // Right arm linear approximation
             approximation.f.segment<3>(6) = positions[1].f - rightArmPose.first;
             approximation.dfdx.middleRows<3>(6) = positions[1].dfdx;
             approximation.f.tail<3>() = orientationErrors[1].f;
@@ -146,7 +144,6 @@ namespace ocs2::mobile_manipulator
             
             return approximation;
         } else {
-            // 单臂模式：保持原有逻辑
             const auto desiredPositionOrientation = interpolateEndEffectorPose(time);
 
             auto approximation = VectorFunctionLinearApproximation(6, state.rows(), 0);
@@ -218,7 +215,7 @@ namespace ocs2::mobile_manipulator
             const auto& lhs = stateTrajectory[index];
             const auto& rhs = stateTrajectory[index + 1];
             
-            // 双臂模式：左臂在前7维 [left_x, left_y, left_z, left_qw, left_qx, left_qy, left_qz]
+            // Dual-arm mode: left arm in first 7 dimensions [left_x, left_y, left_z, left_qw, left_qx, left_qy, left_qz]
             const quaternion_t q_lhs(lhs.segment<4>(3));
             const quaternion_t q_rhs(rhs.segment<4>(3));
 
@@ -254,7 +251,7 @@ namespace ocs2::mobile_manipulator
             const auto& lhs = stateTrajectory[index];
             const auto& rhs = stateTrajectory[index + 1];
             
-            // 双臂模式：右臂在后7维 [right_x, right_y, right_z, right_qw, right_qx, right_qy, right_qz]
+            // Dual-arm mode: right arm in last 7 dimensions [right_x, right_y, right_z, right_qw, right_qx, right_qy, right_qz]
             const quaternion_t q_lhs(lhs.segment<4>(10));
             const quaternion_t q_rhs(rhs.segment<4>(10));
 

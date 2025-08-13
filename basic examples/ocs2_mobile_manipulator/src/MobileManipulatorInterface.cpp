@@ -297,10 +297,9 @@ namespace ocs2::mobile_manipulator
         std::cerr << "\n #### " << prefix << " Settings: ";
         std::cerr << "\n #### =============================================================================\n";
         
-        // 读取双臂模式配置，默认为false（单臂模式）
+        // Read dual-arm mode configuration, default to false (single-arm mode)
         loadData::loadPtreeValue(pt, dual_arm_, prefix + ".dualArmMode", false);
         
-        // 读取单臂模式的原有配置
         loadData::loadPtreeValue(pt, muPosition, prefix + ".muPosition", true);
         loadData::loadPtreeValue(pt, muOrientation, prefix + ".muOrientation", true);
         
@@ -318,12 +317,11 @@ namespace ocs2::mobile_manipulator
             MobileManipulatorPinocchioMapping pinocchioMapping(manipulatorModelInfo_);
             
             if (dual_arm_) {
-                // 双臂模式：创建包含两个末端执行器的运动学
+                // Dual-arm mode: create kinematics with two end effectors
                 PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
                                                             {manipulatorModelInfo_.eeFrame, manipulatorModelInfo_.eeFrame1});
                 constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true);
             } else {
-                // 单臂模式：保持原有逻辑
                 PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
                                                             {manipulatorModelInfo_.eeFrame});
                 constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, false);
@@ -334,7 +332,7 @@ namespace ocs2::mobile_manipulator
             MobileManipulatorPinocchioMappingCppAd pinocchioMappingCppAd(manipulatorModelInfo_);
             
             if (dual_arm_) {
-                // 双臂模式：创建包含两个末端执行器的CppAd运动学
+                // Dual-arm mode: create CppAd kinematics with two end effectors
                 PinocchioEndEffectorKinematicsCppAd eeKinematics(pinocchioInterface, pinocchioMappingCppAd,
                                                                 {manipulatorModelInfo_.eeFrame, manipulatorModelInfo_.eeFrame1},
                                                                 manipulatorModelInfo_.stateDim,
@@ -343,7 +341,6 @@ namespace ocs2::mobile_manipulator
                                                                 recompileLibraries, false);
                 constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true);
             } else {
-                // 单臂模式：保持原有逻辑
                 PinocchioEndEffectorKinematicsCppAd eeKinematics(pinocchioInterface, pinocchioMappingCppAd,
                                                                 {manipulatorModelInfo_.eeFrame},
                                                                 manipulatorModelInfo_.stateDim,
@@ -357,7 +354,7 @@ namespace ocs2::mobile_manipulator
         std::vector<std::unique_ptr<PenaltyBase>> penaltyArray;
         
         if (dual_arm_) {
-            // 双臂模式：读取双臂特定配置，如果没有则使用默认配置
+            // Dual-arm mode: read dual-arm specific configuration, use default if not provided
             scalar_t leftMuPosition = muPosition;
             scalar_t leftMuOrientation = muOrientation;
             scalar_t rightMuPosition = muPosition;
@@ -369,14 +366,13 @@ namespace ocs2::mobile_manipulator
             loadData::loadPtreeValue(pt, rightMuOrientation, prefix + ".rightArm.muOrientation", false);
             
             penaltyArray.resize(12);
-            // 左臂：位置 + 姿态
+            // Left arm: position + orientation
             std::generate_n(penaltyArray.begin(), 3, [&] { return std::make_unique<QuadraticPenalty>(leftMuPosition); });
             std::generate_n(penaltyArray.begin() + 3, 3, [&] { return std::make_unique<QuadraticPenalty>(leftMuOrientation); });
-            // 右臂：位置 + 姿态
+            // Right arm: position + orientation
             std::generate_n(penaltyArray.begin() + 6, 3, [&] { return std::make_unique<QuadraticPenalty>(rightMuPosition); });
             std::generate_n(penaltyArray.begin() + 9, 3, [&] { return std::make_unique<QuadraticPenalty>(rightMuOrientation); });
         } else {
-            // 单臂模式：保持原有逻辑
             penaltyArray.resize(6);
             std::generate_n(penaltyArray.begin(), 3, [&] { return std::make_unique<QuadraticPenalty>(muPosition); });
             std::generate_n(penaltyArray.begin() + 3, 3, [&] { return std::make_unique<QuadraticPenalty>(muOrientation); });

@@ -517,7 +517,7 @@ namespace ocs2
             RCLCPP_INFO(node_->get_logger(), "🎯 Marker changed to CUBE shape for manual mode.");
         }
 
-        // 更新marker显示
+        // Update marker display
         updateMarkerShape();
 
         if (mode_ == Mode::SINGLE_ARM)
@@ -663,7 +663,7 @@ namespace ocs2
 
     UnifiedTargetTrajectoriesInteractiveMarker::~UnifiedTargetTrajectoriesInteractiveMarker()
     {
-        // 清理定时器
+        // Clean up timer
         if (publishTimer_)
         {
             publishTimer_->cancel();

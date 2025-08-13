@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace ocs2;
 
 /**
- * 从taskFile中读取dualArmMode配置
+ * Read dualArmMode configuration from taskFile
  */
 bool readDualArmModeFromTaskFile(const std::string& taskFile)
 {
@@ -48,7 +48,7 @@ bool readDualArmModeFromTaskFile(const std::string& taskFile)
         boost::property_tree::read_info(taskFile, pt);
 
         bool dualArmMode = false;
-        // 尝试从endEffector或finalEndEffector配置中读取dualArmMode
+        // Try to read dualArmMode from endEffector or finalEndEffector configuration
         loadData::loadPtreeValue(pt, dualArmMode, "endEffector.dualArmMode", false);
         if (!dualArmMode)
         {
@@ -65,7 +65,7 @@ bool readDualArmModeFromTaskFile(const std::string& taskFile)
 }
 
 /**
- * 从taskFile中读取frame信息，根据manipulatorModelType决定使用哪个frame
+ * Read frame information from taskFile, determine which frame to use based on manipulatorModelType
  */
 std::string getMarkerFrameFromTaskFile(const std::string& taskFile)
 {
@@ -74,30 +74,25 @@ std::string getMarkerFrameFromTaskFile(const std::string& taskFile)
         boost::property_tree::ptree pt;
         boost::property_tree::read_info(taskFile, pt);
 
-        // 读取manipulatorModelType
-        size_t manipulatorModelType = 1; // 默认为1 (WheelBasedMobileManipulator)
+        size_t manipulatorModelType = 1; // Default is 1 (WheelBasedMobileManipulator)
         loadData::loadPtreeValue(pt, manipulatorModelType, "model_information.manipulatorModelType", false);
 
-        // 读取baseFrame
-        std::string baseFrame = "base_link"; // 默认值
+        std::string baseFrame = "base_link"; // Default value
         loadData::loadPtreeValue(pt, baseFrame, "model_information.baseFrame", false);
 
-        // 根据manipulatorModelType决定使用哪个frame
         if (manipulatorModelType == 0) // DefaultManipulator
         {
-            // 当manipulatorModelType为0时，使用机器人的baseFrame
             return baseFrame;
         }
         else
         {
-            // 其他情况使用world frame
             return "world";
         }
     }
     catch (const std::exception& e)
     {
         std::cerr << "Error reading frame information from task file: " << e.what() << std::endl;
-        return "world"; // 出错时使用默认的world frame
+        return "world";
     }
 }
 
@@ -162,11 +157,9 @@ int main(int argc, char* argv[])
         .allow_undeclared_parameters(true)
         .automatically_declare_parameters_from_overrides(true));
 
-    // 从taskFile读取双臂模式配置
     std::string taskFile = node->get_parameter("taskFile").as_string();
     bool dualArmMode = readDualArmModeFromTaskFile(taskFile);
 
-    // 读取enableDynamicFrame参数，如果外部没有传入则默认为false
     bool enableDynamicFrame = false;
     if (node->has_parameter("enableDynamicFrame"))
     {
@@ -178,8 +171,7 @@ int main(int argc, char* argv[])
         RCLCPP_INFO(node->get_logger(), "enableDynamicFrame parameter not found, using default: false");
     }
 
-    // 读取frame信息
-    std::string markerFrame = "world"; // 默认使用world frame
+    std::string markerFrame = "world";
     if (enableDynamicFrame)
     {
         markerFrame = getMarkerFrameFromTaskFile(taskFile);
@@ -190,7 +182,6 @@ int main(int argc, char* argv[])
         RCLCPP_INFO(node->get_logger(), "Dynamic frame selection disabled. Using default frame: %s", markerFrame.c_str());
     }
 
-    // 检查是否启用手柄控制
     bool enableJoystick = false;
     try
     {
@@ -198,11 +189,9 @@ int main(int argc, char* argv[])
     }
     catch (const rclcpp::exceptions::ParameterNotDeclaredException&)
     {
-        // 参数未声明，使用默认值false
         enableJoystick = false;
     }
 
-    // 检查是否启用自动位置更新
     bool enableAutoPosition = false;
     try
     {
@@ -210,7 +199,6 @@ int main(int argc, char* argv[])
     }
     catch (const rclcpp::exceptions::ParameterNotDeclaredException&)
     {
-        // 参数未声明，使用默认值false
         enableAutoPosition = false;
     }
 
@@ -224,14 +212,12 @@ int main(int argc, char* argv[])
         UnifiedTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName,
                                                                      &dualArmGoalPoseToTargetTrajectories, 10.0, markerFrame);
 
-        // 如果启用手柄控制，创建JoystickMarkerWrapper实例
         if (enableJoystick)
         {
             RCLCPP_INFO(node->get_logger(), "Joystick marker wrapper enabled");
             joystickControl = std::make_unique<JoystickMarkerWrapper>(node, &targetPoseCommand);
         }
 
-        // 如果启用自动位置更新，创建MarkerAutoPositionWrapper实例
         if (enableAutoPosition)
         {
             RCLCPP_INFO(node->get_logger(), "Marker auto position wrapper enabled");
@@ -249,14 +235,12 @@ int main(int argc, char* argv[])
     RCLCPP_INFO(node->get_logger(), "Single arm mode enabled");
     UnifiedTargetTrajectoriesInteractiveMarker targetPoseCommand(node, robotName, &goalPoseToTargetTrajectories, 10.0, markerFrame);
 
-    // 如果启用手柄控制，创建JoystickMarkerWrapper实例
     if (enableJoystick)
     {
         RCLCPP_INFO(node->get_logger(), "Joystick marker wrapper enabled");
         joystickControl = std::make_unique<JoystickMarkerWrapper>(node, &targetPoseCommand);
     }
 
-    // 如果启用自动位置更新，创建MarkerAutoPositionWrapper实例
     if (enableAutoPosition)
     {
         RCLCPP_INFO(node->get_logger(), "Marker auto position wrapper enabled");

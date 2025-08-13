@@ -122,7 +122,6 @@ def generate_launch_description():
                 }
             ]
         ),
-        # 动态创建target节点，根据taskFile内容决定双臂模式
         Node(
             package='ocs2_mobile_manipulator_ros',
             executable='mobile_manipulator_target',
