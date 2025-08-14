@@ -53,6 +53,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mobile_manipulator/ManipulatorModelInfo.h"
 #include "ocs2_mobile_manipulator/MobileManipulatorPreComputation.h"
 #include "ocs2_mobile_manipulator/constraint/EndEffectorConstraint.h"
+#include "ocs2_mobile_manipulator/constraint/BodyRelativeConstraint.h"
+
 #include "ocs2_mobile_manipulator/constraint/MobileManipulatorSelfCollisionConstraint.h"
 #include "ocs2_mobile_manipulator/cost/QuadraticInputCost.h"
 #include "ocs2_mobile_manipulator/dynamics/DefaultManipulatorDynamics.h"
@@ -198,6 +200,17 @@ namespace ocs2::mobile_manipulator
                 "selfCollision", getSelfCollisionConstraint(*pinocchioInterfacePtr_, taskFile, urdfFile,
                                                             "selfCollision", usePreComputation,
                                                             libraryFolder, recompileLibraries));
+        }
+        
+        // body relative constraint
+        bool activateBodyRelative = false;
+        loadData::loadPtreeValue(pt, activateBodyRelative, "bodyRelative.activate", false);
+        if (activateBodyRelative)
+        {
+            problem_.stateSoftConstraintPtr->add(
+                "bodyRelative", getBodyRelativeConstraint(*pinocchioInterfacePtr_, taskFile,
+                                                       "bodyRelative", usePreComputation,
+                                                       libraryFolder, recompileLibraries));
         }
 
         // Dynamics
@@ -534,7 +547,98 @@ namespace ocs2::mobile_manipulator
 
         auto boxConstraints = std::make_unique<StateInputSoftBoxConstraint>(stateLimits, inputLimits);
         boxConstraints->initializeOffset(0.0, vector_t::Zero(manipulatorModelInfo_.stateDim),
-                                         vector_t::Zero(manipulatorModelInfo_.inputDim));
+                                         vector_t::Zero(manipulatorModelInfo_.stateDim));
         return boxConstraints;
+    }
+
+    std::unique_ptr<StateCost> MobileManipulatorInterface::getBodyRelativeConstraint(
+        const PinocchioInterface& pinocchioInterface,
+        const std::string& taskFile, const std::string& prefix,
+        bool usePreComputation, const std::string& libraryFolder,
+        bool recompileLibraries)
+    {
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_info(taskFile, pt);
+        std::cerr << "\n #### " << prefix << " Settings: ";
+        std::cerr << "\n #### =============================================================================\n";
+        
+        // Read configuration parameters
+        std::string bodyLinkName = "base_link";  // default link name
+        scalar_t rollTolerance = 0.1;            // default roll tolerance (radians)
+        scalar_t pitchTolerance = 0.1;           // default pitch tolerance (radians)
+        scalar_t muRoll = 1.0;                   // default roll penalty weight
+        scalar_t muPitch = 1.0;                  // default pitch penalty weight
+        
+        // Position constraint weights for stability (XY plane only, Z free)
+        scalar_t muPositionX = 0.5;              // default X position penalty weight
+        scalar_t muPositionY = 0.5;              // default Y position penalty weight
+        
+        loadData::loadPtreeValue(pt, bodyLinkName, prefix + ".bodyLinkName", false);
+        loadData::loadPtreeValue(pt, rollTolerance, prefix + ".rollTolerance", false);
+        loadData::loadPtreeValue(pt, pitchTolerance, prefix + ".pitchTolerance", false);
+        loadData::loadPtreeValue(pt, muRoll, prefix + ".muRoll", false);
+        loadData::loadPtreeValue(pt, muPitch, prefix + ".muPitch", false);
+        
+        // Load position constraint weights
+        loadData::loadPtreeValue(pt, muPositionX, prefix + ".muPositionX", false);
+        loadData::loadPtreeValue(pt, muPositionY, prefix + ".muPositionY", false);
+        
+        std::cerr << " #### Body link name: " << bodyLinkName << std::endl;
+        std::cerr << " #### Roll tolerance: " << rollTolerance << " rad (" << (rollTolerance * 180.0 / M_PI) << " deg)" << std::endl;
+        std::cerr << " #### Pitch tolerance: " << pitchTolerance << " rad (" << (pitchTolerance * 180.0 / M_PI) << " deg)" << std::endl;
+        std::cerr << " #### Roll penalty weight: " << muRoll << std::endl;
+        std::cerr << " #### Pitch penalty weight: " << muPitch << std::endl;
+        std::cerr << " #### X position penalty weight: " << muPositionX << std::endl;
+        std::cerr << " #### Y position penalty weight: " << muPositionY << std::endl;
+        std::cerr << " #### =============================================================================\n";
+
+        // Create the body relative constraint using our specialized BodyRelativeConstraint
+        std::unique_ptr<StateConstraint> constraint;
+        if (usePreComputation)
+        {
+            MobileManipulatorPinocchioMapping pinocchioMapping(manipulatorModelInfo_);
+            
+            // Create kinematics treating the body link as an end effector
+            PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
+                                                        {bodyLinkName});
+            
+            // Create our specialized constraint
+            constraint = std::make_unique<BodyRelativeConstraint>(eeKinematics, bodyLinkName,
+                                                                 rollTolerance, pitchTolerance,
+                                                                 muRoll, muPitch,
+                                                                 muPositionX, muPositionY);
+        }
+        else
+        {
+            MobileManipulatorPinocchioMappingCppAd pinocchioMappingCppAd(manipulatorModelInfo_);
+            
+            // Create CppAd kinematics treating the body link as an end effector
+            PinocchioEndEffectorKinematicsCppAd eeKinematics(pinocchioInterface, pinocchioMappingCppAd,
+                                                            {bodyLinkName},
+                                                            manipulatorModelInfo_.stateDim,
+                                                            manipulatorModelInfo_.inputDim,
+                                                            "body_orientation_kinematics", libraryFolder,
+                                                            recompileLibraries, false);
+            
+            // Create our specialized constraint
+            constraint = std::make_unique<BodyRelativeConstraint>(eeKinematics, bodyLinkName,
+                                                                 rollTolerance, pitchTolerance,
+                                                                 muRoll, muPitch,
+                                                                 muPositionX, muPositionY);
+        }
+
+        // Create penalty array for BodyRelativeConstraint (5 constraints)
+        // X position, Y position, roll, pitch, Z position (recorded but not constrained)
+        std::vector<std::unique_ptr<PenaltyBase>> penaltyArray;
+        penaltyArray.resize(5);
+        
+        // Position constraints: XY for stability, Z free
+        penaltyArray[0] = std::make_unique<QuadraticPenalty>(muPositionX);  // X position (constrained for stability)
+        penaltyArray[1] = std::make_unique<QuadraticPenalty>(muPositionY);  // Y position (constrained for stability)
+        penaltyArray[2] = std::make_unique<QuadraticPenalty>(muRoll);       // Roll constraint (vertical orientation)
+        penaltyArray[3] = std::make_unique<QuadraticPenalty>(muPitch);      // Pitch constraint (vertical orientation)
+        penaltyArray[4] = std::make_unique<QuadraticPenalty>(0.001);        // Z position (free, very low weight)
+
+        return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
     }
 } // namespace ocs2::mobile_manipulator
