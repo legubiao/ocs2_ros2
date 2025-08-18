@@ -598,15 +598,15 @@ namespace ocs2::mobile_manipulator
         {
             MobileManipulatorPinocchioMapping pinocchioMapping(manipulatorModelInfo_);
             
-            // Create kinematics treating the body link as an end effector
+            // Single kinematics interface containing both end effector and base frame
+            // Use the baseFrame already loaded in constructor
             PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
-                                                        {bodyLinkName});
+                                                        {bodyLinkName, manipulatorModelInfo_.baseFrame});
             
             // Create our specialized constraint
             constraint = std::make_unique<BodyRelativeConstraint>(eeKinematics, bodyLinkName,
                                                                  rollTolerance, pitchTolerance,
-                                                                 muRoll, muPitch,
-                                                                 muPositionX, muPositionY);
+                                                                 static_cast<int>(manipulatorModelInfo_.manipulatorModelType));
         }
         else
         {
@@ -614,7 +614,7 @@ namespace ocs2::mobile_manipulator
             
             // Create CppAd kinematics treating the body link as an end effector
             PinocchioEndEffectorKinematicsCppAd eeKinematics(pinocchioInterface, pinocchioMappingCppAd,
-                                                            {bodyLinkName},
+                                                            {bodyLinkName, manipulatorModelInfo_.baseFrame},
                                                             manipulatorModelInfo_.stateDim,
                                                             manipulatorModelInfo_.inputDim,
                                                             "body_orientation_kinematics", libraryFolder,
@@ -623,21 +623,20 @@ namespace ocs2::mobile_manipulator
             // Create our specialized constraint
             constraint = std::make_unique<BodyRelativeConstraint>(eeKinematics, bodyLinkName,
                                                                  rollTolerance, pitchTolerance,
-                                                                 muRoll, muPitch,
-                                                                 muPositionX, muPositionY);
+                                                                 static_cast<int>(manipulatorModelInfo_.manipulatorModelType));
         }
 
-        // Create penalty array for BodyRelativeConstraint (5 constraints)
-        // X position, Y position, roll, pitch, Z position (recorded but not constrained)
+        // Create penalty array for BodyRelativeConstraint (4 constraints)
+        // Roll, pitch, X position, Y position
         std::vector<std::unique_ptr<PenaltyBase>> penaltyArray;
-        penaltyArray.resize(5);
+        penaltyArray.resize(4);
         
-        // Position constraints: XY for stability, Z free
-        penaltyArray[0] = std::make_unique<QuadraticPenalty>(muPositionX);  // X position (constrained for stability)
-        penaltyArray[1] = std::make_unique<QuadraticPenalty>(muPositionY);  // Y position (constrained for stability)
-        penaltyArray[2] = std::make_unique<QuadraticPenalty>(muRoll);       // Roll constraint (vertical orientation)
-        penaltyArray[3] = std::make_unique<QuadraticPenalty>(muPitch);      // Pitch constraint (vertical orientation)
-        penaltyArray[4] = std::make_unique<QuadraticPenalty>(0.001);        // Z position (free, very low weight)
+        // Rotation constraints: roll and pitch
+        penaltyArray[0] = std::make_unique<QuadraticPenalty>(muRoll);       // Roll constraint (vertical orientation)
+        penaltyArray[1] = std::make_unique<QuadraticPenalty>(muPitch);      // Pitch constraint (vertical orientation)
+        // Position constraints: XY for stability
+        penaltyArray[2] = std::make_unique<QuadraticPenalty>(muPositionX);  // X position (constrained for stability)
+        penaltyArray[3] = std::make_unique<QuadraticPenalty>(muPositionY);  // Y position (constrained for stability)
 
         return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
     }

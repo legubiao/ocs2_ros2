@@ -13,6 +13,7 @@ namespace ocs2::mobile_manipulator
     class BodyRelativeConstraint final : public StateConstraint
     {
     public:
+        using vector2_t = Eigen::Matrix<scalar_t, 2, 1>;
         using vector3_t = Eigen::Matrix<scalar_t, 3, 1>;
         using quaternion_t = Eigen::Quaternion<scalar_t>;
         using matrix3_t = Eigen::Matrix<scalar_t, 3, 3>;
@@ -21,10 +22,7 @@ namespace ocs2::mobile_manipulator
                                const std::string& bodyLinkName,
                                scalar_t rollTolerance,
                                scalar_t pitchTolerance,
-                               scalar_t muRoll,
-                               scalar_t muPitch,
-                               scalar_t muPositionX,
-                               scalar_t muPositionY);
+                               int modelType);
 
         ~BodyRelativeConstraint() override = default;
 
@@ -32,8 +30,7 @@ namespace ocs2::mobile_manipulator
         {
             return new BodyRelativeConstraint(*endEffectorKinematicsPtr_, bodyLinkName_,
                                               rollTolerance_, pitchTolerance_,
-                                              muRoll_, muPitch_,
-                                              muPositionX_, muPositionY_);
+                                              modelType_);
         }
 
         size_t getNumConstraints(scalar_t time) const override;
@@ -47,15 +44,15 @@ namespace ocs2::mobile_manipulator
         // Calculate attitude constraints relative to base frame
         vector_t computeOrientationConstraints(const quaternion_t& bodyOrientation) const;
 
+        // Update targetPosition based on model type and current state
+        void updateTargetPosition(const vector_t& state) const;
+
 
         // Constraint parameters
         std::string bodyLinkName_;
         scalar_t rollTolerance_;
         scalar_t pitchTolerance_;
-        scalar_t muRoll_;
-        scalar_t muPitch_;
-        scalar_t muPositionX_;
-        scalar_t muPositionY_;
+        int modelType_;
 
         // Kinematics interface
         std::unique_ptr<EndEffectorKinematics<scalar_t>> endEffectorKinematicsPtr_;
@@ -65,6 +62,6 @@ namespace ocs2::mobile_manipulator
 
         // Cached target orientation (relative to base frame)
         quaternion_t targetOrientation_;
-        vector3_t targetPosition_;
+        mutable vector3_t targetPosition_;
     };
 }

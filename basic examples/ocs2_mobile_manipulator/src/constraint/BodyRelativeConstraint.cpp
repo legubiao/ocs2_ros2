@@ -11,18 +11,12 @@ namespace ocs2::mobile_manipulator
                                                    const std::string& bodyLinkName,
                                                    scalar_t rollTolerance,
                                                    scalar_t pitchTolerance,
-                                                   scalar_t muRoll,
-                                                   scalar_t muPitch,
-                                                   scalar_t muPositionX,
-                                                   scalar_t muPositionY)
+                                                   int modelType)
         : StateConstraint(ConstraintOrder::Linear)
           , bodyLinkName_(bodyLinkName)
           , rollTolerance_(rollTolerance)
           , pitchTolerance_(pitchTolerance)
-          , muRoll_(muRoll)
-          , muPitch_(muPitch)
-          , muPositionX_(muPositionX)
-          , muPositionY_(muPositionY)
+          , modelType_(modelType)
           , endEffectorKinematicsPtr_(endEffectorKinematics.clone())
     {
         // 初始化目标姿态为单位四元数（无旋转）
@@ -58,19 +52,22 @@ namespace ocs2::mobile_manipulator
 
     size_t BodyRelativeConstraint::getNumConstraints(scalar_t time) const
     {
-        // Attitude constraints: roll and pitch + Position constraints: x, y (Z direction unconstrained)
+        // Attitude constraints: roll and pitch + Position constraints: x, y
         return 4;
     }
 
     vector_t BodyRelativeConstraint::getValue(scalar_t time, const vector_t& state,
                                               const PreComputation& preComputation) const
     {
-        // PinocchioEndEffectorKinematics requires pre-computation with shared PinocchioInterface.
+        // PinocchioEndEffectorKinematics requires pre-computation with shared PinocchioInterface
         if (pinocchioEEKinPtr_ != nullptr)
         {
             const auto& preCompMM = cast<MobileManipulatorPreComputation>(preComputation);
             pinocchioEEKinPtr_->setPinocchioInterface(preCompMM.getPinocchioInterface());
         }
+
+        // Update targetPosition based on model type
+        updateTargetPosition(state);
 
         // Get orientation and position errors
         const auto orientationErrors = endEffectorKinematicsPtr_->getOrientationError(state, {targetOrientation_});
@@ -95,12 +92,15 @@ namespace ocs2::mobile_manipulator
         scalar_t time, const vector_t& state,
         const PreComputation& preComputation) const
     {
-        // PinocchioEndEffectorKinematics requires pre-computation with shared PinocchioInterface.
+        // PinocchioEndEffectorKinematics requires pre-computation with shared PinocchioInterface
         if (pinocchioEEKinPtr_ != nullptr)
         {
             const auto& preCompMM = cast<MobileManipulatorPreComputation>(preComputation);
             pinocchioEEKinPtr_->setPinocchioInterface(preCompMM.getPinocchioInterface());
         }
+
+        // Update targetPosition based on model type (same logic as getValue)
+        updateTargetPosition(state);
 
         // Get linear approximation of orientation and position errors
         const auto orientationErrors = endEffectorKinematicsPtr_->getOrientationErrorLinearApproximation(
@@ -120,5 +120,29 @@ namespace ocs2::mobile_manipulator
         approximation.dfdx.bottomRows<2>() = positions[0].dfdx.topRows<2>();
 
         return approximation;
+    }
+
+    void BodyRelativeConstraint::updateTargetPosition(const vector_t& state) const
+    {
+        if (modelType_ == 1 && endEffectorKinematicsPtr_ != nullptr)
+        {
+            // For mobile robots (WheelBasedMobileManipulator): 
+            // Use the existing EndEffectorKinematics to get the base frame position
+            try {
+                // Get positions from kinematics interface
+                // positions[0] = end effector position (bodyLinkName)
+                // positions[1] = base frame position (baseFrame)
+                const auto positions = endEffectorKinematicsPtr_->getPosition(state);
+                if (positions.size() >= 2) {
+                    // The second position should be the base frame position
+                    targetPosition_ = positions[1];
+                }
+            } catch (const std::exception& e) {
+                // If EndEffectorKinematics fails, keep targetPosition as zero
+                // This ensures the constraint falls back to fixed-base behavior
+            }
+        }
+        // For other robot types (DefaultManipulator, FloatingArmManipulator, etc.):
+        // Keep targetPosition as zero (initialized value) - fixed base reference
     }
 }
