@@ -94,6 +94,8 @@ namespace ocs2::mobile_manipulator
         const auto urdfTree = ::urdf::parseURDFFile(robotUrdfPath);
         // remove extraneous joints from urdf
         ::urdf::ModelInterfaceSharedPtr newModel = std::make_shared<::urdf::ModelInterface>(*urdfTree);
+        
+        // First pass: mark specified joints as fixed
         for (joint_pair_t& jointPair : newModel->joints_)
         {
             if (std::find(jointNames.begin(), jointNames.end(), jointPair.first) != jointNames.end())
@@ -101,6 +103,30 @@ namespace ocs2::mobile_manipulator
                 jointPair.second->type = urdf::Joint::FIXED;
             }
         }
+        
+        // Second pass: automatically detect and remove mimic joints
+        std::vector<std::string> mimicJointNames;
+        for (const joint_pair_t& jointPair : newModel->joints_)
+        {
+            // Check if this joint has a mimic property
+            if (jointPair.second->mimic)
+            {
+                mimicJointNames.push_back(jointPair.first);
+                std::cerr << " #### Auto-detected mimic joint: \"" << jointPair.first << "\" -> \"" 
+                          << jointPair.second->mimic->joint_name << "\"" << std::endl;
+            }
+        }
+        
+        // Mark all mimic joints as fixed
+        for (joint_pair_t& jointPair : newModel->joints_)
+        {
+            if (std::find(mimicJointNames.begin(), mimicJointNames.end(), jointPair.first) != mimicJointNames.end())
+            {
+                jointPair.second->type = urdf::Joint::FIXED;
+                std::cerr << " #### Auto-removed mimic joint: \"" << jointPair.first << "\"" << std::endl;
+            }
+        }
+        
         // resolve for the robot type
         switch (type)
         {

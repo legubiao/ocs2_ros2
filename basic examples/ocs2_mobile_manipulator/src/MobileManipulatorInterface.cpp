@@ -124,6 +124,7 @@ namespace ocs2::mobile_manipulator
         {
             std::cerr << "\"" << name << "\" ";
         }
+        std::cerr << "\n #### Note: All mimic joints will be automatically detected and removed";
         std::cerr << "\n #### model_information.baseFrame: \"" << baseFrame << "\"";
         std::cerr << "\n #### model_information.eeFrame: \"" << eeFrame << "\"" << std::endl;
         std::cerr << " #### =============================================================================" <<
