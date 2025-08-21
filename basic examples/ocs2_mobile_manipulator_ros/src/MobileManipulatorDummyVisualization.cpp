@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <iostream>
 #include <kdl_parser/kdl_parser.hpp>
+#include <memory>
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
 #include <pinocchio/fwd.hpp>
@@ -110,8 +111,8 @@ namespace ocs2::mobile_manipulator
             PinocchioGeometryInterface geomInterface(pinocchioInterface,
                                                      collisionObjectPairs);
             // set geometry visualization markers
-            geometryVisualization_.reset(new GeometryInterfaceVisualization(
-                std::move(pinocchioInterface), geomInterface));
+            geometryVisualization_ = std::make_unique<GeometryInterfaceVisualization>(
+                std::move(pinocchioInterface), geomInterface);
         }
     }
 

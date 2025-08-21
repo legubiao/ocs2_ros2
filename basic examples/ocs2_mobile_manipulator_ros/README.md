@@ -1,4 +1,4 @@
-# OCS2 Mobile Manipulator
+# OCS2 Mobile Manipulator ROS Demo
 
 ## 1. Build
 
@@ -36,18 +36,12 @@ source ~/ros2_ws/install/setup.bash
 ros2 launch ocs2_mobile_manipulator_ros manipulator_kinova_j2n6.launch.py
 ```
 
-### Willow Garage PR2
+### Willow Garage PR2 (Dual Arm)
 
-* Single Arm
-  ```bash
-  source ~/ros2_ws/install/setup.bash
-  ros2 launch ocs2_mobile_manipulator_ros pr2.launch.py
-  ```
-* Dual Arm
-  ```bash
-  source ~/ros2_ws/install/setup.bash
-  ros2 launch ocs2_mobile_manipulator_ros pr2_dual.launch.py
-  ```
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_mobile_manipulator_ros pr2.launch.py
+```
 
 ### Clearpath Ridgeback with UR-5
 

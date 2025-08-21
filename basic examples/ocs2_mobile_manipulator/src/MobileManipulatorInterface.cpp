@@ -46,7 +46,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_oc/synchronized_module/ReferenceManager.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematicsCppAd.h>
-#include <ocs2_pinocchio_interface/urdf.h>
 #include <ocs2_self_collision/SelfCollisionConstraint.h>
 #include <ocs2_self_collision/SelfCollisionConstraintCppAd.h>
 
@@ -202,7 +201,7 @@ namespace ocs2::mobile_manipulator
                                                             "selfCollision", usePreComputation,
                                                             libraryFolder, recompileLibraries));
         }
-        
+
         // body relative constraint
         bool activateBodyRelative = false;
         loadData::loadPtreeValue(pt, activateBodyRelative, "bodyRelative.activate", false);
@@ -210,8 +209,8 @@ namespace ocs2::mobile_manipulator
         {
             problem_.stateSoftConstraintPtr->add(
                 "bodyRelative", getBodyRelativeConstraint(*pinocchioInterfacePtr_, taskFile,
-                                                       "bodyRelative", usePreComputation,
-                                                       libraryFolder, recompileLibraries));
+                                                          "bodyRelative", usePreComputation,
+                                                          libraryFolder, recompileLibraries));
         }
 
         // Dynamics
@@ -310,13 +309,13 @@ namespace ocs2::mobile_manipulator
         boost::property_tree::read_info(taskFile, pt);
         std::cerr << "\n #### " << prefix << " Settings: ";
         std::cerr << "\n #### =============================================================================\n";
-        
+
         // Read dual-arm mode configuration, default to false (single-arm mode)
         loadData::loadPtreeValue(pt, dual_arm_, prefix + ".dualArmMode", false);
-        
+
         loadData::loadPtreeValue(pt, muPosition, prefix + ".muPosition", true);
         loadData::loadPtreeValue(pt, muOrientation, prefix + ".muOrientation", true);
-        
+
         std::cerr << " #### Dual arm mode: " << (dual_arm_ ? "enabled" : "disabled") << std::endl;
         std::cerr << " #### =============================================================================\n";
 
@@ -329,13 +328,19 @@ namespace ocs2::mobile_manipulator
         if (usePreComputation)
         {
             MobileManipulatorPinocchioMapping pinocchioMapping(manipulatorModelInfo_);
-            
-            if (dual_arm_) {
+
+            if (dual_arm_)
+            {
                 // Dual-arm mode: create kinematics with two end effectors
                 PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
-                                                            {manipulatorModelInfo_.eeFrame, manipulatorModelInfo_.eeFrame1});
+                                                            {
+                                                                manipulatorModelInfo_.eeFrame,
+                                                                manipulatorModelInfo_.eeFrame1
+                                                            });
                 constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true);
-            } else {
+            }
+            else
+            {
                 PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
                                                             {manipulatorModelInfo_.eeFrame});
                 constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, false);
@@ -344,52 +349,76 @@ namespace ocs2::mobile_manipulator
         else
         {
             MobileManipulatorPinocchioMappingCppAd pinocchioMappingCppAd(manipulatorModelInfo_);
-            
-            if (dual_arm_) {
+
+            if (dual_arm_)
+            {
                 // Dual-arm mode: create CppAd kinematics with two end effectors
                 PinocchioEndEffectorKinematicsCppAd eeKinematics(pinocchioInterface, pinocchioMappingCppAd,
-                                                                {manipulatorModelInfo_.eeFrame, manipulatorModelInfo_.eeFrame1},
-                                                                manipulatorModelInfo_.stateDim,
-                                                                manipulatorModelInfo_.inputDim,
-                                                                "end_effector_kinematics", libraryFolder,
-                                                                recompileLibraries, false);
+                                                                 {
+                                                                     manipulatorModelInfo_.eeFrame,
+                                                                     manipulatorModelInfo_.eeFrame1
+                                                                 },
+                                                                 manipulatorModelInfo_.stateDim,
+                                                                 manipulatorModelInfo_.inputDim,
+                                                                 "end_effector_kinematics", libraryFolder,
+                                                                 recompileLibraries, false);
                 constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true);
-            } else {
+            }
+            else
+            {
                 PinocchioEndEffectorKinematicsCppAd eeKinematics(pinocchioInterface, pinocchioMappingCppAd,
-                                                                {manipulatorModelInfo_.eeFrame},
-                                                                manipulatorModelInfo_.stateDim,
-                                                                manipulatorModelInfo_.inputDim,
-                                                                "end_effector_kinematics", libraryFolder,
-                                                                recompileLibraries, false);
+                                                                 {manipulatorModelInfo_.eeFrame},
+                                                                 manipulatorModelInfo_.stateDim,
+                                                                 manipulatorModelInfo_.inputDim,
+                                                                 "end_effector_kinematics", libraryFolder,
+                                                                 recompileLibraries, false);
                 constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, false);
             }
         }
 
         std::vector<std::unique_ptr<PenaltyBase>> penaltyArray;
-        
-        if (dual_arm_) {
+
+        if (dual_arm_)
+        {
             // Dual-arm mode: read dual-arm specific configuration, use default if not provided
             scalar_t leftMuPosition = muPosition;
             scalar_t leftMuOrientation = muOrientation;
             scalar_t rightMuPosition = muPosition;
             scalar_t rightMuOrientation = muOrientation;
-            
+
             loadData::loadPtreeValue(pt, leftMuPosition, prefix + ".leftArm.muPosition", false);
             loadData::loadPtreeValue(pt, leftMuOrientation, prefix + ".leftArm.muOrientation", false);
             loadData::loadPtreeValue(pt, rightMuPosition, prefix + ".rightArm.muPosition", false);
             loadData::loadPtreeValue(pt, rightMuOrientation, prefix + ".rightArm.muOrientation", false);
-            
+
             penaltyArray.resize(12);
             // Left arm: position + orientation
-            std::generate_n(penaltyArray.begin(), 3, [&] { return std::make_unique<QuadraticPenalty>(leftMuPosition); });
-            std::generate_n(penaltyArray.begin() + 3, 3, [&] { return std::make_unique<QuadraticPenalty>(leftMuOrientation); });
+            std::generate_n(penaltyArray.begin(), 3, [&]
+            {
+                return std::make_unique<QuadraticPenalty>(leftMuPosition);
+            });
+            std::generate_n(penaltyArray.begin() + 3, 3, [&]
+            {
+                return std::make_unique<QuadraticPenalty>(leftMuOrientation);
+            });
             // Right arm: position + orientation
-            std::generate_n(penaltyArray.begin() + 6, 3, [&] { return std::make_unique<QuadraticPenalty>(rightMuPosition); });
-            std::generate_n(penaltyArray.begin() + 9, 3, [&] { return std::make_unique<QuadraticPenalty>(rightMuOrientation); });
-        } else {
+            std::generate_n(penaltyArray.begin() + 6, 3, [&]
+            {
+                return std::make_unique<QuadraticPenalty>(rightMuPosition);
+            });
+            std::generate_n(penaltyArray.begin() + 9, 3, [&]
+            {
+                return std::make_unique<QuadraticPenalty>(rightMuOrientation);
+            });
+        }
+        else
+        {
             penaltyArray.resize(6);
             std::generate_n(penaltyArray.begin(), 3, [&] { return std::make_unique<QuadraticPenalty>(muPosition); });
-            std::generate_n(penaltyArray.begin() + 3, 3, [&] { return std::make_unique<QuadraticPenalty>(muOrientation); });
+            std::generate_n(penaltyArray.begin() + 3, 3, [&]
+            {
+                return std::make_unique<QuadraticPenalty>(muOrientation);
+            });
         }
 
         return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
@@ -420,7 +449,11 @@ namespace ocs2::mobile_manipulator
         loadData::loadStdVectorOfPair(taskFile, prefix + ".collisionLinkPairs", collisionLinkPairs, true);
         std::cerr << " #### =============================================================================\n";
 
-        PinocchioGeometryInterface geometryInterface(pinocchioInterface, urdfFile, collisionLinkPairs, collisionObjectPairs);
+        PinocchioGeometryInterface geometryInterface(pinocchioInterface, urdfFile, collisionLinkPairs,
+                                                     collisionObjectPairs);
+
+        pinocchioGeometryInterfacePtr_ = std::make_unique<PinocchioGeometryInterface>(
+            pinocchioInterface, urdfFile, collisionLinkPairs, collisionObjectPairs);
 
         const size_t numCollisionPairs = geometryInterface.getNumCollisionPairs();
         std::cerr << "SelfCollision: Testing for " << numCollisionPairs << " collision pairs\n";
@@ -562,31 +595,33 @@ namespace ocs2::mobile_manipulator
         boost::property_tree::read_info(taskFile, pt);
         std::cerr << "\n #### " << prefix << " Settings: ";
         std::cerr << "\n #### =============================================================================\n";
-        
+
         // Read configuration parameters
-        std::string bodyLinkName = "base_link";  // default link name
-        scalar_t rollTolerance = 0.1;            // default roll tolerance (radians)
-        scalar_t pitchTolerance = 0.1;           // default pitch tolerance (radians)
-        scalar_t muRoll = 1.0;                   // default roll penalty weight
-        scalar_t muPitch = 1.0;                  // default pitch penalty weight
-        
+        std::string bodyLinkName = "base_link"; // default link name
+        scalar_t rollTolerance = 0.1; // default roll tolerance (radians)
+        scalar_t pitchTolerance = 0.1; // default pitch tolerance (radians)
+        scalar_t muRoll = 1.0; // default roll penalty weight
+        scalar_t muPitch = 1.0; // default pitch penalty weight
+
         // Position constraint weights for stability (XY plane only, Z free)
-        scalar_t muPositionX = 0.5;              // default X position penalty weight
-        scalar_t muPositionY = 0.5;              // default Y position penalty weight
-        
+        scalar_t muPositionX = 0.5; // default X position penalty weight
+        scalar_t muPositionY = 0.5; // default Y position penalty weight
+
         loadData::loadPtreeValue(pt, bodyLinkName, prefix + ".bodyLinkName", false);
         loadData::loadPtreeValue(pt, rollTolerance, prefix + ".rollTolerance", false);
         loadData::loadPtreeValue(pt, pitchTolerance, prefix + ".pitchTolerance", false);
         loadData::loadPtreeValue(pt, muRoll, prefix + ".muRoll", false);
         loadData::loadPtreeValue(pt, muPitch, prefix + ".muPitch", false);
-        
+
         // Load position constraint weights
         loadData::loadPtreeValue(pt, muPositionX, prefix + ".muPositionX", false);
         loadData::loadPtreeValue(pt, muPositionY, prefix + ".muPositionY", false);
-        
+
         std::cerr << " #### Body link name: " << bodyLinkName << std::endl;
-        std::cerr << " #### Roll tolerance: " << rollTolerance << " rad (" << (rollTolerance * 180.0 / M_PI) << " deg)" << std::endl;
-        std::cerr << " #### Pitch tolerance: " << pitchTolerance << " rad (" << (pitchTolerance * 180.0 / M_PI) << " deg)" << std::endl;
+        std::cerr << " #### Roll tolerance: " << rollTolerance << " rad (" << (rollTolerance * 180.0 / M_PI) << " deg)"
+            << std::endl;
+        std::cerr << " #### Pitch tolerance: " << pitchTolerance << " rad (" << (pitchTolerance * 180.0 / M_PI) <<
+            " deg)" << std::endl;
         std::cerr << " #### Roll penalty weight: " << muRoll << std::endl;
         std::cerr << " #### Pitch penalty weight: " << muPitch << std::endl;
         std::cerr << " #### X position penalty weight: " << muPositionX << std::endl;
@@ -598,47 +633,59 @@ namespace ocs2::mobile_manipulator
         if (usePreComputation)
         {
             MobileManipulatorPinocchioMapping pinocchioMapping(manipulatorModelInfo_);
-            
+
             // Single kinematics interface containing both end effector and base frame
             // Use the baseFrame already loaded in constructor
             PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
                                                         {bodyLinkName, manipulatorModelInfo_.baseFrame});
-            
+
             // Create our specialized constraint
             constraint = std::make_unique<BodyRelativeConstraint>(eeKinematics, bodyLinkName,
-                                                                 rollTolerance, pitchTolerance,
-                                                                 static_cast<int>(manipulatorModelInfo_.manipulatorModelType));
+                                                                  rollTolerance, pitchTolerance,
+                                                                  static_cast<int>(manipulatorModelInfo_.
+                                                                      manipulatorModelType));
         }
         else
         {
             MobileManipulatorPinocchioMappingCppAd pinocchioMappingCppAd(manipulatorModelInfo_);
-            
+
             // Create CppAd kinematics treating the body link as an end effector
             PinocchioEndEffectorKinematicsCppAd eeKinematics(pinocchioInterface, pinocchioMappingCppAd,
-                                                            {bodyLinkName, manipulatorModelInfo_.baseFrame},
-                                                            manipulatorModelInfo_.stateDim,
-                                                            manipulatorModelInfo_.inputDim,
-                                                            "body_orientation_kinematics", libraryFolder,
-                                                            recompileLibraries, false);
-            
+                                                             {bodyLinkName, manipulatorModelInfo_.baseFrame},
+                                                             manipulatorModelInfo_.stateDim,
+                                                             manipulatorModelInfo_.inputDim,
+                                                             "body_orientation_kinematics", libraryFolder,
+                                                             recompileLibraries, false);
+
             // Create our specialized constraint
             constraint = std::make_unique<BodyRelativeConstraint>(eeKinematics, bodyLinkName,
-                                                                 rollTolerance, pitchTolerance,
-                                                                 static_cast<int>(manipulatorModelInfo_.manipulatorModelType));
+                                                                  rollTolerance, pitchTolerance,
+                                                                  static_cast<int>(manipulatorModelInfo_.
+                                                                      manipulatorModelType));
         }
 
         // Create penalty array for BodyRelativeConstraint (4 constraints)
         // Roll, pitch, X position, Y position
         std::vector<std::unique_ptr<PenaltyBase>> penaltyArray;
         penaltyArray.resize(4);
-        
+
         // Rotation constraints: roll and pitch
-        penaltyArray[0] = std::make_unique<QuadraticPenalty>(muRoll);       // Roll constraint (vertical orientation)
-        penaltyArray[1] = std::make_unique<QuadraticPenalty>(muPitch);      // Pitch constraint (vertical orientation)
+        penaltyArray[0] = std::make_unique<QuadraticPenalty>(muRoll); // Roll constraint (vertical orientation)
+        penaltyArray[1] = std::make_unique<QuadraticPenalty>(muPitch); // Pitch constraint (vertical orientation)
         // Position constraints: XY for stability
-        penaltyArray[2] = std::make_unique<QuadraticPenalty>(muPositionX);  // X position (constrained for stability)
-        penaltyArray[3] = std::make_unique<QuadraticPenalty>(muPositionY);  // Y position (constrained for stability)
+        penaltyArray[2] = std::make_unique<QuadraticPenalty>(muPositionX); // X position (constrained for stability)
+        penaltyArray[3] = std::make_unique<QuadraticPenalty>(muPositionY); // Y position (constrained for stability)
 
         return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
+    }
+
+    std::unique_ptr<PinocchioGeometryInterface> MobileManipulatorInterface::getPinocchioGeometryInterface() const
+    {
+        if (pinocchioGeometryInterfacePtr_)
+        {
+            // 返回一个副本，因为原始指针是私有的
+            return std::make_unique<PinocchioGeometryInterface>(*pinocchioGeometryInterfacePtr_);
+        }
+        return nullptr;
     }
 } // namespace ocs2::mobile_manipulator

@@ -93,6 +93,7 @@ namespace ocs2 {
             markerArray.markers[numMarkersPerResult * i].scale.x = 0.01;
             markerArray.markers[numMarkersPerResult * i].scale.y = 0.02;
             markerArray.markers[numMarkersPerResult * i].scale.z = 0.04;
+
             // Dots at the end of the arrow, denoting the close locations on the body
             markerArray.markers[numMarkersPerResult * i + 1].type =
                     visualization_msgs::msg::Marker::SPHERE_LIST;
@@ -105,6 +106,7 @@ namespace ocs2 {
             markerArray.markers[numMarkersPerResult * i + 1].scale.z = 0.02;
             markerArray.markers[numMarkersPerResult * i + 1].id =
                     numMarkersPerResult * i + 1;
+
             // Text denoting the object number in the geometry model, raised above the
             // spheres
             markerArray.markers[numMarkersPerResult * i + 2].id =
@@ -116,9 +118,11 @@ namespace ocs2 {
                     ros_msg_helpers::getPointMsg(results[i].nearest_points[0]);
             markerArray.markers[numMarkersPerResult * i + 2].pose.position.z += 0.015;
             markerArray.markers[numMarkersPerResult * i + 2].text =
-                    "obj " +
+                    "obj:" +
                     std::to_string(
                         geometryInterface_.getGeometryModel().collisionPairs[i].first);
+
+
             markerArray.markers[numMarkersPerResult * i + 3].id =
                     numMarkersPerResult * i + 3;
             markerArray.markers[numMarkersPerResult * i + 3].type =
@@ -127,10 +131,12 @@ namespace ocs2 {
                     ros_msg_helpers::getPointMsg(results[i].nearest_points[1]);
             markerArray.markers[numMarkersPerResult * i + 3].pose.position.z += 0.015;
             markerArray.markers[numMarkersPerResult * i + 3].text =
-                    "obj " +
+                    "obj:" +
                     std::to_string(
                         geometryInterface_.getGeometryModel().collisionPairs[i].second);
             markerArray.markers[numMarkersPerResult * i + 3].scale.z = 0.02;
+
+
             // Text above the arrow, denoting the distance
             markerArray.markers[numMarkersPerResult * i + 4].id =
                     numMarkersPerResult * i + 4;
@@ -142,13 +148,13 @@ namespace ocs2 {
                         2.0);
             markerArray.markers[numMarkersPerResult * i + 4].pose.position.z += 0.015;
             markerArray.markers[numMarkersPerResult * i + 4].text =
-                    "dist " +
+                    "dist:" +
                     std::to_string(
                         geometryInterface_.getGeometryModel().collisionPairs[i].first) +
-                    " - " +
+                    "-" +
                     std::to_string(
                         geometryInterface_.getGeometryModel().collisionPairs[i].second) +
-                    ": " + std::to_string(results[i].min_distance);
+                    ":" + std::to_string(results[i].min_distance);
             markerArray.markers[numMarkersPerResult * i + 4].scale.z = 0.02;
         }
 

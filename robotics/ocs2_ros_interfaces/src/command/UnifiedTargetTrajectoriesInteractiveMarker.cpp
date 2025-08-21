@@ -157,7 +157,6 @@ namespace ocs2
         interactiveMarker.header.stamp = node_->now();
         interactiveMarker.name = "Goal";
         interactiveMarker.scale = 0.2;
-        interactiveMarker.description = "Right click to send command or toggle continuous mode";
 
         // Set position and orientation
         interactiveMarker.pose.position.x = singleArmPosition_.x();
@@ -196,8 +195,7 @@ namespace ocs2
         interactiveMarker.header.stamp = node_->now();
         interactiveMarker.name = isLeftArm ? "LeftArmGoal" : "RightArmGoal";
         interactiveMarker.scale = 0.2;
-        interactiveMarker.description = (isLeftArm ? "Left" : "Right") + std::string(
-            " arm target - Right click to send command");
+        interactiveMarker.description = isLeftArm ? "Left" : "Right";
 
         // Set position and orientation based on arm type
         const auto& position = isLeftArm ? leftArmPosition_ : rightArmPosition_;

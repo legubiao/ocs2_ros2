@@ -52,12 +52,6 @@ target_link_libraries(mobile_manipulator_mpc_node ${PROJECT_NAME})
 ament_target_dependencies(mobile_manipulator_mpc_node ${dependencies})
 target_compile_options(mobile_manipulator_mpc_node PUBLIC ${FLAGS})
 
-# DistanceVisualization node
-add_executable(mobile_manipulator_distance_visualization src/MobileManipulatorDistanceVisualization.cpp)
-target_link_libraries(mobile_manipulator_distance_visualization ${PROJECT_NAME})
-ament_target_dependencies(mobile_manipulator_distance_visualization ${dependencies})
-target_compile_options(mobile_manipulator_distance_visualization PUBLIC ${FLAGS})
-
 # Dummy node
 add_executable(mobile_manipulator_dummy_mrt_node
         src/MobileManipulatorDummyMRT.cpp
@@ -81,7 +75,6 @@ install(DIRECTORY include DESTINATION include/${PROJECT_NAME})
 install(
         TARGETS
         mobile_manipulator_mpc_node
-        mobile_manipulator_distance_visualization
         mobile_manipulator_dummy_mrt_node
         mobile_manipulator_target
         DESTINATION lib/${PROJECT_NAME}

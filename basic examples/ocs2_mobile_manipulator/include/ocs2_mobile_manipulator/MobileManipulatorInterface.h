@@ -40,6 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_mobile_manipulator/FactoryFunctions.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
+#include <ocs2_self_collision/PinocchioGeometryInterface.h>
 
 namespace ocs2::mobile_manipulator
 {
@@ -83,6 +84,9 @@ namespace ocs2::mobile_manipulator
 
         const ManipulatorModelInfo& getManipulatorModelInfo() const { return manipulatorModelInfo_; }
 
+        // 获取自碰撞几何接口
+        std::unique_ptr<PinocchioGeometryInterface> getPinocchioGeometryInterface() const;
+
         bool dual_arm_ = false;
 
     private:
@@ -98,12 +102,12 @@ namespace ocs2::mobile_manipulator
                                                               bool useCaching,
                                                               const std::string& libraryFolder,
                                                               bool recompileLibraries);
-            std::unique_ptr<StateCost> getBodyRelativeConstraint(const PinocchioInterface& pinocchioInterface,
-                                                         const std::string& taskFile,
-                                                         const std::string& prefix,
-                                                         bool usePreComputation,
-                                                         const std::string& libraryFolder,
-                                                         bool recompileLibraries);
+        std::unique_ptr<StateCost> getBodyRelativeConstraint(const PinocchioInterface& pinocchioInterface,
+                                                             const std::string& taskFile,
+                                                             const std::string& prefix,
+                                                             bool usePreComputation,
+                                                             const std::string& libraryFolder,
+                                                             bool recompileLibraries);
         std::unique_ptr<StateInputCost> getJointLimitSoftConstraint(const PinocchioInterface& pinocchioInterface,
                                                                     const std::string& taskFile);
 
@@ -118,6 +122,9 @@ namespace ocs2::mobile_manipulator
 
         std::unique_ptr<PinocchioInterface> pinocchioInterfacePtr_;
         ManipulatorModelInfo manipulatorModelInfo_;
+
+        // 自碰撞几何接口
+        std::unique_ptr<PinocchioGeometryInterface> pinocchioGeometryInterfacePtr_;
 
         vector_t initialState_;
     };
