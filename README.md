@@ -47,9 +47,6 @@ Tested system and ROS2 version:
 * C++ compiler with C++17 support
 * Eigen (v3.4)
 * Boost C++ (v1.74)
-* [Pinocchio](https://stack-of-tasks.github.io/pinocchio/download.html)
-
-> **Warm Reminder**: Please follow the guide in the link to install Pinocchio before building the project
 
 ### 2.3 Clone Repositories
 

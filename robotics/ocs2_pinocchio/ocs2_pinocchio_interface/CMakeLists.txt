@@ -8,14 +8,14 @@ set(dependencies
         ocs2_robotic_tools
         pinocchio
         urdfdom
-        coal
+        hpp-fcl
 )
 
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)
 find_package(urdfdom REQUIRED)
 find_package(pinocchio REQUIRED)
-find_package(coal REQUIRED)
+find_package(hpp-fcl REQUIRED)
 
 # Add pinocchio configurations
 include(cmake/pinocchio_config.cmake)
@@ -35,7 +35,7 @@ add_library(${PROJECT_NAME} SHARED
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         ${pinocchio_INCLUDE_DIRS}
-        ${COAL_INCLUDE_DIRS}
+        ${hpp-fcl_INCLUDE_DIRS}
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
