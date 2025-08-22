@@ -2,29 +2,26 @@
 
 ## 1. Summary
 
-OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), it was refactored to be compatible with
-ROS2 and modern cmake. Below is the current todolist of the project:
+OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), it was refactored to be compatible with ROS2 and modern cmake.
 
-- [x] modern cmake
-- [x] basic 6 examples in official documents
-- [x] WSL2 support
-- [x] Fix Quadrotor example's unexpected behavior
-- [x] Fix Mobile Manipolator's interactive marker
-- [x] perceptive locomotion demo
-- [x] tinyxml2 problem in Ubuntu 24.04 ROS2 Jazzy
-- [x] raisim demo
-- [x] mpc_net demo
-- [x] **[2025-01-16]** Pinnochio 3 support, removed hpp-fcl dependency
-- [x] **[2025-03-20]** Add forked Gridmap SDF
+### What's New (2025.08)
+
+**Pinocchio 3 Dependency Optimization**
+- Upgraded to Pinocchio 3 version for better performance and stability
+- Support for installing Pinocchio from ROS sources, avoiding complex third-party package management
+
+**Dual-Arm Mobile Manipulator Support**
+- Added Dual-Arm Mobile Manipulator functionality
+- Enhanced interactive markers for better user operation experience
 
 The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up
 the IDE.
 
-Below is my tested platform:
+### Tested Platform
 
 * Intel Nuc X15 (i7-11800H):
-    * Ubuntu 22.04 ROS2 Humble (WSL2)
-    * Ubuntu 24.04 ROS2 Jazzy
+    * Ubuntu 22.04 ROS2 Humble  (WSL2 included)
+    * Ubuntu 24.04 ROS2 Jazzy   (WSL2 included)
 * Lenovo P16v (i7-13800H):
     * Ubuntu 24.04 ROS2 Jazzy
 * Jetson Orin Nano
@@ -47,6 +44,11 @@ Tested system and ROS2 version:
 * C++ compiler with C++17 support
 * Eigen (v3.4)
 * Boost C++ (v1.74)
+
+> **Note:** Latest version used pinocchio from ros source to simplified install steps. If you install pinocchio from robot-pkgs, you can uninstall it by
+> ```bash
+> sudo apt remove robotpkg-*
+> ```
 
 ### 2.3 Clone Repositories
 

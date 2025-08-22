@@ -29,16 +29,6 @@ find_package(ocs2_robotic_assets REQUIRED)
 ## Build ##
 ###########
 
-set(FLAGS
-        ${OCS2_CXX_FLAGS}
-        ${pinocchio_CFLAGS_OTHER}
-        -Wno-ignored-attributes
-        -Wno-invalid-partial-specialization   # to silence warning with unsupported Eigen Tensor
-        -DPINOCCHIO_URDFDOM_TYPEDEF_SHARED_PTR
-        -DPINOCCHIO_URDFDOM_USE_STD_SHARED_PTR
-        -DPINOCCHIO_WITH_HPP_FCL
-)
-
 # ocs2 sphere approximation library
 add_library(${PROJECT_NAME}
         src/SphereApproximation.cpp
@@ -54,7 +44,6 @@ if (URDFDOM_VERSION VERSION_GREATER_EQUAL 4.0.0)
     target_link_libraries(${PROJECT_NAME} tinyxml2)
 endif ()
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
-target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})
 
 #############
 ## Install ##

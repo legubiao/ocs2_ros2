@@ -26,15 +26,6 @@ find_package(ocs2_mobile_manipulator REQUIRED)
 ## Build ##
 ###########
 
-set(FLAGS
-        ${OCS2_CXX_FLAGS}
-        ${pinocchio_CFLAGS_OTHER}
-        -Wno-ignored-attributes
-        -Wno-invalid-partial-specialization   # to silence warning with unsupported Eigen Tensor
-        -DPINOCCHIO_URDFDOM_TYPEDEF_SHARED_PTR
-        -DPINOCCHIO_URDFDOM_USE_STD_SHARED_PTR
-)
-
 add_library(${PROJECT_NAME}
         src/MobileManipulatorMpcNode.cpp
 )
@@ -44,13 +35,11 @@ target_include_directories(${PROJECT_NAME}
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
-target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
 # MPC node
 add_executable(mobile_manipulator_mpc_node src/MobileManipulatorMpcNode.cpp)
 target_link_libraries(mobile_manipulator_mpc_node ${PROJECT_NAME})
 ament_target_dependencies(mobile_manipulator_mpc_node ${dependencies})
-target_compile_options(mobile_manipulator_mpc_node PUBLIC ${FLAGS})
 
 # Dummy node
 add_executable(mobile_manipulator_dummy_mrt_node
@@ -59,13 +48,11 @@ add_executable(mobile_manipulator_dummy_mrt_node
 )
 target_link_libraries(mobile_manipulator_dummy_mrt_node ${PROJECT_NAME})
 ament_target_dependencies(mobile_manipulator_dummy_mrt_node ${dependencies})
-target_compile_options(mobile_manipulator_dummy_mrt_node PUBLIC ${FLAGS})
 
 # Target node
 add_executable(mobile_manipulator_target src/MobileManipulatorTarget.cpp)
 target_link_libraries(mobile_manipulator_target ${PROJECT_NAME})
 ament_target_dependencies(mobile_manipulator_target ${dependencies})
-target_compile_options(mobile_manipulator_target PUBLIC ${FLAGS})
 
 #############
 ## Install ##
