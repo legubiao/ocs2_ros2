@@ -247,3 +247,33 @@ https://github.com/user-attachments/assets/d29551b7-2ac7-428d-9605-f782193bcaf2
 ![raisim_rviz](.images/raisim_rviz.png)
 
 ### 3.3 [MPC-Net](advance%20examples/ocs2_mpcnet/)
+
+## 4. Related Projects
+
+### 4.1 Robot Descriptions
+
+This repository includes various robot description packages for different robotic platforms:
+
+- **Agibot G1** - Humanoid robot description
+- **Agilex Aloha** - Mobile robot description  
+- **Airbot MMK2** - Manipulator description
+- **Airbot Play** - Educational robot description
+- **Changingtek** - Custom robot description
+- **CR5** - Collaborative robot description
+- **EC66 Dual** - Dual-arm robot description
+- **Elite EC** - Elite series robot description
+- **Galaxea A1** - Humanoid robot description
+- **Galaxea R1** - Wheeled humanoid description
+- **Galaxea R1 Pro** - Advanced wheeled humanoid description
+- **Galbot Foxtrot** - Mobile robot description
+- **Piper** - Custom robot description
+- **Robotiq** - Gripper description
+
+### 4.2 Arms ROS2 Control
+
+The **arms_ros2_control** package provides ROS2 control interfaces for various robotic arms:
+
+- **arms_ros2_control_msgs** - Message definitions for arm control
+- **arms_teleop** - Teleoperation interfaces for robotic arms
+
+These packages enable seamless integration with ROS2 control framework and provide standardized interfaces for robot control and teleoperation.
