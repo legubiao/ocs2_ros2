@@ -98,9 +98,7 @@ source ~/ros2_ws/install/setup.bash
 ros2 launch ocs2_double_integrator_ros double_integrator.launch.py
 ```
 
-<video src=".images/double_interger.webm" width="100%" controls>
-  Your browser does not support the video tag.
-</video>
+https://github.com/user-attachments/assets/581d03ff-43e4-49c9-8f47-a0ce491b585c
 
 </details>
 
