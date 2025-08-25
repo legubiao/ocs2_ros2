@@ -75,14 +75,11 @@ cd ~/ros2_ws
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
-### 2.4 Basic Examples
+## 3. Basic Examples
 
 This section contains basic examples for the OCS2 library.
 
-[![](http://i0.hdslb.com/bfs/archive/1bf12ba98ed8e7fe01594bb2a713ddafdd580488.jpg)](https://www.bilibili.com/video/BV12vv9eGEns/)
-
-
-#### 2.4.1 [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
+### 3.1 [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
 
 <details>
 <summary>🎯 Click to expand Double Integrator example</summary>
@@ -102,7 +99,7 @@ https://github.com/user-attachments/assets/581d03ff-43e4-49c9-8f47-a0ce491b585c
 
 </details>
 
-#### 2.4.2 [Cartpole](https://leggedrobotics.github.io/ocs2/robotic_examples.html#cartpole)
+### 3.2 [Cartpole](https://leggedrobotics.github.io/ocs2/robotic_examples.html#cartpole)
 
 <details>
 <summary>🛒 Click to expand Cartpole example</summary>
@@ -118,11 +115,9 @@ source ~/ros2_ws/install/setup.bash
 ros2 launch ocs2_cartpole_ros cartpole.launch.py
 ```
 
-https://github.com/user-attachments/assets/7fe0fe18-3ad5-47dd-9fe2-be90413c2f2f
-
 </details>
 
-#### 2.4.3 [Ballbot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#ballbot)
+### 3.3 [Ballbot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#ballbot)
 
 <details>
 <summary>🏀 Click to expand Ballbot example</summary>
@@ -138,11 +133,9 @@ source ~/ros2_ws/install/setup.bash
 ros2 launch ocs2_ballbot_ros ballbot_ddp.launch.py
 ```
 
-https://github.com/user-attachments/assets/c87966b8-525f-4592-a54f-cfaed458a6f2
-
 </details>
 
-#### 2.4.4 [Quadrotor](https://leggedrobotics.github.io/ocs2/robotic_examples.html#quadrotor)
+### 3.4 [Quadrotor](https://leggedrobotics.github.io/ocs2/robotic_examples.html#quadrotor)
 
 <details>
 <summary>🚁 Click to expand Quadrotor example</summary>
@@ -158,11 +151,9 @@ source ~/ros2_ws/install/setup.bash
 ros2 launch ocs2_quadrotor_ros quadrotor.launch.py
 ```
 
-https://github.com/user-attachments/assets/aed3173f-a6e6-4499-ae8c-d101bedc5222
-
 </details>
 
-#### 2.4.5 [Mobile Manipulator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#mobile-manipulator)
+### 3.5 [Mobile Manipulator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#mobile-manipulator)
 
 <details>
 <summary>🦾 Click to expand Mobile Manipulator example</summary>
@@ -178,8 +169,6 @@ source ~/ros2_ws/install/setup.bash
 ros2 launch ocs2_mobile_manipulator_ros manipulator_mabi_mobile.launch.py
 ```
 
-https://github.com/user-attachments/assets/c71f6123-fa3a-4b72-a60f-5509b8c25413
-
 * run Kinova Jaco2
 ```bash
 source ~/ros2_ws/install/setup.bash
@@ -191,15 +180,11 @@ source ~/ros2_ws/install/setup.bash
 ros2 launch ocs2_mobile_manipulator_ros franka.launch.py
 ```
 
-https://github.com/user-attachments/assets/bab14b46-486e-46dc-a268-bd63616d1010
-
 * run Willow Garage PR2
 ```bash
 source ~/ros2_ws/install/setup.bash
 ros2 launch ocs2_mobile_manipulator_ros pr2.launch.py
 ```
-
-https://github.com/user-attachments/assets/100aae62-9e80-487b-89cf-ea6a97ef2505
 
 * run Clearpath Ridgeback with UR-5
 ```bash
@@ -209,7 +194,7 @@ ros2 launch ocs2_mobile_manipulator_ros manipulator_ridgeback_ur5.launch.py
 
 </details>
 
-#### 2.4.6 [Legged Robot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#legged-robot)
+### 3.6 [Legged Robot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#legged-robot)
 
 <details>
 <summary>🐕 Click to expand Legged Robot example</summary>
@@ -229,51 +214,26 @@ https://github.com/user-attachments/assets/d29551b7-2ac7-428d-9605-f782193bcaf2
 
 </details>
 
-
-## 3. Advanced Examples
+## 4. Advanced Examples
 
 [![](http://i1.hdslb.com/bfs/archive/a53bab50141165eb452aa0763a9a5b9a51a7ca67.jpg)](https://www.bilibili.com/video/BV1gSHLe3EEv/)
 
-### 3.1 [Perceptive Locomotion](advance%20examples/ocs2_perceptive_anymal/)
+### 4.1 [Perceptive Locomotion](advance%20examples/ocs2_perceptive_anymal/)
 
 ![perceptive_side](.images/perception_side.png)
 
 ![perceptive_hurdles](.images/perception_hurdles.png)
 
-### 3.2 [RaiSim Simulation](advance%20examples/ocs2_raisim/)
+### 4.2 [RaiSim Simulation](advance%20examples/ocs2_raisim/)
 
 ![raisim](.images/raisim.png)
 
 ![raisim_rviz](.images/raisim_rviz.png)
 
-### 3.3 [MPC-Net](advance%20examples/ocs2_mpcnet/)
+### 4.3 [MPC-Net](advance%20examples/ocs2_mpcnet/)
 
-## 4. Related Projects
+## 5. Related Projects
 
-### 4.1 Robot Descriptions
-
-This repository includes various robot description packages for different robotic platforms:
-
-- **Agibot G1** - Humanoid robot description
-- **Agilex Aloha** - Mobile robot description  
-- **Airbot MMK2** - Manipulator description
-- **Airbot Play** - Educational robot description
-- **Changingtek** - Custom robot description
-- **CR5** - Collaborative robot description
-- **EC66 Dual** - Dual-arm robot description
-- **Elite EC** - Elite series robot description
-- **Galaxea A1** - Humanoid robot description
-- **Galaxea R1** - Wheeled humanoid description
-- **Galaxea R1 Pro** - Advanced wheeled humanoid description
-- **Galbot Foxtrot** - Mobile robot description
-- **Piper** - Custom robot description
-- **Robotiq** - Gripper description
-
-### 4.2 Arms ROS2 Control
-
-The **arms_ros2_control** package provides ROS2 control interfaces for various robotic arms:
-
-- **arms_ros2_control_msgs** - Message definitions for arm control
-- **arms_teleop** - Teleoperation interfaces for robotic arms
-
-These packages enable seamless integration with ROS2 control framework and provide standardized interfaces for robot control and teleoperation.
+* [quadruped ros2 control](https://github.com/legubiao/quadruped_ros2_control)： Quadruped controller based on OCS2 ROS2
+* [arms ro2 control](https://github.com/fiveages-sim/arms_ros2_control): Mobile manipulator controller based on OCS2 ROS2
+* [robot_descriptions](https://github.com/fiveages-sim/robot_descriptions): More robot configs for OCS2 ROS2
