@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <ocs2_msgs/msg/mpc_observation.hpp>
+#include <utility>
 #include <visualization_msgs/msg/interactive_marker.hpp>
 #include <visualization_msgs/msg/interactive_marker_feedback.hpp>
 #include <visualization_msgs/msg/marker.hpp>
@@ -16,19 +17,17 @@ namespace ocs2
     UnifiedTargetTrajectoriesInteractiveMarker::UnifiedTargetTrajectoriesInteractiveMarker(
         rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
         SingleArmGoalPoseToTargetTrajectories goalPoseToTargetTrajectories,
-        const double publishRate, const std::string& frameId)
+        const double publishRate, std::string  frameId)
         : node_(std::move(node)),
           mode_(Mode::SINGLE_ARM),
           publishRate_(publishRate),
           continuousMode_(false),
+          frameId_(std::move(frameId)),
           singleArmFunction_(std::move(goalPoseToTargetTrajectories)),
           singleArmPosition_(0.0, 0.0, 1.0),
-          singleArmOrientation_(1.0, 0.0, 0.0, 0.0),
-          activeArm_(ArmType::LEFT), // Default active arm
-          frameId_(frameId)
+          singleArmOrientation_(1.0, 0.0, 0.0, 0.0), // Default active arm
+          activeArm_(ArmType::LEFT)
     {
-        // 20Hz update rate
-
         topicPrefix_ = topicPrefix;
         setupCommon();
         setupSingleArmMode();
@@ -38,21 +37,19 @@ namespace ocs2
     UnifiedTargetTrajectoriesInteractiveMarker::UnifiedTargetTrajectoriesInteractiveMarker(
         rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
         DualArmGoalPoseToTargetTrajectories dualArmGoalPoseToTargetTrajectories,
-        const double publishRate, const std::string& frameId)
+        const double publishRate, std::string  frameId)
         : node_(std::move(node)),
           mode_(Mode::DUAL_ARM),
           publishRate_(publishRate),
           continuousMode_(false),
+          frameId_(std::move(frameId)),
           dualArmFunction_(std::move(dualArmGoalPoseToTargetTrajectories)),
           leftArmPosition_(0.0, 0.5, 1.0),
           leftArmOrientation_(1.0, 0.0, 0.0, 0.0),
           rightArmPosition_(0.0, -0.5, 1.0),
-          rightArmOrientation_(1.0, 0.0, 0.0, 0.0),
-          activeArm_(ArmType::LEFT), // Default active arm
-          frameId_(frameId)
+          rightArmOrientation_(1.0, 0.0, 0.0, 0.0), // Default active arm
+          activeArm_(ArmType::LEFT)
     {
-        // 20Hz update rate
-
         topicPrefix_ = topicPrefix;
         setupCommon();
         setupDualArmMode();
@@ -316,7 +313,7 @@ namespace ocs2
     {
         // Update current marker pose in real-time
         {
-            std::lock_guard<std::mutex> lock(markerPoseMutex_);
+            std::lock_guard lock(markerPoseMutex_);
             singleArmPosition_ = Eigen::Vector3d(feedback->pose.position.x,
                                                  feedback->pose.position.y,
                                                  feedback->pose.position.z);

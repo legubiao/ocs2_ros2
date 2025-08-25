@@ -75,24 +75,162 @@ cd ~/ros2_ws
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
-### 2.4 [Basic Examples](basic%20examples/)
+### 2.4 Basic Examples
 
-Quick start guide:
-
-* Compile legged robot example
-    ```bash
-    cd ~/ros2_ws
-    colcon build --packages-up-to ocs2_legged_robot_ros --symlink-install
-    ```
-* Run the legged robot example
-    ```bash
-    source ~/ros2_ws/install/setup.bash
-    ros2 launch ocs2_legged_robot_ros legged_robot_ddp.launch.py
-    ```
-
-![legged_robot](.images/legged_demo.png)
+This section contains basic examples for the OCS2 library.
 
 [![](http://i0.hdslb.com/bfs/archive/1bf12ba98ed8e7fe01594bb2a713ddafdd580488.jpg)](https://www.bilibili.com/video/BV12vv9eGEns/)
+
+
+#### 2.4.1 [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
+
+<details>
+<summary>🎯 Click to expand Double Integrator example</summary>
+
+* build
+```bash
+cd ~/ros2_ws
+colcon build --packages-up-to ocs2_double_integrator_ros --symlink-install
+```
+* run
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_double_integrator_ros double_integrator.launch.py
+```
+
+<video src=".images/double_interger.webm" width="100%" controls>
+  Your browser does not support the video tag.
+</video>
+
+</details>
+
+#### 2.4.2 [Cartpole](https://leggedrobotics.github.io/ocs2/robotic_examples.html#cartpole)
+
+<details>
+<summary>🛒 Click to expand Cartpole example</summary>
+
+* build
+```bash
+cd ~/ros2_ws
+colcon build --packages-up-to ocs2_cartpole_ros --symlink-install
+```
+* run
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_cartpole_ros cartpole.launch.py
+```
+
+https://github.com/user-attachments/assets/7fe0fe18-3ad5-47dd-9fe2-be90413c2f2f
+
+</details>
+
+#### 2.4.3 [Ballbot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#ballbot)
+
+<details>
+<summary>🏀 Click to expand Ballbot example</summary>
+
+* build
+```bash
+cd ~/ros2_ws
+colcon build --packages-up-to ocs2_ballbot_ros --symlink-install
+```
+* run
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_ballbot_ros ballbot_ddp.launch.py
+```
+
+https://github.com/user-attachments/assets/c87966b8-525f-4592-a54f-cfaed458a6f2
+
+</details>
+
+#### 2.4.4 [Quadrotor](https://leggedrobotics.github.io/ocs2/robotic_examples.html#quadrotor)
+
+<details>
+<summary>🚁 Click to expand Quadrotor example</summary>
+
+* build
+```bash
+cd ~/ros2_ws
+colcon build --packages-up-to ocs2_quadrotor_ros --symlink-install
+```
+* run
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_quadrotor_ros quadrotor.launch.py
+```
+
+https://github.com/user-attachments/assets/aed3173f-a6e6-4499-ae8c-d101bedc5222
+
+</details>
+
+#### 2.4.5 [Mobile Manipulator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#mobile-manipulator)
+
+<details>
+<summary>🦾 Click to expand Mobile Manipulator example</summary>
+
+* build
+```bash
+cd ~/ros2_ws
+colcon build --packages-up-to ocs2_mobile_manipulator_ros --symlink-install
+```
+* run Mabi-Mobile
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_mobile_manipulator_ros manipulator_mabi_mobile.launch.py
+```
+
+https://github.com/user-attachments/assets/c71f6123-fa3a-4b72-a60f-5509b8c25413
+
+* run Kinova Jaco2
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_mobile_manipulator_ros manipulator_kinova_j2n6.launch.py
+```
+* run Franka Panda
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_mobile_manipulator_ros franka.launch.py
+```
+
+https://github.com/user-attachments/assets/bab14b46-486e-46dc-a268-bd63616d1010
+
+* run Willow Garage PR2
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_mobile_manipulator_ros pr2.launch.py
+```
+
+https://github.com/user-attachments/assets/100aae62-9e80-487b-89cf-ea6a97ef2505
+
+* run Clearpath Ridgeback with UR-5
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_mobile_manipulator_ros manipulator_ridgeback_ur5.launch.py 
+```
+
+</details>
+
+#### 2.4.6 [Legged Robot](https://leggedrobotics.github.io/ocs2/robotic_examples.html#legged-robot)
+
+<details>
+<summary>🐕 Click to expand Legged Robot example</summary>
+
+* build
+```bash
+cd ~/ros2_ws
+colcon build --packages-up-to ocs2_legged_robot_ros --symlink-install
+```
+* run
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_legged_robot_ros legged_robot_ddp.launch.py
+```
+
+https://github.com/user-attachments/assets/d29551b7-2ac7-428d-9605-f782193bcaf2
+
+</details>
+
 
 ## 3. Advanced Examples
 

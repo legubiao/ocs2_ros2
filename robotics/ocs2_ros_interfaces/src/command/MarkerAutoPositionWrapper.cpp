@@ -4,13 +4,14 @@
 #include <ocs2_msgs/msg/mpc_observation.hpp>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <utility>
 #include <ocs2_ros_interfaces/common/RosMsgConversions.h>
 
 namespace ocs2
 {
     MarkerAutoPositionWrapper::MarkerAutoPositionWrapper(
         rclcpp::Node::SharedPtr node,
-        const std::string& topicPrefix,
+        std::string topicPrefix,
         IMarkerControl* markerControl,
         const UpdateMode updateMode,
         const bool dualArmMode,
@@ -19,7 +20,7 @@ namespace ocs2
     )
         : node_(std::move(node)),
           markerControl_(markerControl),
-          topicPrefix_(topicPrefix),
+          topicPrefix_(std::move(topicPrefix)),
           updateMode_(updateMode),
           cooldownDuration_(cooldownDuration),
           maxUpdateFrequency_(maxUpdateFrequency),
@@ -29,7 +30,8 @@ namespace ocs2
           initialized_(false),
           updateEnabled_(true),
           lastMpcObservationTime_(node_->now()),
-          lastUpdateTime_(rclcpp::Time(0, 0, RCL_ROS_TIME)),  // Set to very early time to avoid frequency limit on first check
+          lastUpdateTime_(rclcpp::Time(0, 0, RCL_ROS_TIME)),
+          // Set to very early time to avoid frequency limit on first check
           leftArmPoseReceived_(false),
           rightArmPoseReceived_(false)
     {
@@ -74,10 +76,10 @@ namespace ocs2
         bool shouldUpdate = false;
         {
             std::lock_guard lock(stateMutex_);
-            
+
             // Check frequency limit
             double timeSinceLastUpdate = (currentTime - lastUpdateTime_).seconds();
-            
+
             if (timeSinceLastUpdate >= minUpdateInterval_)
             {
                 switch (updateMode_)
@@ -115,14 +117,13 @@ namespace ocs2
     void MarkerAutoPositionWrapper::leftEndEffectorPoseCallback(
         const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
     {
-        bool shouldUpdate = processPoseCallback(msg, true);
-        if (!shouldUpdate)
+        if (bool shouldUpdate = processPoseCallback(msg, true); !shouldUpdate)
         {
             return;
         }
 
         updateLeftArmMarkerPosition(msg);
-        
+
         // Handle INITIALIZATION mode in single-arm mode
         if (!dualArmMode_)
         {
@@ -243,7 +244,7 @@ namespace ocs2
             {
                 initialized_ = true;
             }
-            
+
             // In single-arm mode, update lastUpdateTime_
             lastUpdateTime_ = node_->now();
         }
@@ -266,7 +267,7 @@ namespace ocs2
     {
         updateMarkerPosition(msg, IMarkerControl::ArmType::LEFT, "LeftArmGoal");
         handleInitialization(true);
-        
+
         // Handle INITIALIZATION mode in single-arm mode
         if (!dualArmMode_)
         {

@@ -4,12 +4,8 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <ocs2_msgs/msg/mpc_observation.hpp>
 #include <Eigen/Core>
-#include <Eigen/Geometry>
 #include <memory>
 #include <mutex>
-#include <atomic>
-#include <chrono>
-#include <functional>
 #include "ocs2_ros_interfaces/command/IMarkerControl.h"
 
 namespace ocs2 {
@@ -42,7 +38,7 @@ namespace ocs2 {
          */
         MarkerAutoPositionWrapper(
             rclcpp::Node::SharedPtr node,
-            const std::string& topicPrefix,
+            std::string  topicPrefix,
             IMarkerControl* markerControl,
             UpdateMode updateMode = UpdateMode::INITIALIZATION,
             bool dualArmMode = false,

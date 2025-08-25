@@ -14,13 +14,15 @@
 #include <visualization_msgs/msg/interactive_marker_feedback.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
-namespace ocs2 {
+namespace ocs2
+{
     /**
      * Unified interactive marker class that supports both single arm and dual arm modes.
      * This class combines the functionality of both TargetTrajectoriesInteractiveMarker 
      * and DualArmTargetTrajectoriesInteractiveMarker.
      */
-    class UnifiedTargetTrajectoriesInteractiveMarker final : public IMarkerControl {
+    class UnifiedTargetTrajectoriesInteractiveMarker final : public IMarkerControl
+    {
     public:
         // Function types for different modes
         using SingleArmGoalPoseToTargetTrajectories = std::function<TargetTrajectories(
@@ -48,7 +50,7 @@ namespace ocs2 {
             rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
             SingleArmGoalPoseToTargetTrajectories goalPoseToTargetTrajectories,
             double publishRate = 10.0,
-            const std::string& frameId = "world");
+            std::string frameId = "world");
 
         /**
          * Constructor for dual arm mode
@@ -66,15 +68,16 @@ namespace ocs2 {
             rclcpp::Node::SharedPtr node, const std::string& topicPrefix,
             DualArmGoalPoseToTargetTrajectories dualArmGoalPoseToTargetTrajectories,
             double publishRate = 10.0,
-            const std::string& frameId = "world");
+            std::string frameId = "world");
 
-        ~UnifiedTargetTrajectoriesInteractiveMarker();
+        ~UnifiedTargetTrajectoriesInteractiveMarker() override;
 
         // Public methods
 
         // IMarkerControl interface implementation
         void setSingleArmPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation) override;
-        void setDualArmPose(ArmType armType, const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation) override;
+        void setDualArmPose(ArmType armType, const Eigen::Vector3d& position,
+                            const Eigen::Quaterniond& orientation) override;
         std::pair<Eigen::Vector3d, Eigen::Quaterniond> getSingleArmPose() const override;
         std::pair<Eigen::Vector3d, Eigen::Quaterniond> getDualArmPose(ArmType armType) const override;
         void sendSingleArmTrajectories() override;
@@ -84,10 +87,10 @@ namespace ocs2 {
         Mode getMode() const override;
         ArmType getActiveArm() const override;
         void setActiveArm(ArmType armType) override;
-        void updateMarkerDisplay(const std::string& markerName, const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation) override;
+        void updateMarkerDisplay(const std::string& markerName, const Eigen::Vector3d& position,
+                                 const Eigen::Quaterniond& orientation) override;
 
     private:
-
         // Core setup methods
         void setupCommon();
         void setupSingleArmMode();
@@ -103,8 +106,10 @@ namespace ocs2 {
         void addMovementControls(visualization_msgs::msg::InteractiveMarker& interactiveMarker) const;
 
         // Feedback processing methods
-        void processSingleArmFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback);
-        void processDualArmFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback, ArmType armType);
+        void processSingleArmFeedback(
+            const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback);
+        void processDualArmFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback,
+                                    ArmType armType);
 
         // Menu handling methods
         void setupSingleArmMenu();
@@ -136,8 +141,10 @@ namespace ocs2 {
         std::string frameId_;
 
         // Function objects
-        std::function<TargetTrajectories(const Eigen::Vector3d&, const Eigen::Quaterniond&, const SystemObservation&)> singleArmFunction_;
-        std::function<TargetTrajectories(const Eigen::Vector3d&, const Eigen::Quaterniond&, const Eigen::Vector3d&, const Eigen::Quaterniond&, const SystemObservation&)> dualArmFunction_;
+        std::function<TargetTrajectories(const Eigen::Vector3d&, const Eigen::Quaterniond&, const SystemObservation&)>
+        singleArmFunction_;
+        std::function<TargetTrajectories(const Eigen::Vector3d&, const Eigen::Quaterniond&, const Eigen::Vector3d&,
+                                         const Eigen::Quaterniond&, const SystemObservation&)> dualArmFunction_;
 
         // Menu handlers
         std::shared_ptr<interactive_markers::MenuHandler> singleArmMenuHandler_;
@@ -147,7 +154,7 @@ namespace ocs2 {
         // Menu handles for dynamic visibility control (single arm)
         interactive_markers::MenuHandler::EntryHandle sendPoseHandle_;
         interactive_markers::MenuHandler::EntryHandle toggleModeHandle_;
-        
+
         // Menu handles for dynamic visibility control (dual arm)
         interactive_markers::MenuHandler::EntryHandle leftArmSendHandle_;
         interactive_markers::MenuHandler::EntryHandle leftArmBothHandle_;
@@ -164,11 +171,10 @@ namespace ocs2 {
         Eigen::Quaterniond leftArmOrientation_;
         Eigen::Vector3d rightArmPosition_;
         Eigen::Quaterniond rightArmOrientation_;
-        
+
         // Active arm for dual arm mode
-        ArmType activeArm_;  // Currently active arm (dual-arm mode)
+        ArmType activeArm_; // Currently active arm (dual-arm mode)
 
         // Marker initialization
-
     };
-} // namespace ocs2 
+} // namespace ocs2

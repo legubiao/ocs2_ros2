@@ -26,9 +26,9 @@ namespace ocs2
           currentOrientation_(1.0, 0.0, 0.0, 0.0)
     {
         // Initialize button states
-        for (int i = 0; i < 6; ++i)
+        for (bool& lastButtonState : lastButtonStates_)
         {
-            lastButtonStates_[i] = false;
+            lastButtonState = false;
         }
 
         // Create joystick subscriber
@@ -168,7 +168,7 @@ namespace ocs2
                 if (bJustPressed && enabled_.load() && markerControl_->getMode() == IMarkerControl::Mode::DUAL_ARM)
                 {
                     auto currentArm = markerControl_->getActiveArm();
-                    auto newArm = (currentArm == IMarkerControl::ArmType::LEFT)
+                    auto newArm = currentArm == IMarkerControl::ArmType::LEFT
                                       ? IMarkerControl::ArmType::RIGHT
                                       : IMarkerControl::ArmType::LEFT;
                     markerControl_->setActiveArm(newArm);
