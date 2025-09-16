@@ -118,16 +118,6 @@ namespace ocs2
         }
     }
 
-    // Eigen::Matrix4d VRMarkerWrapper::getLeftPose() const
-    // {
-    //     return leftEEPose_;
-    // }
-
-    // Eigen::Matrix4d VRMarkerWrapper::getRightPose() const
-    // {
-    //     return rightEEPose_;
-    // }
-
 
     void VRMarkerWrapper::updateMarkerPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation, const IMarkerControl::ArmType targetArm)
     {
@@ -153,44 +143,6 @@ namespace ocs2
                      targetArm == IMarkerControl::ArmType::LEFT ? "left arm" : "right arm",
                      position.x(), position.y(), position.z());
     }
-
-    // void VRMarkerWrapper::syncExternalPosition(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation)
-    // {
-    //     // Always update the internal position and orientation, regardless of enabled state
-    //     currentPosition_ = position;
-    //     currentOrientation_ = orientation;
-        
-    //     // Log the sync operation
-    //     RCLCPP_DEBUG(node_->get_logger(), "🕹️🕶️🕹️ Synced external position: [%.3f, %.3f, %.3f] (enabled: %s)",
-    //                  position.x(), position.y(), position.z(),
-    //                  enabled_.load() ? "true" : "false");
-    // }
-
-    // void VRMarkerWrapper::syncCurrentPoseWithMarker()
-    // {
-    //     if (!markerControl_)
-    //     {
-    //         RCLCPP_WARN(node_->get_logger(), "🕹️🕶️🕹️ Marker control not available for pose sync");
-    //         return;
-    //     }
-
-    //     // Get current marker position based on mode
-    //     if (markerControl_->getMode() == IMarkerControl::Mode::SINGLE_ARM)
-    //     {
-    //         auto [pos, orient] = markerControl_->getSingleArmPose();
-    //         currentPosition_ = pos;
-    //         currentOrientation_ = orient;
-    //     }
-    //     else
-    //     {
-    //         auto [pos, orient] = markerControl_->getDualArmPose(markerControl_->getActiveArm());
-    //         currentPosition_ = pos;
-    //         currentOrientation_ = orient;
-    //     }
-
-    //     RCLCPP_DEBUG(node_->get_logger(), "🕹️🕶️🕹️ Synced current pose with marker: [%.3f, %.3f, %.3f]",
-    //                  currentPosition_.x(), currentPosition_.y(), currentPosition_.z());
-    // }
 
     Eigen::Matrix4d VRMarkerWrapper::poseMsgToMatrix(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
     {

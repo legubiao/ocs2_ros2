@@ -51,18 +51,6 @@ namespace ocs2 {
          */
         bool isEnabled() const { return enabled_.load(); }
 
-        /**
-         * Sync VR position with external position update
-         * This method is safe to call even when VR control is disabled
-         * @param position New position
-         * @param orientation New orientation
-         */
-        // void syncExternalPosition(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation);
-
-
-        // Eigen::Matrix4d VRMarkerWrapper::getLeftPose() const;
-        // Eigen::Matrix4d VRMarkerWrapper::getRightPose() const;
-
     private:
         double updateRate_;
 
@@ -83,11 +71,6 @@ namespace ocs2 {
         void updateMarkerPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation, const IMarkerControl::ArmType targetArm);
 
 
-        /**
-         * Sync current pose with marker position
-         * Updates currentPosition_ and currentOrientation_ from marker control
-         */
-        // void syncCurrentPoseWithMarker();
 
         /**
          * Convert PoseStamped message to Eigen::Matrix4d
