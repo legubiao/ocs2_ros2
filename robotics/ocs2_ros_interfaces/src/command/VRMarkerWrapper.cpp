@@ -47,6 +47,7 @@ namespace ocs2
 
         for (const auto& name : node_names)
         {
+            // std::cout << "Discovered node: " << name << std::endl;
             if (name == target_node_name)
             {
                 return true;
@@ -80,12 +81,12 @@ namespace ocs2
         }
         lastUpdateTime_ = currentTime;
 
-        if (check_node_exists(node_, XR_NODE_NAME))
+        if (check_node_exists(node_, XR_NODE_NAME) && !enabled_.load())
         {
             RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 5000, "🕹️🕶️🕹️ xr_target_node found, VR control ENABLED!");
             this->enable();
         }
-        else
+        else if (!check_node_exists(node_, XR_NODE_NAME) && enabled_.load())
         {
             this->disable();
             RCLCPP_WARN_THROTTLE(node_->get_logger(), *node_->get_clock(), 5000, "🕹️🕶️🕹️ xr_target_node not found, VR control DISABLED!");
@@ -96,15 +97,10 @@ namespace ocs2
         matrixToPosOri(leftEEPose_, leftPosition_, leftOrientation_);
         if (enabled_.load())
         {
-            if (markerControl_->getMode() == IMarkerControl::Mode::SINGLE_ARM)
-            {
-                this->updateMarkerPose(leftPosition_, leftOrientation_, IMarkerControl::ArmType::LEFT);
-            }
-            else
-            {
-                // Dual arm mode: always update left arm
-                this->updateMarkerPose(leftPosition_, leftOrientation_, IMarkerControl::ArmType::LEFT);
-            }
+            std::cout << "Left Position: " << leftPosition_.transpose() << std::endl;
+            // Update left arm
+            this->updateMarkerPose(leftPosition_, leftOrientation_, IMarkerControl::ArmType::LEFT);
+
         }
     }
 

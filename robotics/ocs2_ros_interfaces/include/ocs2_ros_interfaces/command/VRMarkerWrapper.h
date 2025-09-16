@@ -13,7 +13,7 @@
 
 namespace ocs2 {
 
-    const std::string XR_NODE_NAME = "xr_target_node";
+    const std::string XR_NODE_NAME = "/xr_target_node";
 
     class VRMarkerWrapper {
     public:
@@ -26,7 +26,7 @@ namespace ocs2 {
         VRMarkerWrapper(
             rclcpp::Node::SharedPtr node,
             IMarkerControl* markerControl,
-            const double updateRate = 30.0);
+            const double updateRate = 500.0);
 
         /**
          * Destructor
