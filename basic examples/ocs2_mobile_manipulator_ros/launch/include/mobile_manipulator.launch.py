@@ -53,6 +53,11 @@ def generate_launch_description():
             description='Whether to enable joystick control'
         ),
         DeclareLaunchArgument(
+            name='enableVR',
+            default_value='false',
+            description='Whether to enable VR control'
+        ),
+        DeclareLaunchArgument(
             name='enableAutoPosition',
             default_value='false',
             description='Whether to enable automatic marker position updates'
@@ -133,6 +138,9 @@ def generate_launch_description():
                 },
                 {
                     'enableJoystick': LaunchConfiguration('enableJoystick')
+                },
+                {
+                    'enableVR': LaunchConfiguration('enableVR')
                 },
                 {
                     'enableAutoPosition': LaunchConfiguration('enableAutoPosition')

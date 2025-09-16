@@ -192,6 +192,16 @@ int main(int argc, char* argv[])
         enableJoystick = false;
     }
 
+    bool enableVR = false;
+    try
+    {
+        enableVR = node->get_parameter("enableVR").as_bool();
+    }
+    catch (const rclcpp::exceptions::ParameterNotDeclaredException&)
+    {
+        enableVR = false;
+    }
+
     bool enableAutoPosition = false;
     try
     {
@@ -204,6 +214,7 @@ int main(int argc, char* argv[])
 
     std::unique_ptr<JoystickMarkerWrapper> joystickControl;
     std::unique_ptr<MarkerAutoPositionWrapper> autoPositionWrapper;
+    std::unique_ptr<VRMarkerWrapper> vrControl;
 
     if (dualArmMode)
     {
@@ -216,6 +227,14 @@ int main(int argc, char* argv[])
         {
             RCLCPP_INFO(node->get_logger(), "Joystick marker wrapper enabled");
             joystickControl = std::make_unique<JoystickMarkerWrapper>(node, &targetPoseCommand);
+        }
+
+        if (enableVR)
+        {
+            RCLCPP_INFO(node->get_logger(), "VR marker wrapper enabled");
+            vrControl = std::make_unique<VRMarkerWrapper>(node, &targetPoseCommand);
+            // Enable VR control by default
+            vrControl->enable();
         }
 
         if (enableAutoPosition)
