@@ -10,8 +10,7 @@ namespace ocs2
         VRMarkerWrapper::VRMarkerWrapper(
         rclcpp::Node::SharedPtr node,
         IMarkerControl* markerControl,
-        const double updateRate,
-        const JoystickMapping& mapping)
+        const double updateRate)
         : node_(std::move(node)),
           markerControl_(markerControl),
           updateRate_(updateRate),
@@ -26,14 +25,14 @@ namespace ocs2
             this->vrLeftCallback(msg);
         };
         subLeft_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-            "xr_target_node/xr_left_ee_pose", 10, vrLeftCallback);
+            "xr_left_ee_pose", 10, vrLeftCallback);
 
         auto vrRightCallback = [this](const geometry_msgs::msg::PoseStamped::SharedPtr msg)
         {
             this->vrRightCallback(msg);
         };
         subRight_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-            "xr_target_node/xr_right_ee_pose", 10, vrRightCallback);
+            "xr_right_ee_pose", 10, vrRightCallback);
 
         RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ VRMarkerWrapper created");
         RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ VR control is DISABLED by default. Press right stick to enable.");
@@ -42,7 +41,7 @@ namespace ocs2
         markerControl_->togglePublishMode();
     }
 
-    bool check_node_exists(const std::shared_ptr<rclcpp::Node>& node, const std::string& target_node_name)
+    bool VRMarkerWrapper::check_node_exists(const std::shared_ptr<rclcpp::Node>& node, const std::string& target_node_name)
     {
         std::vector<std::string> node_names = node->get_node_graph_interface()->get_node_names();
 
@@ -134,7 +133,7 @@ namespace ocs2
     // }
 
 
-    void VRMarkerWrapper::updateMarkerPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation, const ArmType targetArm)
+    void VRMarkerWrapper::updateMarkerPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation, const IMarkerControl::ArmType targetArm)
     {
         if (markerControl_->getMode() == IMarkerControl::Mode::SINGLE_ARM)
         {
@@ -216,7 +215,7 @@ namespace ocs2
     }
 
 
-    void matrixToPosOri(const Eigen::Matrix4d& matrix, Eigen::Vector3d& position, Eigen::Quaterniond& orientation)
+    void VRMarkerWrapper::matrixToPosOri(const Eigen::Matrix4d& matrix, Eigen::Vector3d& position, Eigen::Quaterniond& orientation)
     {
         position = matrix.block<3, 1>(0, 3);
         Eigen::Matrix3d rot = matrix.block<3, 3>(0, 0);

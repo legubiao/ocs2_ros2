@@ -32,6 +32,7 @@ add_library(${PROJECT_NAME}
         src/command/JoystickMarkerWrapper.cpp
         src/command/MarkerAutoPositionWrapper.cpp
         src/command/TargetTrajectoriesKeyboardPublisher.cpp
+        src/command/VRMarkerWrapper.cpp
         src/common/RosMsgConversions.cpp
         src/common/RosMsgHelpers.cpp
         src/mpc/MPC_ROS_Interface.cpp

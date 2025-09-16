@@ -26,8 +26,7 @@ namespace ocs2 {
         VRMarkerWrapper(
             rclcpp::Node::SharedPtr node,
             IMarkerControl* markerControl,
-            const double updateRate = 30.0,
-        );
+            const double updateRate = 30.0);
 
         /**
          * Destructor
@@ -65,10 +64,7 @@ namespace ocs2 {
         // Eigen::Matrix4d VRMarkerWrapper::getRightPose() const;
 
     private:
-        rclcpp::Node::SharedPtr node_;
-        IMarkerControl* markerControl_;
         double updateRate_;
-        std::atomic<bool> enabled_;
 
         /**
          * VR callback function
@@ -84,7 +80,7 @@ namespace ocs2 {
          * @param orientation New orientation
          * @param targetArm Target arm for dual arm mode
          */
-        void updateMarkerPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation, const ArmType targetArm);
+        void updateMarkerPose(const Eigen::Vector3d& position, const Eigen::Quaterniond& orientation, const IMarkerControl::ArmType targetArm);
 
 
         /**

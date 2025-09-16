@@ -29,6 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_ros_interfaces/command/UnifiedTargetTrajectoriesInteractiveMarker.h>
 #include <ocs2_ros_interfaces/command/JoystickMarkerWrapper.h>
+#include <ocs2_ros_interfaces/command/VRMarkerWrapper.h>
 #include <ocs2_ros_interfaces/command/MarkerAutoPositionWrapper.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/info_parser.hpp>
