@@ -14,6 +14,10 @@
 namespace ocs2 {
 
     const std::string XR_NODE_NAME = "/xr_target_node";
+    
+    // Thresholds for pose change detection
+    const double POSITION_THRESHOLD = 0.001;  // 1mm threshold for position changes
+    const double ORIENTATION_THRESHOLD = 0.005; // threshold for orientation changes (quaternion angle)
 
     class VRMarkerWrapper {
     public:
@@ -81,6 +85,17 @@ namespace ocs2 {
 
         void matrixToPosOri(const Eigen::Matrix4d& matrix, Eigen::Vector3d& position, Eigen::Quaterniond& orientation);
 
+        /**
+         * Check if pose has changed significantly
+         * @param currentPos Current position
+         * @param currentOri Current orientation
+         * @param prevPos Previous position
+         * @param prevOri Previous orientation
+         * @return true if pose has changed significantly
+         */
+        bool hasPoseChanged(const Eigen::Vector3d& currentPos, const Eigen::Quaterniond& currentOri,
+                           const Eigen::Vector3d& prevPos, const Eigen::Quaterniond& prevOri);
+
         // ROS components
         rclcpp::Node::SharedPtr node_;
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subLeft_;
@@ -96,6 +111,12 @@ namespace ocs2 {
         Eigen::Quaterniond leftOrientation_ = Eigen::Quaterniond::Identity();
         Eigen::Vector3d rightPosition_ = Eigen::Vector3d::Zero();
         Eigen::Quaterniond rightOrientation_ = Eigen::Quaterniond::Identity();
+
+        // Previous pose for change detection
+        Eigen::Vector3d prevLeftPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond prevLeftOrientation_ = Eigen::Quaterniond::Identity();
+        Eigen::Vector3d prevRightPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond prevRightOrientation_ = Eigen::Quaterniond::Identity();
 
 
         // Marker control interface

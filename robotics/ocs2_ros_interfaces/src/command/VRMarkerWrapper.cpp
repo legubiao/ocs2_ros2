@@ -38,7 +38,12 @@ namespace ocs2
         RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ VR control is DISABLED by default. Press right stick to enable.");
 
         // Initialize the marker control mode to continuous mode
-        markerControl_->togglePublishMode();
+        if (!markerControl_->isContinuousMode())
+        {
+            markerControl_->togglePublishMode();
+            RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ Marker control set to CONTINUOUS mode by default.");
+        }
+        
     }
 
     bool VRMarkerWrapper::check_node_exists(const std::shared_ptr<rclcpp::Node>& node, const std::string& target_node_name)
@@ -95,12 +100,22 @@ namespace ocs2
 
         leftEEPose_ = poseMsgToMatrix(msg);
         matrixToPosOri(leftEEPose_, leftPosition_, leftOrientation_);
+        
         if (enabled_.load())
         {
-            std::cout << "Left Position: " << leftPosition_.transpose() << std::endl;
-            // Update left arm
-            this->updateMarkerPose(leftPosition_, leftOrientation_, IMarkerControl::ArmType::LEFT);
-
+            // Check if pose has changed significantly
+            if (hasPoseChanged(leftPosition_, leftOrientation_, prevLeftPosition_, prevLeftOrientation_))
+            {
+                // std::cout << "Left Position: " << leftPosition_.transpose() << std::endl;
+                // std::cout << "Left Orientation (w,x,y,z): " << leftOrientation_.w() << ", " << leftOrientation_.x() << ", "
+                //           << leftOrientation_.y() << ", " << leftOrientation_.z() << std::endl;
+                // Update left arm
+                updateMarkerPose(leftPosition_, leftOrientation_, IMarkerControl::ArmType::LEFT);
+                
+                // Update previous pose
+                prevLeftPosition_ = leftPosition_;
+                prevLeftOrientation_ = leftOrientation_;
+            }
         }
     }
 
@@ -108,12 +123,21 @@ namespace ocs2
     {
         rightEEPose_ = poseMsgToMatrix(msg);
         matrixToPosOri(rightEEPose_, rightPosition_, rightOrientation_);
+        
         if (enabled_.load())
         {
             if (markerControl_->getMode() == IMarkerControl::Mode::DUAL_ARM)
             {
-                // Dual arm mode: always update right arm
-                this->updateMarkerPose(rightPosition_, rightOrientation_, IMarkerControl::ArmType::RIGHT);
+                // Check if pose has changed significantly
+                if (hasPoseChanged(rightPosition_, rightOrientation_, prevRightPosition_, prevRightOrientation_))
+                {
+                    // Dual arm mode: update right arm
+                    updateMarkerPose(rightPosition_, rightOrientation_, IMarkerControl::ArmType::RIGHT);
+                    
+                    // Update previous pose
+                    prevRightPosition_ = rightPosition_;
+                    prevRightOrientation_ = rightOrientation_;
+                }
             }
         }
     }
@@ -138,7 +162,7 @@ namespace ocs2
         }
 
         // Output debug information
-        RCLCPP_DEBUG(node_->get_logger(), "🕹️🕶️🕹️ Updated %s marker position: [%.3f, %.3f, %.3f]",
+        RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ Updated %s marker position: [%.3f, %.3f, %.3f]",
                      markerControl_->getMode() == IMarkerControl::Mode::SINGLE_ARM ? "single arm" :
                      targetArm == IMarkerControl::ArmType::LEFT ? "left arm" : "right arm",
                      position.x(), position.y(), position.z());
@@ -168,5 +192,25 @@ namespace ocs2
         position = matrix.block<3, 1>(0, 3);
         Eigen::Matrix3d rot = matrix.block<3, 3>(0, 0);
         orientation = Eigen::Quaterniond(rot);
+    }
+
+    bool VRMarkerWrapper::hasPoseChanged(const Eigen::Vector3d& currentPos, const Eigen::Quaterniond& currentOri,
+                                        const Eigen::Vector3d& prevPos, const Eigen::Quaterniond& prevOri)
+    {
+        // Check position change
+        double positionDiff = (currentPos - prevPos).norm();
+        if (positionDiff > POSITION_THRESHOLD)
+        {
+            return true;
+        }
+
+        // Check orientation change using quaternion angle difference
+        double orientationDiff = std::abs(currentOri.angularDistance(prevOri));
+        if (orientationDiff > ORIENTATION_THRESHOLD)
+        {
+            return true;
+        }
+
+        return false;
     }
 }   // namespace ocs2
