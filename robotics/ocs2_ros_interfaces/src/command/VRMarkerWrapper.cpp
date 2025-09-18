@@ -51,14 +51,14 @@ namespace ocs2
         };
         subRobotLeftPose_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
             "unitree_g1_left_end_effector_pose", 10, robotLeftCallback);
-
+            // "unitree_g1_left_end_effector_pose" "left_current_pose"
         auto robotRightCallback = [this](const geometry_msgs::msg::PoseStamped::SharedPtr msg)
         {
             this->robotRightPoseCallback(msg);
         };
         subRobotRightPose_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
             "unitree_g1_right_end_effector_pose", 10, robotRightCallback);
-
+            // "unitree_g1_right_end_effector_pose" "right_current_pose"
         RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ VRMarkerWrapper created");
         RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ VR control is DISABLED by default. Press right stick to enable.");
         RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ Left thumbstick toggles between STORAGE and UPDATE modes.");
