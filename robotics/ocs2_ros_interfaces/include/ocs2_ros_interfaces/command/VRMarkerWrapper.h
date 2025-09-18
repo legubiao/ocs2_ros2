@@ -2,6 +2,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <memory>
@@ -16,7 +17,7 @@ namespace ocs2 {
     const std::string XR_NODE_NAME = "/xr_target_node";
     
     // Thresholds for pose change detection
-    const double POSITION_THRESHOLD = 0.001;  // 1mm threshold for position changes
+    const double POSITION_THRESHOLD = 0.01;  // 1mm threshold for position changes
     const double ORIENTATION_THRESHOLD = 0.005; // threshold for orientation changes (quaternion angle)
 
     class VRMarkerWrapper {
@@ -65,6 +66,19 @@ namespace ocs2 {
         void vrLeftCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
         void vrRightCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
+        /**
+         * Left thumbstick callback function
+         * @param msg Boolean message indicating thumbstick press
+         */
+        void leftThumbstickCallback(const std_msgs::msg::Bool::SharedPtr msg);
+
+        /**
+         * Robot current pose callback functions
+         * @param msg Robot current pose message
+         */
+        void robotLeftPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+        void robotRightPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+
 
         /**
          * Update marker position based on VR input
@@ -96,10 +110,29 @@ namespace ocs2 {
         bool hasPoseChanged(const Eigen::Vector3d& currentPos, const Eigen::Quaterniond& currentOri,
                            const Eigen::Vector3d& prevPos, const Eigen::Quaterniond& prevOri);
 
+        /**
+         * Calculate pose difference and apply to robot base pose
+         * @param vrCurrentPos Current VR position
+         * @param vrCurrentOri Current VR orientation
+         * @param vrBasePos VR base position
+         * @param vrBaseOri VR base orientation
+         * @param robotBasePos Robot base position
+         * @param robotBaseOri Robot base orientation
+         * @param resultPos Output calculated position
+         * @param resultOri Output calculated orientation
+         */
+        void calculatePoseFromDifference(const Eigen::Vector3d& vrCurrentPos, const Eigen::Quaterniond& vrCurrentOri,
+                                       const Eigen::Vector3d& vrBasePos, const Eigen::Quaterniond& vrBaseOri,
+                                       const Eigen::Vector3d& robotBasePos, const Eigen::Quaterniond& robotBaseOri,
+                                       Eigen::Vector3d& resultPos, Eigen::Quaterniond& resultOri);
+
         // ROS components
         rclcpp::Node::SharedPtr node_;
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subLeft_;
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subRight_;
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subLeftThumbstick_;
+        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subRobotLeftPose_;
+        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subRobotRightPose_;
 
         // VR ee pose matrix parameters
         Eigen::Matrix4d leftEEPose_ = Eigen::Matrix4d::Identity();
@@ -112,11 +145,39 @@ namespace ocs2 {
         Eigen::Vector3d rightPosition_ = Eigen::Vector3d::Zero();
         Eigen::Quaterniond rightOrientation_ = Eigen::Quaterniond::Identity();
 
-        // Previous pose for change detection
-        Eigen::Vector3d prevLeftPosition_ = Eigen::Vector3d::Zero();
-        Eigen::Quaterniond prevLeftOrientation_ = Eigen::Quaterniond::Identity();
-        Eigen::Vector3d prevRightPosition_ = Eigen::Vector3d::Zero();
-        Eigen::Quaterniond prevRightOrientation_ = Eigen::Quaterniond::Identity();
+        // Previous pose for change detection (update mode)
+        Eigen::Vector3d prevCalculatedLeftPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond prevCalculatedLeftOrientation_ = Eigen::Quaterniond::Identity();
+        Eigen::Vector3d prevCalculatedRightPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond prevCalculatedRightOrientation_ = Eigen::Quaterniond::Identity();
+
+        // Previous VR pose for change detection (storage mode)
+        Eigen::Vector3d prevVRLeftPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond prevVRLeftOrientation_ = Eigen::Quaterniond::Identity();
+        Eigen::Vector3d prevVRRightPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond prevVRRightOrientation_ = Eigen::Quaterniond::Identity();
+
+        // State management
+        std::atomic<bool> isUpdateMode_;  // true = update mode, false = storage mode
+        std::atomic<bool> lastThumbstickState_;
+
+        // VR base poses (stored when thumbstick is pressed)
+        Eigen::Vector3d vrBaseLeftPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond vrBaseLeftOrientation_ = Eigen::Quaterniond::Identity();
+        Eigen::Vector3d vrBaseRightPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond vrBaseRightOrientation_ = Eigen::Quaterniond::Identity();
+
+        // Robot base poses (stored when thumbstick is pressed)
+        Eigen::Vector3d robotBaseLeftPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond robotBaseLeftOrientation_ = Eigen::Quaterniond::Identity();
+        Eigen::Vector3d robotBaseRightPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond robotBaseRightOrientation_ = Eigen::Quaterniond::Identity();
+
+        // Current robot poses
+        Eigen::Vector3d robotCurrentLeftPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond robotCurrentLeftOrientation_ = Eigen::Quaterniond::Identity();
+        Eigen::Vector3d robotCurrentRightPosition_ = Eigen::Vector3d::Zero();
+        Eigen::Quaterniond robotCurrentRightOrientation_ = Eigen::Quaterniond::Identity();
 
 
         // Marker control interface
