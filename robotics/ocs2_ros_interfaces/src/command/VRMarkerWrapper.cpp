@@ -36,13 +36,13 @@ namespace ocs2
         subRight_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
             "xr_right_ee_pose", 10, vrRightCallback);
 
-        // Create left thumbstick subscriber
+        // Create right thumbstick subscriber
         auto thumbstickCallback = [this](const std_msgs::msg::Bool::SharedPtr msg)
         {
-            this->leftThumbstickCallback(msg);
+            this->rightThumbstickCallback(msg);
         };
-        subLeftThumbstick_ = node_->create_subscription<std_msgs::msg::Bool>(
-            "xr_left_thumbstick", 10, thumbstickCallback);
+        subRightThumbstick_ = node_->create_subscription<std_msgs::msg::Bool>(
+            "xr_right_thumbstick", 10, thumbstickCallback);
 
         // Create robot pose subscribers
         auto robotLeftCallback = [this](const geometry_msgs::msg::PoseStamped::SharedPtr msg)
@@ -61,7 +61,7 @@ namespace ocs2
             // "unitree_g1_right_end_effector_pose" "right_current_pose"
         RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ VRMarkerWrapper created");
         RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ VR control is DISABLED by default. Press right stick to enable.");
-        RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ Left thumbstick toggles between STORAGE and UPDATE modes.");
+        RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ Right thumbstick toggles between STORAGE and UPDATE modes.");
         RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ STORAGE mode: Store VR and robot base poses (no marker update)");
         RCLCPP_INFO(node_->get_logger(), "🕹️🕶️🕹️ UPDATE mode: Calculate pose differences and update markers");
 
@@ -105,7 +105,7 @@ namespace ocs2
         }
     }
 
-    void VRMarkerWrapper::leftThumbstickCallback(const std_msgs::msg::Bool::SharedPtr msg)
+    void VRMarkerWrapper::rightThumbstickCallback(const std_msgs::msg::Bool::SharedPtr msg)
     {
         bool currentThumbstickState = msg->data;
         bool lastState = lastThumbstickState_.load();

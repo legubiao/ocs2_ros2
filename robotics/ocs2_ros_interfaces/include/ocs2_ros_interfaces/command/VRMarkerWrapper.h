@@ -67,10 +67,10 @@ namespace ocs2 {
         void vrRightCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
         /**
-         * Left thumbstick callback function
+         * Right thumbstick callback function
          * @param msg Boolean message indicating thumbstick press
          */
-        void leftThumbstickCallback(const std_msgs::msg::Bool::SharedPtr msg);
+        void rightThumbstickCallback(const std_msgs::msg::Bool::SharedPtr msg);
 
         /**
          * Robot current pose callback functions
@@ -130,7 +130,7 @@ namespace ocs2 {
         rclcpp::Node::SharedPtr node_;
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subLeft_;
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subRight_;
-        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subLeftThumbstick_;
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subRightThumbstick_;
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subRobotLeftPose_;
         rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subRobotRightPose_;
 
