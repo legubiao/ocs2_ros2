@@ -192,9 +192,9 @@ namespace ocs2::mobile_manipulator
                                                  *pinocchioInterfacePtr_, taskFile, "finalEndEffector",
                                                  usePreComputation, libraryFolder, recompileLibraries));
         // self-collision avoidance constraint
-        bool activateSelfCollision = true;
-        loadData::loadPtreeValue(pt, activateSelfCollision, "selfCollision.activate", true);
-        if (activateSelfCollision)
+        selfCollisionEnabled_ = true;
+        loadData::loadPtreeValue(pt, selfCollisionEnabled_, "selfCollision.activate", true);
+        if (selfCollisionEnabled_)
         {
             problem_.stateSoftConstraintPtr->add(
                 "selfCollision", getSelfCollisionConstraint(*pinocchioInterfacePtr_, taskFile, urdfFile,
@@ -437,6 +437,7 @@ namespace ocs2::mobile_manipulator
         scalar_t mu = 1e-2;
         scalar_t delta = 1e-3;
         scalar_t minimumDistance = 0.0;
+        scalar_t activationDistance = -1.0;  // -1 means use default (5 * minimumDistance)
 
         boost::property_tree::ptree pt;
         boost::property_tree::read_info(taskFile, pt);
@@ -445,8 +446,19 @@ namespace ocs2::mobile_manipulator
         loadData::loadPtreeValue(pt, mu, prefix + ".mu", true);
         loadData::loadPtreeValue(pt, delta, prefix + ".delta", true);
         loadData::loadPtreeValue(pt, minimumDistance, prefix + ".minimumDistance", true);
+        loadData::loadPtreeValue(pt, activationDistance, prefix + ".activationDistance", false);
         loadData::loadStdVectorOfPair(taskFile, prefix + ".collisionObjectPairs", collisionObjectPairs, true);
         loadData::loadStdVectorOfPair(taskFile, prefix + ".collisionLinkPairs", collisionLinkPairs, true);
+        
+        // If activationDistance not specified, default to 5 * minimumDistance
+        if (activationDistance < 0.0) {
+            activationDistance = 5.0 * minimumDistance;
+        }
+        // Store distances for visualization and collision detection
+        selfCollisionMinimumDistance_ = minimumDistance;
+        selfCollisionActivationDistance_ = activationDistance;
+        std::cerr << " #### minimumDistance: " << minimumDistance << " (minimum allowed distance)\n";
+        std::cerr << " #### activationDistance: " << activationDistance << " (penalty only active when distance < this value)\n";
         std::cerr << " #### =============================================================================\n";
 
         PinocchioGeometryInterface geometryInterface(pinocchioInterface, urdfFile, collisionLinkPairs,
@@ -473,7 +485,12 @@ namespace ocs2::mobile_manipulator
                 "self_collision", libraryFolder, recompileLibraries, false);
         }
 
-        auto penalty = std::make_unique<RelaxedBarrierPenalty>(RelaxedBarrierPenalty::Config{mu, delta});
+        // Use ThresholdRelaxedBarrierPenalty with activation distance
+        // The activationThreshold in penalty space is (activationDistance - minimumDistance)
+        // because constraint value h = actual_distance - minimumDistance
+        const scalar_t activationThreshold = activationDistance - minimumDistance;
+        auto penalty = std::make_unique<ThresholdRelaxedBarrierPenalty>(
+            ThresholdRelaxedBarrierPenalty::Config{mu, delta, activationThreshold});
 
         return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penalty));
     }

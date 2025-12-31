@@ -87,6 +87,15 @@ namespace ocs2::mobile_manipulator
         // 获取自碰撞几何接口
         std::unique_ptr<PinocchioGeometryInterface> getPinocchioGeometryInterface() const;
 
+        // 获取自碰撞激活距离
+        scalar_t getSelfCollisionActivationDistance() const { return selfCollisionActivationDistance_; }
+
+        // 获取自碰撞最小安全距离
+        scalar_t getSelfCollisionMinimumDistance() const { return selfCollisionMinimumDistance_; }
+
+        // 获取自碰撞约束是否启用
+        bool isSelfCollisionEnabled() const { return selfCollisionEnabled_; }
+
         bool dual_arm_ = false;
 
     private:
@@ -125,6 +134,15 @@ namespace ocs2::mobile_manipulator
 
         // 自碰撞几何接口
         std::unique_ptr<PinocchioGeometryInterface> pinocchioGeometryInterfacePtr_;
+
+        // 自碰撞激活距离
+        scalar_t selfCollisionActivationDistance_ = 0.0;
+
+        // 自碰撞最小安全距离
+        scalar_t selfCollisionMinimumDistance_ = 0.0;
+
+        // 自碰撞约束是否启用
+        bool selfCollisionEnabled_ = false;
 
         vector_t initialState_;
     };

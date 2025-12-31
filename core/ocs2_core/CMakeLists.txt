@@ -119,6 +119,7 @@ add_library(${PROJECT_NAME}
         src/penalties/Penalties.cpp
         src/penalties/penalties/RelaxedBarrierPenalty.cpp
         src/penalties/penalties/SquaredHingePenalty.cpp
+        src/penalties/penalties/ThresholdRelaxedBarrierPenalty.cpp
         src/thread_support/ThreadPool.cpp
 )
 

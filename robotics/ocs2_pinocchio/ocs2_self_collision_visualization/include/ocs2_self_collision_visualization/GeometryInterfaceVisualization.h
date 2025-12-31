@@ -39,13 +39,51 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2 {
     class GeometryInterfaceVisualization : public rclcpp::Node {
     public:
+        /**
+         * Constructor
+         * @param pinocchioInterface: Pinocchio interface for the robot
+         * @param geometryInterface: Geometry interface for collision checking
+         * @param pinocchioWorldFrame: World frame name for visualization
+         * @param activationDistance: Only show markers when distance < activationDistance.
+         *                            If <= 0, show all markers (default behavior).
+         */
         GeometryInterfaceVisualization(PinocchioInterface pinocchioInterface,
                                        PinocchioGeometryInterface geometryInterface,
-                                       std::string pinocchioWorldFrame = "world");
+                                       std::string pinocchioWorldFrame = "world",
+                                       scalar_t activationDistance = -1.0);
 
         ~GeometryInterfaceVisualization() override = default;
 
+        /**
+         * Publish distance visualization markers
+         * Only publishes markers for collision pairs where distance < activationDistance
+         */
         void publishDistances(const vector_t &);
+
+        /**
+         * Set the activation distance for visualization filtering
+         * @param activationDistance: Only show markers when distance < this value.
+         *                            If <= 0, show all markers.
+         */
+        void setActivationDistance(scalar_t activationDistance) { activationDistance_ = activationDistance; }
+
+        /**
+         * Get the current activation distance
+         */
+        scalar_t getActivationDistance() const { return activationDistance_; }
+
+        /**
+         * Get the minimum distance from the last publishDistances() call
+         * @return The minimum distance among all collision pairs, or max value if no pairs
+         */
+        scalar_t getLastMinDistance() const { return lastMinDistance_; }
+
+        /**
+         * Check if collision was detected in the last publishDistances() call
+         * @param threshold: Distance threshold to consider as collision (default 0.0 = actual penetration)
+         * @return true if any collision pair has distance <= threshold
+         */
+        bool isCollisionDetected(scalar_t threshold = 0.0) const { return lastMinDistance_ <= threshold; }
 
     private:
         PinocchioInterface pinocchioInterface_;
@@ -55,5 +93,7 @@ namespace ocs2 {
         markerPublisher_;
 
         std::string pinocchioWorldFrame_;
+        scalar_t activationDistance_;  // Only show markers when distance < this value
+        scalar_t lastMinDistance_{std::numeric_limits<scalar_t>::max()};  // Cached minimum distance from last update
     };
 } // namespace ocs2

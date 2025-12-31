@@ -37,6 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/penalties/penalties/DoubleSidedPenalty.h>
 #include <ocs2_core/penalties/penalties/RelaxedBarrierPenalty.h>
 #include <ocs2_core/penalties/penalties/SquaredHingePenalty.h>
+#include <ocs2_core/penalties/penalties/ThresholdRelaxedBarrierPenalty.h>
 
 // hard equalities
 #include <ocs2_core/penalties/augmented/QuadraticPenalty.h>

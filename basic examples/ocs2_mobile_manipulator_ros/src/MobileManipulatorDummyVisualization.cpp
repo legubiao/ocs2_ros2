@@ -108,11 +108,21 @@ namespace ocs2::mobile_manipulator
             loadData::loadStdVectorOfPair(taskFile,
                                           "selfCollision.collisionObjectPairs",
                                           collisionObjectPairs, true);
+            
+            // Read activation distance for visualization filtering
+            scalar_t minimumDistance = 0.0;
+            scalar_t activationDistance = -1.0;
+            loadData::loadPtreeValue(pt, minimumDistance, "selfCollision.minimumDistance", false);
+            loadData::loadPtreeValue(pt, activationDistance, "selfCollision.activationDistance", false);
+            if (activationDistance < 0.0) {
+                activationDistance = 5.0 * minimumDistance;
+            }
+            
             PinocchioGeometryInterface geomInterface(pinocchioInterface,
                                                      collisionObjectPairs);
-            // set geometry visualization markers
+            // set geometry visualization markers with activation distance
             geometryVisualization_ = std::make_unique<GeometryInterfaceVisualization>(
-                std::move(pinocchioInterface), geomInterface);
+                std::move(pinocchioInterface), geomInterface, "world", activationDistance);
         }
     }
 
