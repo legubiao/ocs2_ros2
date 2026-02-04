@@ -4,15 +4,11 @@
 
 OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), it was refactored to be compatible with ROS2 and modern cmake.
 
-### What's New (2025.08)
+### What's New (2026.01)
 
-**Pinocchio 3 Dependency Optimization**
-- Upgraded to Pinocchio 3 version for better performance and stability
-- Support for installing Pinocchio from ROS sources, avoiding complex third-party package management
-
-**Dual-Arm Mobile Manipulator Support**
-- Added Dual-Arm Mobile Manipulator functionality
-- Enhanced interactive markers for better user operation experience
+**Environment Collision for Mobile Manipulator**
+- Add basic geometry environment collision support.
+- Please check Franka demo for more details.
 
 The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up
 the IDE.
@@ -193,9 +189,7 @@ source ~/ros2_ws/install/setup.bash
 ros2 launch ocs2_mobile_manipulator_ros franka_sqp.launch.py
 ```
 
-
-https://github.com/user-attachments/assets/0c6c45f6-5090-4237-aa5e-69906000ffbf
-
+https://github.com/user-attachments/assets/bab14b46-486e-46dc-a268-bd63616d1010
 
 * run Willow Garage PR2
 ```bash
