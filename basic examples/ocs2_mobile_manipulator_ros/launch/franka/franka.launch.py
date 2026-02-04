@@ -38,7 +38,7 @@ def generate_launch_description():
     libFolder = launch.actions.DeclareLaunchArgument(
         name='libFolder',
         default_value=get_package_share_directory(
-            'ocs2_mobile_manipulator') + '/auto_generated/agileX_piper'
+            'ocs2_mobile_manipulator') + '/auto_generated/franka'
     )
 
     visualize_only = launch.actions.DeclareLaunchArgument(

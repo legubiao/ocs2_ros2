@@ -188,6 +188,11 @@ source ~/ros2_ws/install/setup.bash
 ros2 launch ocs2_mobile_manipulator_ros franka.launch.py
 ```
 
+```bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch ocs2_mobile_manipulator_ros franka_sqp.launch.py
+```
+
 https://github.com/user-attachments/assets/bab14b46-486e-46dc-a268-bd63616d1010
 
 * run Willow Garage PR2

@@ -10,11 +10,13 @@ option(BUILD_TESTING "Build the testing tree." OFF)
 
 set(dependencies
         ocs2_ddp
+        ocs2_sqp
         ocs2_self_collision
 )
 
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_ddp REQUIRED)
+find_package(ocs2_sqp REQUIRED)
 find_package(ocs2_self_collision REQUIRED)
 
 ###########
@@ -34,6 +36,8 @@ add_library(${PROJECT_NAME}
         src/MobileManipulatorPinocchioMapping.cpp
         src/constraint/EndEffectorConstraint.cpp
         src/constraint/BodyRelativeConstraint.cpp
+        src/constraint/EnvironmentCollisionConstraint.cpp
+        src/collision/EnvironmentGeometryInterface.cpp
         src/dynamics/WheelBasedMobileManipulatorDynamics.cpp
         src/dynamics/DefaultManipulatorDynamics.cpp
         src/dynamics/FloatingArmManipulatorDynamics.cpp

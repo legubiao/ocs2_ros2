@@ -124,6 +124,34 @@ namespace ocs2::mobile_manipulator
             geometryVisualization_ = std::make_unique<GeometryInterfaceVisualization>(
                 std::move(pinocchioInterface), geomInterface, "world", activationDistance);
         }
+        
+        // Environment collision visualization
+        bool activateEnvironmentCollision = false;
+        loadData::loadPtreeValue(pt, activateEnvironmentCollision, "environmentCollision.activate", false);
+        std::cerr << "[Visualization] environmentCollision.activate = " << activateEnvironmentCollision << std::endl;
+        std::cerr << "[Visualization] envGeomInterface_ = " << (envGeomInterface_ ? "valid" : "nullptr") << std::endl;
+        if (activateEnvironmentCollision && envGeomInterface_) {
+            std::cerr << "[Visualization] Initializing environment collision visualization..." << std::endl;
+            scalar_t envMinimumDistance = 0.0;
+            scalar_t envActivationDistance = -1.0;
+            loadData::loadPtreeValue(pt, envMinimumDistance, "environmentCollision.minimumDistance", false);
+            loadData::loadPtreeValue(pt, envActivationDistance, "environmentCollision.activationDistance", false);
+            if (envActivationDistance < 0.0) {
+                envActivationDistance = 5.0 * envMinimumDistance;
+            }
+            
+            // Create a fresh PinocchioInterface for environment visualization
+            PinocchioInterface envPinocchioInterface(
+                mobile_manipulator::createPinocchioInterface(urdfFile, modelType, removeJointNames_));
+            
+            envCollisionVisualization_ = std::make_unique<EnvironmentCollisionVisualization>(
+                node_, envGeomInterface_, envPinocchioInterface, "world", envActivationDistance);
+            
+            // Publish initial obstacles
+            envCollisionVisualization_->publishObstacles();
+            std::cerr << "[Visualization] Environment collision visualization initialized with " 
+                      << envGeomInterface_->getObstacleNames().size() << " obstacles" << std::endl;
+        }
     }
 
 
@@ -139,6 +167,11 @@ namespace ocs2::mobile_manipulator
         if (geometryVisualization_ != nullptr)
         {
             geometryVisualization_->publishDistances(observation.state);
+        }
+        
+        if (envCollisionVisualization_ != nullptr)
+        {
+            envCollisionVisualization_->publishDistances(observation.state);
         }
     }
 

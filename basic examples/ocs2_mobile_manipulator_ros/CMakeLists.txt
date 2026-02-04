@@ -36,15 +36,21 @@ target_include_directories(${PROJECT_NAME}
 
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 
-# MPC node
+# DDP MPC node
 add_executable(mobile_manipulator_mpc_node src/MobileManipulatorMpcNode.cpp)
 target_link_libraries(mobile_manipulator_mpc_node ${PROJECT_NAME})
 ament_target_dependencies(mobile_manipulator_mpc_node ${dependencies})
+
+# SQP MPC node
+add_executable(mobile_manipulator_sqp_mpc_node src/MobileManipulatorSqpMpcNode.cpp)
+target_link_libraries(mobile_manipulator_sqp_mpc_node ${PROJECT_NAME})
+ament_target_dependencies(mobile_manipulator_sqp_mpc_node ${dependencies})
 
 # Dummy node
 add_executable(mobile_manipulator_dummy_mrt_node
         src/MobileManipulatorDummyMRT.cpp
         src/MobileManipulatorDummyVisualization.cpp
+        src/EnvironmentCollisionVisualization.cpp
 )
 target_link_libraries(mobile_manipulator_dummy_mrt_node ${PROJECT_NAME})
 ament_target_dependencies(mobile_manipulator_dummy_mrt_node ${dependencies})
@@ -62,6 +68,7 @@ install(DIRECTORY include DESTINATION include/${PROJECT_NAME})
 install(
         TARGETS
         mobile_manipulator_mpc_node
+        mobile_manipulator_sqp_mpc_node
         mobile_manipulator_dummy_mrt_node
         mobile_manipulator_target
         DESTINATION lib/${PROJECT_NAME}
