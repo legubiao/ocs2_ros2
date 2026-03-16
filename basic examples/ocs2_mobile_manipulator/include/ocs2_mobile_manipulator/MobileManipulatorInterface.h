@@ -117,6 +117,7 @@ namespace ocs2::mobile_manipulator
                                                              bool usePreComputation,
                                                              const std::string& libraryFolder,
                                                              bool recompileLibraries);
+        std::unique_ptr<StateCost> getJoint67CouplingConstraint(const std::string& taskFile);
         std::unique_ptr<StateInputCost> getJointLimitSoftConstraint(const PinocchioInterface& pinocchioInterface,
                                                                     const std::string& taskFile);
 

@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pinocchio/multibody/model.hpp>
 
 #include "ocs2_mobile_manipulator/MobileManipulatorInterface.h"
+#include "ocs2_mobile_manipulator/constraint/Joint67CouplingConstraint.h"
 
 #include <ocs2_core/initialization/DefaultInitializer.h>
 #include <ocs2_core/misc/LoadData.h>
@@ -211,6 +212,14 @@ namespace ocs2::mobile_manipulator
                 "bodyRelative", getBodyRelativeConstraint(*pinocchioInterfacePtr_, taskFile,
                                                           "bodyRelative", usePreComputation,
                                                           libraryFolder, recompileLibraries));
+        }
+
+        // joint 6/7 coupling constraint (only for 7-DOF arms)
+        bool activateJoint67Coupling = true;
+        loadData::loadPtreeValue(pt, activateJoint67Coupling, "joint67Coupling.activate", true);
+        if (activateJoint67Coupling && (manipulatorModelInfo_.armDim == 7 || manipulatorModelInfo_.armDim == 14))
+        {
+            problem_.stateSoftConstraintPtr->add("joint67Coupling", getJoint67CouplingConstraint(taskFile));
         }
 
         // Dynamics
@@ -692,6 +701,37 @@ namespace ocs2::mobile_manipulator
         // Position constraints: XY for stability
         penaltyArray[2] = std::make_unique<QuadraticPenalty>(muPositionX); // X position (constrained for stability)
         penaltyArray[3] = std::make_unique<QuadraticPenalty>(muPositionY); // Y position (constrained for stability)
+
+        return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
+    }
+
+    std::unique_ptr<StateCost> MobileManipulatorInterface::getJoint67CouplingConstraint(
+        const std::string& taskFile)
+    {
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_info(taskFile, pt);
+        std::cerr << "\n #### Joint67Coupling Settings: ";
+        std::cerr << "\n #### =============================================================================\n";
+
+        scalar_t mu = 5.0;
+        scalar_t smoothAbsEps = 1e-6;
+        loadData::loadPtreeValue(pt, mu, "joint67Coupling.mu", false);
+        loadData::loadPtreeValue(pt, smoothAbsEps, "joint67Coupling.smoothAbsEps", false);
+
+        std::cerr << " #### penalty mu: " << mu << std::endl;
+        std::cerr << " #### smoothAbsEps: " << smoothAbsEps << std::endl;
+        std::cerr << " #### =============================================================================\n";
+
+        auto constraint = std::make_unique<Joint67CouplingConstraint>(
+            manipulatorModelInfo_.stateDim, manipulatorModelInfo_.armDim, smoothAbsEps);
+
+        const size_t numConstraints = constraint->getNumConstraints(0.0);
+        std::vector<std::unique_ptr<PenaltyBase>> penaltyArray;
+        penaltyArray.reserve(numConstraints);
+        for (size_t i = 0; i < numConstraints; ++i)
+        {
+            penaltyArray.emplace_back(std::make_unique<QuadraticPenalty>(mu));
+        }
 
         return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
     }
