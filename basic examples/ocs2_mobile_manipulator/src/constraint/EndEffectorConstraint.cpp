@@ -31,17 +31,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_mobile_manipulator/constraint/EndEffectorConstraint.h>
 
 #include <ocs2_core/misc/LinearInterpolation.h>
+#include <iostream>
 
 
 namespace ocs2::mobile_manipulator
 {
     EndEffectorConstraint::EndEffectorConstraint(const EndEffectorKinematics<scalar_t>& endEffectorKinematics,
                                                  const ReferenceManager& referenceManager,
-                                                 bool dualArmMode)
+                                                 bool dualArmMode,
+                                                 bool logTrackingError,
+                                                 scalar_t logTrackingPeriod)
         : StateConstraint(ConstraintOrder::Linear),
           endEffectorKinematicsPtr_(endEffectorKinematics.clone()),
           referenceManagerPtr_(&referenceManager),
-          dualArmMode_(dualArmMode)
+          dualArmMode_(dualArmMode),
+          logTrackingError_(logTrackingError),
+          logTrackingPeriod_(logTrackingPeriod)
     {
         if (dualArmMode_) {
             // Dual-arm mode: check if there are exactly 2 end effectors
@@ -95,6 +100,8 @@ namespace ocs2::mobile_manipulator
             // Right arm constraints: position + orientation
             constraint.segment<3>(6) = positions[1] - rightArmPose.first;
             constraint.tail<3>() = orientationErrors[1];
+
+            maybeLogTrackingError(time, constraint.head<3>(), constraint.segment<3>(6));
             
             return constraint;
         } else {
@@ -103,6 +110,9 @@ namespace ocs2::mobile_manipulator
             vector_t constraint(6);
             constraint.head<3>() = endEffectorKinematicsPtr_->getPosition(state).front() - desiredPositionOrientation.first;
             constraint.tail<3>() = endEffectorKinematicsPtr_->getOrientationError(state, {desiredPositionOrientation.second}).front();
+
+            maybeLogTrackingError(time, constraint.head<3>());
+
             return constraint;
         }
     }
@@ -266,5 +276,35 @@ namespace ocs2::mobile_manipulator
         }
 
         return {position, orientation};
+    }
+
+    void EndEffectorConstraint::maybeLogTrackingError(scalar_t time, const vector3_t& positionError) const
+    {
+        if (!logTrackingError_) {
+            return;
+        }
+        if (lastLogTime_ < 0.0 || time - lastLogTime_ >= logTrackingPeriod_) {
+            lastLogTime_ = time;
+            std::cerr << "[EndEffectorConstraint] t=" << time
+                      << " position_error_norm=" << positionError.norm()
+                      << " position_error=" << positionError.transpose() << std::endl;
+        }
+    }
+
+    void EndEffectorConstraint::maybeLogTrackingError(scalar_t time,
+                                                      const vector3_t& leftPositionError,
+                                                      const vector3_t& rightPositionError) const
+    {
+        if (!logTrackingError_) {
+            return;
+        }
+        if (lastLogTime_ < 0.0 || time - lastLogTime_ >= logTrackingPeriod_) {
+            lastLogTime_ = time;
+            std::cerr << "[EndEffectorConstraint] t=" << time
+                      << " left_error_norm=" << leftPositionError.norm()
+                      << " left_error=" << leftPositionError.transpose()
+                      << " right_error_norm=" << rightPositionError.norm()
+                      << " right_error=" << rightPositionError.transpose() << std::endl;
+        }
     }
 } // namespace ocs2::mobile_manipulator

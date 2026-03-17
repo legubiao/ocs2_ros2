@@ -16,6 +16,7 @@ set(dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_ddp REQUIRED)
 find_package(ocs2_self_collision REQUIRED)
+find_package(OpenMP QUIET)
 
 ###########
 ## Build ##
@@ -35,6 +36,7 @@ add_library(${PROJECT_NAME}
         src/constraint/EndEffectorConstraint.cpp
         src/constraint/BodyRelativeConstraint.cpp
         src/constraint/Joint67CouplingConstraint.cpp
+        src/LogQuadraticPenalty.cpp
         src/dynamics/WheelBasedMobileManipulatorDynamics.cpp
         src/dynamics/DefaultManipulatorDynamics.cpp
         src/dynamics/FloatingArmManipulatorDynamics.cpp
@@ -48,6 +50,9 @@ target_include_directories(${PROJECT_NAME}
         "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
+if (OpenMP_CXX_FOUND)
+    target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_CXX)
+endif ()
 
 #############
 ## Install ##

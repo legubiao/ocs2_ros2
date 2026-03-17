@@ -34,9 +34,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <pinocchio/multibody/joint/joint-composite.hpp>
 #include <pinocchio/multibody/model.hpp>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "ocs2_mobile_manipulator/MobileManipulatorInterface.h"
 #include "ocs2_mobile_manipulator/constraint/Joint67CouplingConstraint.h"
+#include "ocs2_mobile_manipulator/LogQuadraticPenalty.h"
 
 #include <ocs2_core/initialization/DefaultInitializer.h>
 #include <ocs2_core/misc/LoadData.h>
@@ -171,6 +175,14 @@ namespace ocs2::mobile_manipulator
         // DDP-MPC settings
         ddpSettings_ = ddp::loadSettings(taskFile, "ddp");
         mpcSettings_ = mpc::loadSettings(taskFile, "mpc");
+        const auto ompMaxThreads =
+#ifdef _OPENMP
+            static_cast<size_t>(omp_get_max_threads());
+#else
+            static_cast<size_t>(1);
+#endif
+        std::cerr << "DDP threads requested: " << ddpSettings_.nThreads_
+                  << ", OpenMP max threads: " << ompMaxThreads << std::endl;
 
         // Reference Manager
         referenceManagerPtr_ = std::make_shared<ReferenceManager>();
@@ -215,7 +227,7 @@ namespace ocs2::mobile_manipulator
         }
 
         // joint 6/7 coupling constraint (only for 7-DOF arms)
-        bool activateJoint67Coupling = true;
+        bool activateJoint67Coupling = false;
         loadData::loadPtreeValue(pt, activateJoint67Coupling, "joint67Coupling.activate", true);
         if (activateJoint67Coupling && (manipulatorModelInfo_.armDim == 7 || manipulatorModelInfo_.armDim == 14))
         {
@@ -324,6 +336,10 @@ namespace ocs2::mobile_manipulator
 
         loadData::loadPtreeValue(pt, muPosition, prefix + ".muPosition", true);
         loadData::loadPtreeValue(pt, muOrientation, prefix + ".muOrientation", true);
+        std::string positionPenalty = "quadratic";
+        scalar_t logPositionScale = 1.0;
+        loadData::loadPtreeValue(pt, positionPenalty, prefix + ".positionPenalty", false);
+        loadData::loadPtreeValue(pt, logPositionScale, prefix + ".logPositionScale", false);
 
         std::cerr << " #### Dual arm mode: " << (dual_arm_ ? "enabled" : "disabled") << std::endl;
         std::cerr << " #### =============================================================================\n";
@@ -334,6 +350,11 @@ namespace ocs2::mobile_manipulator
         }
 
         std::unique_ptr<StateConstraint> constraint;
+        bool logTrackingError = false;
+        scalar_t logTrackingPeriod = 1.0;
+        loadData::loadPtreeValue(pt, logTrackingError, prefix + ".logTrackingError", false);
+        loadData::loadPtreeValue(pt, logTrackingPeriod, prefix + ".logTrackingPeriod", false);
+
         if (usePreComputation)
         {
             MobileManipulatorPinocchioMapping pinocchioMapping(manipulatorModelInfo_);
@@ -346,13 +367,15 @@ namespace ocs2::mobile_manipulator
                                                                 manipulatorModelInfo_.eeFrame,
                                                                 manipulatorModelInfo_.eeFrame1
                                                             });
-                constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true);
+                constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true,
+                                                                     logTrackingError, logTrackingPeriod);
             }
             else
             {
                 PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
                                                             {manipulatorModelInfo_.eeFrame});
-                constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, false);
+                constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, false,
+                                                                     logTrackingError, logTrackingPeriod);
             }
         }
         else
@@ -371,7 +394,8 @@ namespace ocs2::mobile_manipulator
                                                                  manipulatorModelInfo_.inputDim,
                                                                  "end_effector_kinematics", libraryFolder,
                                                                  recompileLibraries, false);
-                constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true);
+                constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true,
+                                                                     logTrackingError, logTrackingPeriod);
             }
             else
             {
@@ -381,7 +405,8 @@ namespace ocs2::mobile_manipulator
                                                                  manipulatorModelInfo_.inputDim,
                                                                  "end_effector_kinematics", libraryFolder,
                                                                  recompileLibraries, false);
-                constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, false);
+                constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, false,
+                                                                     logTrackingError, logTrackingPeriod);
             }
         }
 
@@ -394,16 +419,28 @@ namespace ocs2::mobile_manipulator
             scalar_t leftMuOrientation = muOrientation;
             scalar_t rightMuPosition = muPosition;
             scalar_t rightMuOrientation = muOrientation;
+            std::string leftPositionPenalty = positionPenalty;
+            std::string rightPositionPenalty = positionPenalty;
+            scalar_t leftLogPositionScale = logPositionScale;
+            scalar_t rightLogPositionScale = logPositionScale;
 
             loadData::loadPtreeValue(pt, leftMuPosition, prefix + ".leftArm.muPosition", false);
             loadData::loadPtreeValue(pt, leftMuOrientation, prefix + ".leftArm.muOrientation", false);
             loadData::loadPtreeValue(pt, rightMuPosition, prefix + ".rightArm.muPosition", false);
             loadData::loadPtreeValue(pt, rightMuOrientation, prefix + ".rightArm.muOrientation", false);
+            loadData::loadPtreeValue(pt, leftPositionPenalty, prefix + ".leftArm.positionPenalty", false);
+            loadData::loadPtreeValue(pt, rightPositionPenalty, prefix + ".rightArm.positionPenalty", false);
+            loadData::loadPtreeValue(pt, leftLogPositionScale, prefix + ".leftArm.logPositionScale", false);
+            loadData::loadPtreeValue(pt, rightLogPositionScale, prefix + ".rightArm.logPositionScale", false);
 
             penaltyArray.resize(12);
             // Left arm: position + orientation
-            std::generate_n(penaltyArray.begin(), 3, [&]
+            std::generate_n(penaltyArray.begin(), 3, [&]() -> std::unique_ptr<PenaltyBase>
             {
+                if (leftPositionPenalty == "log")
+                {
+                    return std::make_unique<LogQuadraticPenalty>(leftMuPosition, leftLogPositionScale);
+                }
                 return std::make_unique<QuadraticPenalty>(leftMuPosition);
             });
             std::generate_n(penaltyArray.begin() + 3, 3, [&]
@@ -411,8 +448,12 @@ namespace ocs2::mobile_manipulator
                 return std::make_unique<QuadraticPenalty>(leftMuOrientation);
             });
             // Right arm: position + orientation
-            std::generate_n(penaltyArray.begin() + 6, 3, [&]
+            std::generate_n(penaltyArray.begin() + 6, 3, [&]() -> std::unique_ptr<PenaltyBase>
             {
+                if (rightPositionPenalty == "log")
+                {
+                    return std::make_unique<LogQuadraticPenalty>(rightMuPosition, rightLogPositionScale);
+                }
                 return std::make_unique<QuadraticPenalty>(rightMuPosition);
             });
             std::generate_n(penaltyArray.begin() + 9, 3, [&]
@@ -423,7 +464,14 @@ namespace ocs2::mobile_manipulator
         else
         {
             penaltyArray.resize(6);
-            std::generate_n(penaltyArray.begin(), 3, [&] { return std::make_unique<QuadraticPenalty>(muPosition); });
+            std::generate_n(penaltyArray.begin(), 3, [&]() -> std::unique_ptr<PenaltyBase>
+            {
+                if (positionPenalty == "log")
+                {
+                    return std::make_unique<LogQuadraticPenalty>(muPosition, logPositionScale);
+                }
+                return std::make_unique<QuadraticPenalty>(muPosition);
+            });
             std::generate_n(penaltyArray.begin() + 3, 3, [&]
             {
                 return std::make_unique<QuadraticPenalty>(muOrientation);

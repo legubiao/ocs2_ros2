@@ -47,12 +47,15 @@ namespace ocs2::mobile_manipulator
 
         EndEffectorConstraint(const EndEffectorKinematics<scalar_t>& endEffectorKinematics,
                               const ReferenceManager& referenceManager,
-                              bool dualArmMode = false);
+                              bool dualArmMode = false,
+                              bool logTrackingError = false,
+                              scalar_t logTrackingPeriod = 1.0);
         ~EndEffectorConstraint() override = default;
 
         EndEffectorConstraint* clone() const override
         {
-            return new EndEffectorConstraint(*endEffectorKinematicsPtr_, *referenceManagerPtr_, dualArmMode_);
+            return new EndEffectorConstraint(*endEffectorKinematicsPtr_, *referenceManagerPtr_, dualArmMode_,
+                                             logTrackingError_, logTrackingPeriod_);
         }
 
         size_t getNumConstraints(scalar_t time) const override;
@@ -69,6 +72,9 @@ namespace ocs2::mobile_manipulator
         // Dual-arm mode target trajectory interpolation
         std::pair<vector_t, quaternion_t> interpolateLeftArmPose(scalar_t time) const;
         std::pair<vector_t, quaternion_t> interpolateRightArmPose(scalar_t time) const;
+        void maybeLogTrackingError(scalar_t time, const vector3_t& positionError) const;
+        void maybeLogTrackingError(scalar_t time, const vector3_t& leftPositionError,
+                                   const vector3_t& rightPositionError) const;
 
         /** Cached pointer to the pinocchio end effector kinematics. Is set to nullptr if not used. */
         PinocchioEndEffectorKinematics* pinocchioEEKinPtr_ = nullptr;
@@ -80,5 +86,8 @@ namespace ocs2::mobile_manipulator
         
         // Dual-arm mode flag
         bool dualArmMode_;
+        bool logTrackingError_;
+        scalar_t logTrackingPeriod_;
+        mutable scalar_t lastLogTime_ = -1.0;
     };
 }
