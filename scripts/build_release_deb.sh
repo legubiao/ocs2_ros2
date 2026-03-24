@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  build_release_deb.sh --ros-distro <distro> --deb-version <version> --release-tag <tag>
+                       [--deb-package-name <name>] [--install-prefix <prefix>]
+                       [--required-packages "<pkg1 pkg2 ...>"] [--skip-deps] [--skip-colcon]
+
+Build selected OCS2 packages and create a bundled .deb package.
+EOF
+}
+
+ROS_DISTRO=""
+DEB_VERSION=""
+RELEASE_TAG=""
+DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ocs2-ros2-bundle}"
+INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ocs2_ros2}"
+REQUIRED_PACKAGES="${REQUIRED_OCS2_PACKAGES:-}"
+SKIP_DEPS=0
+SKIP_COLCON=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --ros-distro) ROS_DISTRO="$2"; shift 2 ;;
+    --deb-version) DEB_VERSION="$2"; shift 2 ;;
+    --release-tag) RELEASE_TAG="$2"; shift 2 ;;
+    --deb-package-name) DEB_PACKAGE_NAME="$2"; shift 2 ;;
+    --install-prefix) INSTALL_PREFIX="$2"; shift 2 ;;
+    --required-packages) REQUIRED_PACKAGES="$2"; shift 2 ;;
+    --skip-deps) SKIP_DEPS=1; shift ;;
+    --skip-colcon) SKIP_COLCON=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown argument: $1"; usage; exit 1 ;;
+  esac
+done
+
+if [[ -z "${ROS_DISTRO}" || -z "${DEB_VERSION}" || -z "${RELEASE_TAG}" ]]; then
+  echo "Missing required arguments."
+  usage
+  exit 1
+fi
+
+if [[ -z "${REQUIRED_PACKAGES// }" ]]; then
+  echo "REQUIRED_OCS2_PACKAGES is empty. Pass --required-packages."
+  exit 1
+fi
+
+DEB_FILE="${DEB_PACKAGE_NAME}_${DEB_VERSION}_amd64.deb"
+
+if [[ "${SKIP_DEPS}" -eq 0 ]]; then
+  set +u
+  source "/opt/ros/${ROS_DISTRO}/setup.bash"
+  set -u
+  rosdep install --from-paths . --ignore-src -r -y
+fi
+
+if [[ "${SKIP_COLCON}" -eq 0 ]]; then
+  set +u
+  source "/opt/ros/${ROS_DISTRO}/setup.bash"
+  set -u
+  colcon build --merge-install --symlink-install --packages-select ${REQUIRED_PACKAGES}
+fi
+
+mkdir -p bundle_support
+cat > bundle_support/setup.sh <<EOF
+#!/usr/bin/env bash
+export OCS2_ROS2_ROOT="${INSTALL_PREFIX}"
+export CMAKE_PREFIX_PATH="${INSTALL_PREFIX}:\${CMAKE_PREFIX_PATH}"
+export AMENT_PREFIX_PATH="${INSTALL_PREFIX}:\${AMENT_PREFIX_PATH}"
+export LD_LIBRARY_PATH="${INSTALL_PREFIX}/lib:\${LD_LIBRARY_PATH}"
+export PATH="${INSTALL_PREFIX}/bin:\${PATH}"
+EOF
+chmod +x bundle_support/setup.sh
+
+STAGE_ROOT="${PWD}/deb_stage"
+INSTALL_ROOT="${STAGE_ROOT}${INSTALL_PREFIX}"
+DEBIAN_DIR="${STAGE_ROOT}/DEBIAN"
+
+rm -rf "${STAGE_ROOT}"
+mkdir -p "${INSTALL_ROOT}" "${DEBIAN_DIR}"
+rsync -a --delete "${PWD}/install/" "${INSTALL_ROOT}/"
+cp bundle_support/setup.sh "${INSTALL_ROOT}/setup.sh"
+
+INSTALLED_SIZE_KB="$(du -sk "${STAGE_ROOT}" | cut -f1)"
+cat > "${DEBIAN_DIR}/control" <<EOF
+Package: ${DEB_PACKAGE_NAME}
+Version: ${DEB_VERSION}
+Section: libs
+Priority: optional
+Architecture: amd64
+Maintainer: ocs2_ros2 CI <noreply@github.com>
+Depends: libc6 (>= 2.35)
+Description: Prebuilt OCS2 ROS2 bundle for selected mobile manipulator dependency chain
+ Built from ${GITHUB_REPOSITORY:-local/ocs2_ros2} at tag/ref ${RELEASE_TAG}.
+ Installed under ${INSTALL_PREFIX}.
+Installed-Size: ${INSTALLED_SIZE_KB}
+EOF
+
+dpkg-deb --build "${STAGE_ROOT}" "${DEB_FILE}"
+echo "Built deb: ${DEB_FILE}"
+
+if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+  {
+    echo "deb_file=${DEB_FILE}"
+    echo "deb_version=${DEB_VERSION}"
+    echo "release_tag=${RELEASE_TAG}"
+    echo "ros_distro=${ROS_DISTRO}"
+  } >> "${GITHUB_OUTPUT}"
+fi
