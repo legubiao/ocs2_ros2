@@ -85,16 +85,24 @@ jobs:
             python3-rosdep \
             python3-colcon-core \
             python3-colcon-common-extensions \
+            python3-pip \
             fakeroot \
             dpkg-dev \
             rsync \
             build-essential \
             cmake
 
-          # Ubuntu/Jazzy images may not provide python3-ament-package directly.
-          # Fallback to ROS namespaced package if needed.
-          sudo apt-get install -y python3-ament-package || \
-            sudo apt-get install -y "ros-${{ steps.meta.outputs.ros_distro }}-ament-package"
+          # Ensure python can import ament_package (required by ament_cmake templates).
+          if ! python3 -c "import ament_package" >/dev/null 2>&1; then
+            sudo apt-get install -y python3-ament-package || true
+          fi
+          if ! python3 -c "import ament_package" >/dev/null 2>&1; then
+            sudo apt-get install -y "ros-${{ steps.meta.outputs.ros_distro }}-ament-package" || true
+          fi
+          if ! python3 -c "import ament_package" >/dev/null 2>&1; then
+            python3 -m pip install --user ament-package
+          fi
+          python3 -c "import ament_package; print('ament_package ready:', ament_package.__file__)"
 
           sudo rosdep init || true
           rosdep update
