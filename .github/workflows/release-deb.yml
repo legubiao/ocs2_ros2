@@ -83,6 +83,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             python3-rosdep \
+            python3-ament-package \
+            python3-colcon-core \
+            python3-colcon-common-extensions \
             fakeroot \
             dpkg-dev \
             rsync \
