@@ -7,12 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       ros_distro:
-        description: ROS 2 distro used to build the deb
+        description: "ROS 2 distro used to build the deb"
         required: false
         default: jazzy
         type: string
       deb_version:
-        description: Override deb version (default: tag name without leading v)
+        description: "Override deb version (default: tag name without leading v)"
         required: false
         default: ""
         type: string
