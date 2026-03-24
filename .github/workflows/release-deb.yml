@@ -83,7 +83,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             python3-rosdep \
-            python3-ament-package \
             python3-colcon-core \
             python3-colcon-common-extensions \
             fakeroot \
@@ -91,6 +90,11 @@ jobs:
             rsync \
             build-essential \
             cmake
+
+          # Ubuntu/Jazzy images may not provide python3-ament-package directly.
+          # Fallback to ROS namespaced package if needed.
+          sudo apt-get install -y python3-ament-package || \
+            sudo apt-get install -y "ros-${{ steps.meta.outputs.ros_distro }}-ament-package"
 
           sudo rosdep init || true
           rosdep update
@@ -101,6 +105,29 @@ jobs:
           set -eo pipefail
           source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
           rosdep install --from-paths . --ignore-src -r -y
+
+      - name: Fast preflight diagnostics
+        shell: bash
+        run: |
+          set -eo pipefail
+          set +u
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          set -u
+
+          echo "Python: $(python3 --version)"
+          echo "CMake: $(cmake --version | sed -n '1p')"
+          echo "Colcon: $(colcon --version)"
+
+          python3 - <<'PY'
+import ament_package
+print("ament_package:", ament_package.__file__)
+PY
+
+          python3 - <<'PY'
+import sys
+print("sys.executable:", sys.executable)
+print("sys.path entries:", len(sys.path))
+PY
 
       - name: Build and package deb
         shell: bash
