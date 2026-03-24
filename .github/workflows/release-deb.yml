@@ -118,16 +118,8 @@ jobs:
           echo "CMake: $(cmake --version | sed -n '1p')"
           echo "Colcon: $(colcon --version)"
 
-          python3 - <<'PY'
-import ament_package
-print("ament_package:", ament_package.__file__)
-PY
-
-          python3 - <<'PY'
-import sys
-print("sys.executable:", sys.executable)
-print("sys.path entries:", len(sys.path))
-PY
+          python3 -c "import ament_package; print('ament_package:', ament_package.__file__)"
+          python3 -c "import sys; print('sys.executable:', sys.executable); print('sys.path entries:', len(sys.path))"
 
       - name: Build and package deb
         shell: bash
