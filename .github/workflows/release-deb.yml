@@ -1,0 +1,260 @@
+name: Release Debian Bundle
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      ros_distro:
+        description: ROS 2 distro used to build the deb
+        required: false
+        default: jazzy
+        type: string
+      deb_version:
+        description: Override deb version (default: tag name without leading v)
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  DEFAULT_ROS_DISTRO: jazzy
+  DEB_PACKAGE_NAME: ocs2-ros2-bundle
+  INSTALL_PREFIX: /opt/ocs2_ros2
+  REQUIRED_OCS2_PACKAGES: >-
+    ocs2_core
+    ocs2_ddp
+    ocs2_mobile_manipulator
+    ocs2_mobile_manipulator_ros
+    ocs2_mpc
+    ocs2_msgs
+    ocs2_oc
+    ocs2_pinocchio_interface
+    ocs2_qp_solver
+    ocs2_robotic_assets
+    ocs2_robotic_tools
+    ocs2_ros_interfaces
+    ocs2_self_collision
+    ocs2_self_collision_visualization
+    ocs2_thirdparty
+
+jobs:
+  build_deb:
+    runs-on: ubuntu-24.04
+    outputs:
+      ros_distro: ${{ steps.meta.outputs.ros_distro }}
+      deb_file: ${{ steps.meta.outputs.deb_file }}
+      deb_version: ${{ steps.meta.outputs.deb_version }}
+      release_tag: ${{ steps.meta.outputs.release_tag }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Resolve build metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ros_distro="${{ github.event.inputs.ros_distro }}"
+          if [[ -z "${ros_distro}" ]]; then
+            ros_distro="${DEFAULT_ROS_DISTRO}"
+          fi
+
+          tag="${{ github.ref_name }}"
+          if [[ -z "${tag}" ]]; then
+            tag="${{ github.event.release.tag_name }}"
+          fi
+
+          deb_version="${{ github.event.inputs.deb_version }}"
+          if [[ -z "${deb_version}" ]]; then
+            deb_version="${tag#v}"
+          fi
+          if [[ -z "${deb_version}" ]]; then
+            deb_version="0.0.0"
+          fi
+
+          deb_version="${deb_version//\//-}"
+          deb_file="${DEB_PACKAGE_NAME}_${deb_version}_amd64.deb"
+
+          echo "ros_distro=${ros_distro}" >> "$GITHUB_OUTPUT"
+          echo "deb_version=${deb_version}" >> "$GITHUB_OUTPUT"
+          echo "deb_file=${deb_file}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${tag}" >> "$GITHUB_OUTPUT"
+
+          echo "Resolved ROS distro: ${ros_distro}"
+          echo "Resolved tag: ${tag}"
+          echo "Resolved deb version: ${deb_version}"
+          echo "Resolved deb file: ${deb_file}"
+
+      - name: Setup ROS
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: ${{ steps.meta.outputs.ros_distro }}
+
+      - name: Install system tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-rosdep \
+            fakeroot \
+            dpkg-dev \
+            rsync \
+            build-essential \
+            cmake
+
+          sudo rosdep init || true
+          rosdep update
+
+      - name: Install package dependencies via rosdep
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          rosdep install --from-paths . --ignore-src -r -y
+
+      - name: Build required OCS2 packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          colcon build --merge-install --symlink-install --packages-select ${REQUIRED_OCS2_PACKAGES}
+
+      - name: Create bundle environment script
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p bundle_support
+          cat > bundle_support/setup.sh <<EOF
+          #!/usr/bin/env bash
+          export OCS2_ROS2_ROOT="${INSTALL_PREFIX}"
+          export CMAKE_PREFIX_PATH="${INSTALL_PREFIX}:\${CMAKE_PREFIX_PATH}"
+          export AMENT_PREFIX_PATH="${INSTALL_PREFIX}:\${AMENT_PREFIX_PATH}"
+          export LD_LIBRARY_PATH="${INSTALL_PREFIX}/lib:\${LD_LIBRARY_PATH}"
+          export PATH="${INSTALL_PREFIX}/bin:\${PATH}"
+          EOF
+          chmod +x bundle_support/setup.sh
+
+      - name: Create Debian bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          stage_root="${GITHUB_WORKSPACE}/deb_stage"
+          install_root="${stage_root}${INSTALL_PREFIX}"
+          debian_dir="${stage_root}/DEBIAN"
+
+          rm -rf "${stage_root}"
+          mkdir -p "${install_root}" "${debian_dir}"
+
+          rsync -a --delete "${GITHUB_WORKSPACE}/install/" "${install_root}/"
+          mkdir -p "${install_root}"
+          cp bundle_support/setup.sh "${install_root}/setup.sh"
+
+          installed_size_kb=$(du -sk "${stage_root}" | cut -f1)
+
+          cat > "${debian_dir}/control" <<EOF
+          Package: ${DEB_PACKAGE_NAME}
+          Version: ${{ steps.meta.outputs.deb_version }}
+          Section: libs
+          Priority: optional
+          Architecture: amd64
+          Maintainer: ocs2_ros2 CI <noreply@github.com>
+          Depends: libc6 (>= 2.35)
+          Description: Prebuilt OCS2 ROS2 bundle for selected mobile manipulator dependency chain
+           Built from ${GITHUB_REPOSITORY} at tag/ref ${{ steps.meta.outputs.release_tag }}.
+           Installed under ${INSTALL_PREFIX}.
+          Installed-Size: ${installed_size_kb}
+          EOF
+
+          dpkg-deb --build "${stage_root}" "${{ steps.meta.outputs.deb_file }}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-bundle-${{ steps.meta.outputs.deb_version }}
+          path: ${{ steps.meta.outputs.deb_file }}
+          if-no-files-found: error
+
+      - name: Upload deb to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.meta.outputs.deb_file }}
+
+  consume_deb:
+    runs-on: ubuntu-24.04
+    needs: build_deb
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup ROS
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: ${{ needs.build_deb.outputs.ros_distro }}
+
+      - name: Install base tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Download deb from release asset
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download "${{ needs.build_deb.outputs.release_tag }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "${{ needs.build_deb.outputs.deb_file }}"
+
+      - name: Download deb from workflow artifact
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/download-artifact@v4
+        with:
+          name: debian-bundle-${{ needs.build_deb.outputs.deb_version }}
+
+      - name: Install deb and verify downstream configure
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo apt-get update
+          sudo dpkg -i "./${{ needs.build_deb.outputs.deb_file }}" || sudo apt-get -f install -y
+
+          source "/opt/ros/${{ needs.build_deb.outputs.ros_distro }}/setup.bash"
+          source "${INSTALL_PREFIX}/setup.sh"
+
+          mkdir -p downstream_check
+          cat > downstream_check/CMakeLists.txt <<'EOF'
+          cmake_minimum_required(VERSION 3.16)
+          project(ocs2_downstream_check CXX)
+
+          find_package(ocs2_mobile_manipulator REQUIRED)
+          find_package(ocs2_mobile_manipulator_ros REQUIRED)
+          find_package(ocs2_ros_interfaces REQUIRED)
+
+          add_executable(dummy main.cpp)
+          target_sources(dummy PRIVATE main.cpp)
+          EOF
+
+          cat > downstream_check/main.cpp <<'EOF'
+          int main() { return 0; }
+          EOF
+
+          cmake -S downstream_check -B downstream_check/build
+          cmake --build downstream_check/build -j2
