@@ -8,7 +8,10 @@ Usage:
                          [--install-prefix <prefix>] [--release-tag <tag>] [--repo <owner/repo>]
                          [--download-from-release] [--skip-install]
 
-Install downloaded .deb and run downstream CMake configure/build check.
+Install the bundled .deb, overlay the merged install on top of ROS (same as
+"source /opt/ros/<distro>/setup.bash" then "source <prefix>/setup.bash"), then
+run a tiny CMake project that find_package()'s key OCS2 packages — proves the
+.deb is usable for downstream builds.
 EOF
 }
 
@@ -54,15 +57,36 @@ fi
 
 set +u
 source "/opt/ros/${ROS_DISTRO}/setup.bash"
-set -u
-if [[ -f "${INSTALL_PREFIX}/setup.sh" ]]; then
-  set +u
+# Colcon merge-install ships setup.bash; use it (do not rely on a hand-written
+# setup.sh that might miss hooks). Fallbacks keep old .deb layouts working.
+if [[ -f "${INSTALL_PREFIX}/setup.bash" ]]; then
   # shellcheck disable=SC1090
-  source "${INSTALL_PREFIX}/setup.sh"
-  set -u
+  source "${INSTALL_PREFIX}/setup.bash"
+elif [[ -f "${INSTALL_PREFIX}/local_setup.bash" ]]; then
+  # shellcheck disable=SC1090
+  source "${INSTALL_PREFIX}/local_setup.bash"
+elif [[ -f "${INSTALL_PREFIX}/ocs2_ros2_bundle_env.sh" ]]; then
+  # shellcheck disable=SC1090
+  source "${INSTALL_PREFIX}/ocs2_ros2_bundle_env.sh"
 else
   export CMAKE_PREFIX_PATH="${INSTALL_PREFIX}:${CMAKE_PREFIX_PATH:-}"
+  export AMENT_PREFIX_PATH="${INSTALL_PREFIX}:${AMENT_PREFIX_PATH:-}"
 fi
+set -u
+
+echo "[debug] INSTALL_PREFIX=${INSTALL_PREFIX}"
+echo "[debug] CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH:-<empty>}"
+echo "[debug] AMENT_PREFIX_PATH=${AMENT_PREFIX_PATH:-<empty>}"
+
+echo "[debug] Looking for package config files..."
+find "${INSTALL_PREFIX}" \( \
+  -name 'ocs2_mobile_manipulatorConfig.cmake' -o \
+  -name 'ocs2_mobile_manipulator-config.cmake' -o \
+  -name 'ocs2_mobile_manipulator_rosConfig.cmake' -o \
+  -name 'ocs2_mobile_manipulator_ros-config.cmake' -o \
+  -name 'ocs2_ros_interfacesConfig.cmake' -o \
+  -name 'ocs2_ros_interfaces-config.cmake' \
+\) -print
 
 rm -rf downstream_check
 mkdir -p downstream_check

@@ -75,11 +75,24 @@ if [[ "${SKIP_COLCON}" -eq 0 ]]; then
   source "/opt/ros/${ROS_DISTRO}/setup.bash"
   set -u
   ensure_ros_pythonpath "${ROS_DISTRO}"
-  colcon build --merge-install --symlink-install --packages-select ${REQUIRED_PACKAGES}
+  # No --symlink-install: release .deb must contain real files; symlinks to CI
+  # workspace paths break on any other machine (including the consume_deb job).
+  colcon build --merge-install --packages-select ${REQUIRED_PACKAGES}
 fi
 
+echo "[debug] Checking installed config files before packaging..."
+find "${PWD}/install" \( \
+  -name 'ocs2_mobile_manipulatorConfig.cmake' -o \
+  -name 'ocs2_mobile_manipulator-config.cmake' -o \
+  -name 'ocs2_mobile_manipulator_rosConfig.cmake' -o \
+  -name 'ocs2_mobile_manipulator_ros-config.cmake' -o \
+  -name 'ocs2_ros_interfacesConfig.cmake' -o \
+  -name 'ocs2_ros_interfaces-config.cmake' \
+\) -print
+
 mkdir -p bundle_support
-cat > bundle_support/setup.sh <<EOF
+# Optional thin overlay (do not overwrite colcon's setup.bash / setup.sh).
+cat > bundle_support/ocs2_ros2_bundle_env.sh <<EOF
 #!/usr/bin/env bash
 export OCS2_ROS2_ROOT="${INSTALL_PREFIX}"
 export CMAKE_PREFIX_PATH="${INSTALL_PREFIX}:\${CMAKE_PREFIX_PATH}"
@@ -87,7 +100,7 @@ export AMENT_PREFIX_PATH="${INSTALL_PREFIX}:\${AMENT_PREFIX_PATH}"
 export LD_LIBRARY_PATH="${INSTALL_PREFIX}/lib:\${LD_LIBRARY_PATH}"
 export PATH="${INSTALL_PREFIX}/bin:\${PATH}"
 EOF
-chmod +x bundle_support/setup.sh
+chmod +x bundle_support/ocs2_ros2_bundle_env.sh
 
 STAGE_ROOT="${PWD}/deb_stage"
 INSTALL_ROOT="${STAGE_ROOT}${INSTALL_PREFIX}"
@@ -95,8 +108,9 @@ DEBIAN_DIR="${STAGE_ROOT}/DEBIAN"
 
 rm -rf "${STAGE_ROOT}"
 mkdir -p "${INSTALL_ROOT}" "${DEBIAN_DIR}"
-rsync -a --delete "${PWD}/install/" "${INSTALL_ROOT}/"
-cp bundle_support/setup.sh "${INSTALL_ROOT}/setup.sh"
+# Dereference symlinks so a misconfigured colcon install still ships real files.
+rsync -aL --delete "${PWD}/install/" "${INSTALL_ROOT}/"
+cp bundle_support/ocs2_ros2_bundle_env.sh "${INSTALL_ROOT}/ocs2_ros2_bundle_env.sh"
 
 INSTALLED_SIZE_KB="$(du -sk "${STAGE_ROOT}" | cut -f1)"
 cat > "${DEBIAN_DIR}/control" <<EOF
