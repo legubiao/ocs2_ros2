@@ -49,10 +49,24 @@ fi
 
 DEB_FILE="${DEB_PACKAGE_NAME}_${DEB_VERSION}_amd64.deb"
 
+# ament_cmake runs /usr/bin/python3 during configure; that process must see ROS
+# site-packages. Some environments do not propagate PYTHONPATH from the shell
+# into CMake's execute_process children reliably, so set it explicitly after sourcing ROS.
+ensure_ros_pythonpath() {
+  local ros_distro="$1"
+  local pyver site_pkgs
+  pyver="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+  site_pkgs="/opt/ros/${ros_distro}/lib/python${pyver}/site-packages"
+  if [[ -d "${site_pkgs}" ]]; then
+    export PYTHONPATH="${site_pkgs}${PYTHONPATH:+:${PYTHONPATH}}"
+  fi
+}
+
 if [[ "${SKIP_DEPS}" -eq 0 ]]; then
   set +u
   source "/opt/ros/${ROS_DISTRO}/setup.bash"
   set -u
+  ensure_ros_pythonpath "${ROS_DISTRO}"
   rosdep install --from-paths . --ignore-src -r -y
 fi
 
@@ -60,6 +74,7 @@ if [[ "${SKIP_COLCON}" -eq 0 ]]; then
   set +u
   source "/opt/ros/${ROS_DISTRO}/setup.bash"
   set -u
+  ensure_ros_pythonpath "${ROS_DISTRO}"
   colcon build --merge-install --symlink-install --packages-select ${REQUIRED_PACKAGES}
 fi
 
