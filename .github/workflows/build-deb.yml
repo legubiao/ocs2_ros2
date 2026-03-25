@@ -1,4 +1,4 @@
-name: Release Debian Bundle
+name: Build and Publish Deb
 
 on:
   push:
@@ -7,12 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       ros_distro:
-        description: "ROS 2 distro used to build the deb"
+        description: "ROS 2 distro"
         required: false
         default: jazzy
         type: string
       deb_version:
-        description: "Override deb version (default: tag name without leading v)"
+        description: "Override deb version (default: tag without leading v)"
         required: false
         default: ""
         type: string
@@ -44,11 +44,6 @@ env:
 jobs:
   build_deb:
     runs-on: ubuntu-24.04
-    outputs:
-      ros_distro: ${{ steps.meta.outputs.ros_distro }}
-      deb_file: ${{ steps.meta.outputs.deb_file }}
-      deb_version: ${{ steps.meta.outputs.deb_version }}
-      release_tag: ${{ steps.meta.outputs.release_tag }}
 
     steps:
       - name: Checkout repository
@@ -80,11 +75,9 @@ jobs:
         shell: bash
         run: |
           set -eo pipefail
-
           sudo apt-get update
           sudo apt-get install -y software-properties-common
           sudo add-apt-repository universe
-
           sudo apt-get update
           sudo apt-get install -y \
             python3-rosdep \
@@ -103,7 +96,6 @@ jobs:
           rosdep update
 
           source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
-          python3 -c "import sys; print(sys.executable)"
           python3 -c "import ament_package; print('ament_package ready:', ament_package.__file__)"
 
       - name: Install package dependencies via rosdep
@@ -120,13 +112,10 @@ jobs:
           set +u
           source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
           set -u
-
           echo "Python: $(python3 --version)"
           echo "CMake: $(cmake --version | sed -n '1p')"
           echo "Colcon: $(colcon --version)"
-
           python3 -c "import ament_package; print('ament_package:', ament_package.__file__)"
-          python3 -c "import sys; print('sys.executable:', sys.executable); print('sys.path entries:', len(sys.path))"
 
       - name: Build and package deb
         shell: bash
@@ -142,62 +131,19 @@ jobs:
             --required-packages "${REQUIRED_OCS2_PACKAGES}" \
             --skip-deps
 
-      - name: Upload workflow artifact
+      - name: Publish deb to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.release_tag }}
+          name: ${{ steps.meta.outputs.release_tag }}
+          draft: false
+          prerelease: false
+          files: ${{ steps.meta.outputs.deb_file }}
+
+      - name: Upload workflow artifact (fallback for workflow_dispatch)
         uses: actions/upload-artifact@v4
         with:
           name: debian-bundle-${{ steps.meta.outputs.deb_version }}
           path: ${{ steps.meta.outputs.deb_file }}
           if-no-files-found: error
-
-      - name: Upload deb to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ steps.meta.outputs.deb_file }}
-
-  consume_deb:
-    runs-on: ubuntu-24.04
-    needs: build_deb
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup ROS
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: ${{ needs.build_deb.outputs.ros_distro }}
-
-      - name: Install base tools
-        shell: bash
-        run: |
-          set -eo pipefail
-          sudo apt-get update
-          sudo apt-get install -y cmake build-essential
-
-      - name: Download deb from release asset
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -eo pipefail
-          gh release download "${{ needs.build_deb.outputs.release_tag }}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --pattern "${{ needs.build_deb.outputs.deb_file }}"
-
-      - name: Download deb from workflow artifact
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/download-artifact@v4
-        with:
-          name: debian-bundle-${{ needs.build_deb.outputs.deb_version }}
-
-      - name: Install deb and verify downstream configure
-        shell: bash
-        run: |
-          set -eo pipefail
-          chmod +x scripts/*.sh
-          scripts/consume_release_deb.sh \
-            --deb-file "${{ needs.build_deb.outputs.deb_file }}" \
-            --ros-distro "${{ needs.build_deb.outputs.ros_distro }}" \
-            --install-prefix "${INSTALL_PREFIX}"
+          retention-days: 7

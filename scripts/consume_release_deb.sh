@@ -94,6 +94,9 @@ cat > downstream_check/CMakeLists.txt <<'EOF'
 cmake_minimum_required(VERSION 3.16)
 project(ocs2_downstream_check CXX)
 
+# Suppress legacy FindBoost deprecation warning from ocs2_core transitive deps.
+cmake_policy(SET CMP0167 NEW)
+
 find_package(ocs2_mobile_manipulator REQUIRED)
 find_package(ocs2_mobile_manipulator_ros REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
@@ -106,6 +109,6 @@ cat > downstream_check/main.cpp <<'EOF'
 int main() { return 0; }
 EOF
 
-cmake -S downstream_check -B downstream_check/build
+cmake -Wno-dev -S downstream_check -B downstream_check/build
 cmake --build downstream_check/build -j2
 echo "Downstream CMake verification passed."
