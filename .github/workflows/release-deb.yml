@@ -83,29 +83,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             python3-rosdep \
+            python3-ament-package \
             python3-colcon-core \
             python3-colcon-common-extensions \
-            python3-pip \
+            python3-vcstool \
             fakeroot \
             dpkg-dev \
             rsync \
             build-essential \
             cmake
 
-          # Ensure python can import ament_package (required by ament_cmake templates).
-          if ! python3 -c "import ament_package" >/dev/null 2>&1; then
-            sudo apt-get install -y python3-ament-package || true
-          fi
-          if ! python3 -c "import ament_package" >/dev/null 2>&1; then
-            sudo apt-get install -y "ros-${{ steps.meta.outputs.ros_distro }}-ament-package" || true
-          fi
-          if ! python3 -c "import ament_package" >/dev/null 2>&1; then
-            python3 -m pip install --user ament-package
-          fi
-          python3 -c "import ament_package; print('ament_package ready:', ament_package.__file__)"
-
           sudo rosdep init || true
           rosdep update
+
+          python3 --version
+          python3 -c "import ament_package; print('ament_package ready:', ament_package.__file__)"
 
       - name: Install package dependencies via rosdep
         shell: bash
