@@ -6,6 +6,11 @@ on:
       - "v*"
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: "Release tag to publish (optional if triggered by pushing a tag; if omitted here, provide a v-prefixed tag trigger)"
+        required: false
+        default: ""
+        type: string
       ros_distro:
         description: "ROS 2 distro"
         required: false
@@ -58,6 +63,7 @@ jobs:
         run: |
           set -eo pipefail
           chmod +x scripts/*.sh
+          INPUT_RELEASE_TAG="${{ github.event.inputs.release_tag }}" \
           INPUT_ROS_DISTRO="${{ github.event.inputs.ros_distro }}" \
           INPUT_DEB_VERSION="${{ github.event.inputs.deb_version }}" \
           RELEASE_TAG_OVERRIDE="${{ github.ref_name }}" \

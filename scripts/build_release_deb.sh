@@ -67,9 +67,11 @@ strip_prefix_common_files() {
     "${prefix_root}/setup.bash" \
     "${prefix_root}/setup.sh" \
     "${prefix_root}/setup.zsh" \
+    "${prefix_root}/setup.ps1" \
     "${prefix_root}/local_setup.bash" \
     "${prefix_root}/local_setup.sh" \
     "${prefix_root}/local_setup.zsh" \
+    "${prefix_root}/local_setup.ps1" \
     "${prefix_root}/_local_setup_util.py" \
     "${prefix_root}/_local_setup_util_sh.py" \
     "${prefix_root}/_local_setup_util_ps1.py" \

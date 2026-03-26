@@ -10,12 +10,19 @@ if [[ -z "${ros_distro}" ]]; then
   ros_distro="${DEFAULT_ROS_DISTRO}"
 fi
 
-release_tag="${RELEASE_TAG_OVERRIDE:-${GITHUB_REF_NAME:-}}"
+release_tag="${INPUT_RELEASE_TAG:-}"
+if [[ -z "${release_tag}" ]]; then
+  release_tag="${RELEASE_TAG_OVERRIDE:-${GITHUB_REF_NAME:-}}"
+fi
 if [[ -z "${release_tag}" ]]; then
   release_tag="${GITHUB_EVENT_RELEASE_TAG_NAME:-}"
 fi
 if [[ -z "${release_tag}" ]]; then
-  release_tag="local"
+  echo "A release tag is required when not running from a tag ref." >&2
+  exit 1
+fi
+if [[ "${release_tag}" != [vV]* ]]; then
+  release_tag="v${release_tag}"
 fi
 
 deb_version="${INPUT_DEB_VERSION:-${2:-}}"
