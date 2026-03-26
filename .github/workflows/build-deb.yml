@@ -148,7 +148,7 @@ jobs:
       - name: Upload workflow artifact (fallback for workflow_dispatch)
         uses: actions/upload-artifact@v4
         with:
-          name: debian-bundle-${{ steps.meta.outputs.deb_version }}
+          name: ocs2-ros2-jazzy-mobile-manipulator-${{ steps.meta.outputs.deb_version }}
           path: ${{ steps.meta.outputs.deb_file }}
           if-no-files-found: error
           retention-days: 7

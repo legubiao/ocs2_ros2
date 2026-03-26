@@ -2,7 +2,7 @@
 set -euo pipefail
 
 DEFAULT_ROS_DISTRO="${DEFAULT_ROS_DISTRO:-jazzy}"
-DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ocs2-ros2-bundle}"
+DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ocs2-ros2-jazzy-mobile-manipulator}"
 DEB_FILE_PREFIX="${DEB_FILE_PREFIX:-${DEB_PACKAGE_NAME}}"
 
 ros_distro="${INPUT_ROS_DISTRO:-${1:-}}"
