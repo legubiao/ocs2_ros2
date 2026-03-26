@@ -22,8 +22,9 @@ permissions:
 
 env:
   DEFAULT_ROS_DISTRO: jazzy
-  DEB_PACKAGE_NAME: ocs2-ros2-bundle
-  INSTALL_PREFIX: /opt/fa/ocs2-ros2-bundle
+  DEB_PACKAGE_NAME: ocs2-ros2-jazzy-mobile-manipulator
+  DEB_FILE_PREFIX: ocs2_ros2_jazzy_mobile_manipulator
+  INSTALL_PREFIX: /opt/ros/jazzy
   REQUIRED_OCS2_PACKAGES: >-
     ocs2_core
     ocs2_ddp
@@ -90,6 +91,9 @@ jobs:
             rsync \
             build-essential \
             cmake \
+            ros-${{ steps.meta.outputs.ros_distro }}-ament-cmake \
+            ros-${{ steps.meta.outputs.ros_distro }}-ament-cmake-core \
+            ros-${{ steps.meta.outputs.ros_distro }}-ament-package \
             ros-${{ steps.meta.outputs.ros_distro }}-ros-base
 
           sudo rosdep init || true
@@ -127,6 +131,7 @@ jobs:
             --deb-version "${{ steps.meta.outputs.deb_version }}" \
             --release-tag "${{ steps.meta.outputs.release_tag }}" \
             --deb-package-name "${DEB_PACKAGE_NAME}" \
+            --deb-file-prefix "${DEB_FILE_PREFIX}" \
             --install-prefix "${INSTALL_PREFIX}" \
             --required-packages "${REQUIRED_OCS2_PACKAGES}" \
             --skip-deps
