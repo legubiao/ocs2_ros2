@@ -49,6 +49,13 @@ if [[ -z "${REQUIRED_PACKAGES// }" ]]; then
   exit 1
 fi
 
+DEB_VERSION="${DEB_VERSION#v}"
+DEB_VERSION="${DEB_VERSION//\//-}"
+if [[ -z "${DEB_VERSION}" ]]; then
+  echo "Resolved deb version is empty after normalization."
+  exit 1
+fi
+
 DEB_FILE="${DEB_FILE_PREFIX}_${DEB_VERSION}_amd64.deb"
 STAGE_ROOT="${PWD}/deb_stage"
 INSTALL_ROOT="${STAGE_ROOT}${INSTALL_PREFIX}"

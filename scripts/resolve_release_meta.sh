@@ -24,6 +24,7 @@ fi
 if [[ -z "${deb_version}" ]]; then
   deb_version="0.0.0"
 fi
+deb_version="${deb_version#v}"
 deb_version="${deb_version//\//-}"
 deb_file="${DEB_PACKAGE_NAME}_${deb_version}_amd64.deb"
 

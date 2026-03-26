@@ -53,6 +53,12 @@ jobs:
           fi
 
           deb_version="${release_tag#v}"
+          deb_version="${deb_version#V}"
+          deb_version="${deb_version//\//-}"
+          if [[ -z "${deb_version}" ]]; then
+            echo "Unable to derive a deb version from release tag: ${release_tag}" >&2
+            exit 1
+          fi
           deb_file="${DEB_FILE_PREFIX}_${deb_version}_amd64.deb"
 
           echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
