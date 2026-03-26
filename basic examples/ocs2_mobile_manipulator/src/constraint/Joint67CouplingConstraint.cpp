@@ -27,8 +27,8 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
  
- #include "ocs2_mobile_manipulator/constraint/Joint67CouplingConstraint.h"
- #include <cmath>
+#include "ocs2_mobile_manipulator/constraint/Joint67CouplingConstraint.h"
+#include <cmath>
  
  namespace ocs2::mobile_manipulator
  {
@@ -48,7 +48,7 @@
            armDim_(armDim),
            baseStateDim_(stateDim - armDim),
            numArms_(armDim >= 7 ? armDim / 7 : 0),
-           smoothAbsEps_(smoothAbsEps)
+          smoothAbsEps_(smoothAbsEps)
      {
      }
  
@@ -60,7 +60,7 @@
      vector_t Joint67CouplingConstraint::getValue(scalar_t /*time*/, const vector_t& state,
                                                   const PreComputation& /*preComputation*/) const
      {
-         vector_t value = vector_t::Zero(getNumConstraints(0.0));
+        vector_t value = vector_t::Zero(getNumConstraints(0.0));
          if (numArms_ == 0)
          {
              return value;
@@ -76,9 +76,11 @@
              const scalar_t absJ7 = smoothAbs(q7, smoothAbsEps_);
              const scalar_t limit = computeLimit(absJ7);
 
-             value(arm) = absJ6 - limit;
+             // Output the margin h >= 0 for use with inequality penalties (e.g. relaxed barrier):
+             //   h = limit(|q7|) - |q6|
+             value(arm) = limit - absJ6;
          }
- 
+
          return value;
      }
  
@@ -101,13 +103,15 @@
  
              const scalar_t absJ7 = smoothAbs(q7, smoothAbsEps_);
              const bool inKnee = (absJ7 <= kJ7Knee);
+             const bool saturatedAtMax = (absJ7 >= kJ7Max);
 
              const scalar_t dabsJ6 = smoothAbsDerivative(q6, smoothAbsEps_);
              const scalar_t dabsJ7 = smoothAbsDerivative(q7, smoothAbsEps_);
-             const scalar_t dlimit = inKnee ? 0.0 : kSlope * dabsJ7;
+             const scalar_t dlimit = (inKnee || saturatedAtMax) ? 0.0 : kSlope * dabsJ7;
 
-             approx.dfdx(arm, armOffset + 5) = dabsJ6;
-             approx.dfdx(arm, armOffset + 6) = -dlimit;
+             // h = limit - |q6|
+             approx.dfdx(arm, armOffset + 5) = -dabsJ6;
+             approx.dfdx(arm, armOffset + 6) = dlimit;
          }
  
          return approx;

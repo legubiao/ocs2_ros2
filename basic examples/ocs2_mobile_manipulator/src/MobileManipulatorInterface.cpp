@@ -761,27 +761,39 @@ namespace ocs2::mobile_manipulator
         std::cerr << "\n #### Joint67Coupling Settings: ";
         std::cerr << "\n #### =============================================================================\n";
 
-        scalar_t mu = 5.0;
+        // Threshold relaxed barrier (inequality) on margin h = limit(|q7|) - |q6| >= 0
+        scalar_t mu = 1e-2;
+        scalar_t delta = 1e-3;
+        scalar_t activationThreshold = 0.05;
         scalar_t smoothAbsEps = 1e-6;
+        // Support a few key variants for convenience/backward compatibility.
         loadData::loadPtreeValue(pt, mu, "joint67Coupling.mu", false);
+        loadData::loadPtreeValue(pt, mu, "joint67Coupling.barrierMu", false);
+        loadData::loadPtreeValue(pt, mu, "joint67Coupling.barrier.mu", false);
+
+        loadData::loadPtreeValue(pt, delta, "joint67Coupling.delta", false);
+        loadData::loadPtreeValue(pt, delta, "joint67Coupling.barrierDelta", false);
+        loadData::loadPtreeValue(pt, delta, "joint67Coupling.barrier.delta", false);
+
+        loadData::loadPtreeValue(pt, activationThreshold, "joint67Coupling.activationThreshold", false);
+        loadData::loadPtreeValue(pt, activationThreshold, "joint67Coupling.barrierActivationThreshold", false);
+        loadData::loadPtreeValue(pt, activationThreshold, "joint67Coupling.barrier.activationThreshold", false);
+
         loadData::loadPtreeValue(pt, smoothAbsEps, "joint67Coupling.smoothAbsEps", false);
 
-        std::cerr << " #### penalty mu: " << mu << std::endl;
+        std::cerr << " #### threshold barrier mu: " << mu << std::endl;
+        std::cerr << " #### threshold barrier delta: " << delta << std::endl;
+        std::cerr << " #### threshold barrier activationThreshold: " << activationThreshold << std::endl;
         std::cerr << " #### smoothAbsEps: " << smoothAbsEps << std::endl;
         std::cerr << " #### =============================================================================\n";
 
         auto constraint = std::make_unique<Joint67CouplingConstraint>(
             manipulatorModelInfo_.stateDim, manipulatorModelInfo_.armDim, smoothAbsEps);
 
-        const size_t numConstraints = constraint->getNumConstraints(0.0);
-        std::vector<std::unique_ptr<PenaltyBase>> penaltyArray;
-        penaltyArray.reserve(numConstraints);
-        for (size_t i = 0; i < numConstraints; ++i)
-        {
-            penaltyArray.emplace_back(std::make_unique<QuadraticPenalty>(mu));
-        }
-
-        return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
+        ThresholdRelaxedBarrierPenalty::Config barrierConfig{mu, delta, activationThreshold};
+        return std::make_unique<StateSoftConstraint>(
+            std::move(constraint),
+            std::make_unique<ThresholdRelaxedBarrierPenalty>(barrierConfig));
     }
 
     std::unique_ptr<PinocchioGeometryInterface> MobileManipulatorInterface::getPinocchioGeometryInterface() const

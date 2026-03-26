@@ -42,6 +42,10 @@
       *  - 40 < |J7| <= 90 =>  |J6| <= 92 - 0.8 * |J7| (so |J6| = 20 at |J7|=90)
       *
       * This matches the Marvin M3S/M6S CCS 6/7 joint coupling chart.
+     *
+     * Output convention:
+     *  - This constraint returns the inequality margin h = limit(|J7|) - |J6|.
+     *  - Feasible region: h >= 0.
       */
      class Joint67CouplingConstraint final : public StateConstraint
      {
@@ -70,6 +74,6 @@
          int armDim_;
          int baseStateDim_;
          int numArms_;
-         scalar_t smoothAbsEps_;
+        scalar_t smoothAbsEps_;
      };
  } // namespace ocs2::mobile_manipulator
