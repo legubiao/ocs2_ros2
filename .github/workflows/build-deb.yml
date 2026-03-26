@@ -23,7 +23,7 @@ permissions:
 env:
   DEFAULT_ROS_DISTRO: jazzy
   DEB_PACKAGE_NAME: ocs2-ros2-bundle
-  INSTALL_PREFIX: /opt/ocs2_ros2
+  INSTALL_PREFIX: /opt/fa/ocs2-ros2-bundle
   REQUIRED_OCS2_PACKAGES: >-
     ocs2_core
     ocs2_ddp
