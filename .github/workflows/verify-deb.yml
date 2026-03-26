@@ -1,0 +1,97 @@
+name: Verify Deb
+
+# Triggered automatically when build-deb.yml publishes a release,
+# or manually to re-verify any existing release tag.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to verify (e.g. v1.0.0)"
+        required: true
+        type: string
+      ros_distro:
+        description: "ROS 2 distro"
+        required: false
+        default: jazzy
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  DEFAULT_ROS_DISTRO: jazzy
+  DEB_PACKAGE_NAME: ocs2-ros2-jazzy-mobile-manipulator
+  DEB_FILE_PREFIX: ocs2_ros2_jazzy_mobile_manipulator
+  INSTALL_PREFIX: /opt/ros/jazzy
+
+jobs:
+  verify_deb:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve metadata
+        id: meta
+        shell: bash
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+
+          # Accept tag from release event or workflow_dispatch input.
+          release_tag="${{ github.event.release.tag_name }}"
+          if [[ -z "${release_tag}" ]]; then
+            release_tag="${{ github.event.inputs.release_tag }}"
+          fi
+
+          ros_distro="${{ github.event.inputs.ros_distro }}"
+          if [[ -z "${ros_distro}" ]]; then
+            ros_distro="${DEFAULT_ROS_DISTRO}"
+          fi
+
+          deb_version="${release_tag#v}"
+          deb_file="${DEB_FILE_PREFIX}_${deb_version}_amd64.deb"
+
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+          echo "ros_distro=${ros_distro}"   >> "$GITHUB_OUTPUT"
+          echo "deb_version=${deb_version}" >> "$GITHUB_OUTPUT"
+          echo "deb_file=${deb_file}"       >> "$GITHUB_OUTPUT"
+
+          echo "Tag: ${release_tag}, distro: ${ros_distro}, deb: ${deb_file}"
+
+      - name: Setup ROS
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: ${{ steps.meta.outputs.ros_distro }}
+
+      - name: Install base tools
+        shell: bash
+        run: |
+          set -eo pipefail
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Download deb from release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -eo pipefail
+          gh release download "${{ steps.meta.outputs.release_tag }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "${{ steps.meta.outputs.deb_file }}"
+          echo "Downloaded: ${{ steps.meta.outputs.deb_file }}"
+          ls -lh "${{ steps.meta.outputs.deb_file }}"
+
+      - name: Install deb and verify downstream configure
+        shell: bash
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+          scripts/consume_release_deb.sh \
+            --deb-file "${{ steps.meta.outputs.deb_file }}" \
+            --ros-distro "${{ steps.meta.outputs.ros_distro }}" \
+            --install-prefix "${INSTALL_PREFIX}"

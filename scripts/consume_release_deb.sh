@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 usage() {
   cat <<'EOF'
@@ -8,13 +8,16 @@ Usage:
                          [--install-prefix <prefix>] [--release-tag <tag>] [--repo <owner/repo>]
                          [--download-from-release] [--skip-install]
 
-Install downloaded .deb and run downstream CMake configure/build check.
+Install the bundled .deb, overlay the merged install on top of ROS (same as
+"source /opt/ros/<distro>/setup.bash" then "source <prefix>/setup.bash"), then
+run a tiny CMake project that find_package()'s key OCS2 packages — proves the
+.deb is usable for downstream builds.
 EOF
 }
 
 DEB_FILE=""
 ROS_DISTRO=""
-INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ocs2_ros2}"
+INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ros/jazzy}"
 RELEASE_TAG=""
 REPO="${GITHUB_REPOSITORY:-}"
 DOWNLOAD_FROM_RELEASE=0
@@ -54,21 +57,45 @@ fi
 
 set +u
 source "/opt/ros/${ROS_DISTRO}/setup.bash"
-set -u
-if [[ -f "${INSTALL_PREFIX}/setup.sh" ]]; then
-  set +u
+# Colcon merge-install ships setup.bash; use it (do not rely on a hand-written
+# setup.sh that might miss hooks). Fallbacks keep old .deb layouts working.
+if [[ -f "${INSTALL_PREFIX}/setup.bash" ]]; then
   # shellcheck disable=SC1090
-  source "${INSTALL_PREFIX}/setup.sh"
-  set -u
+  source "${INSTALL_PREFIX}/setup.bash"
+elif [[ -f "${INSTALL_PREFIX}/local_setup.bash" ]]; then
+  # shellcheck disable=SC1090
+  source "${INSTALL_PREFIX}/local_setup.bash"
+elif [[ -f "${INSTALL_PREFIX}/ocs2_ros2_bundle_env.sh" ]]; then
+  # shellcheck disable=SC1090
+  source "${INSTALL_PREFIX}/ocs2_ros2_bundle_env.sh"
 else
   export CMAKE_PREFIX_PATH="${INSTALL_PREFIX}:${CMAKE_PREFIX_PATH:-}"
+  export AMENT_PREFIX_PATH="${INSTALL_PREFIX}:${AMENT_PREFIX_PATH:-}"
 fi
+set -u
+
+echo "[debug] INSTALL_PREFIX=${INSTALL_PREFIX}"
+echo "[debug] CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH:-<empty>}"
+echo "[debug] AMENT_PREFIX_PATH=${AMENT_PREFIX_PATH:-<empty>}"
+
+echo "[debug] Looking for package config files..."
+find "${INSTALL_PREFIX}" \( \
+  -name 'ocs2_mobile_manipulatorConfig.cmake' -o \
+  -name 'ocs2_mobile_manipulator-config.cmake' -o \
+  -name 'ocs2_mobile_manipulator_rosConfig.cmake' -o \
+  -name 'ocs2_mobile_manipulator_ros-config.cmake' -o \
+  -name 'ocs2_ros_interfacesConfig.cmake' -o \
+  -name 'ocs2_ros_interfaces-config.cmake' \
+\) -print
 
 rm -rf downstream_check
 mkdir -p downstream_check
 cat > downstream_check/CMakeLists.txt <<'EOF'
 cmake_minimum_required(VERSION 3.16)
 project(ocs2_downstream_check CXX)
+
+# Suppress legacy FindBoost deprecation warning from ocs2_core transitive deps.
+cmake_policy(SET CMP0167 NEW)
 
 find_package(ocs2_mobile_manipulator REQUIRED)
 find_package(ocs2_mobile_manipulator_ros REQUIRED)
@@ -82,6 +109,6 @@ cat > downstream_check/main.cpp <<'EOF'
 int main() { return 0; }
 EOF
 
-cmake -S downstream_check -B downstream_check/build
+cmake -Wno-dev -S downstream_check -B downstream_check/build
 cmake --build downstream_check/build -j2
 echo "Downstream CMake verification passed."
