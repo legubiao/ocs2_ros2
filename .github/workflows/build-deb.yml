@@ -1,0 +1,149 @@
+name: Build and Publish Deb
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      ros_distro:
+        description: "ROS 2 distro"
+        required: false
+        default: jazzy
+        type: string
+      deb_version:
+        description: "Override deb version (default: tag without leading v)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  DEFAULT_ROS_DISTRO: jazzy
+  DEB_PACKAGE_NAME: ocs2-ros2-bundle
+  INSTALL_PREFIX: /opt/fa/ocs2-ros2-bundle
+  REQUIRED_OCS2_PACKAGES: >-
+    ocs2_core
+    ocs2_ddp
+    ocs2_mobile_manipulator
+    ocs2_mobile_manipulator_ros
+    ocs2_mpc
+    ocs2_msgs
+    ocs2_oc
+    ocs2_pinocchio_interface
+    ocs2_qp_solver
+    ocs2_robotic_assets
+    ocs2_robotic_tools
+    ocs2_ros_interfaces
+    ocs2_self_collision
+    ocs2_self_collision_visualization
+    ocs2_thirdparty
+
+jobs:
+  build_deb:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Resolve build metadata
+        id: meta
+        shell: bash
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+          INPUT_ROS_DISTRO="${{ github.event.inputs.ros_distro }}" \
+          INPUT_DEB_VERSION="${{ github.event.inputs.deb_version }}" \
+          RELEASE_TAG_OVERRIDE="${{ github.ref_name }}" \
+          scripts/resolve_release_meta.sh | tee /tmp/release_meta.txt
+
+          while IFS='=' read -r key value; do
+            echo "${key}=${value}" >> "$GITHUB_OUTPUT"
+          done < /tmp/release_meta.txt
+
+      - name: Setup ROS
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: ${{ steps.meta.outputs.ros_distro }}
+
+      - name: Install system tools
+        shell: bash
+        run: |
+          set -eo pipefail
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository universe
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-rosdep \
+            python3-colcon-core \
+            python3-colcon-common-extensions \
+            python3-vcstool \
+            python3-pip \
+            fakeroot \
+            dpkg-dev \
+            rsync \
+            build-essential \
+            cmake \
+            ros-${{ steps.meta.outputs.ros_distro }}-ros-base
+
+          sudo rosdep init || true
+          rosdep update
+
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          python3 -c "import ament_package; print('ament_package ready:', ament_package.__file__)"
+
+      - name: Install package dependencies via rosdep
+        shell: bash
+        run: |
+          set -eo pipefail
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          rosdep install --from-paths . --ignore-src -r -y
+
+      - name: Fast preflight diagnostics
+        shell: bash
+        run: |
+          set -eo pipefail
+          set +u
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          set -u
+          echo "Python: $(python3 --version)"
+          echo "CMake: $(cmake --version | sed -n '1p')"
+          echo "Colcon: $(colcon --version)"
+          python3 -c "import ament_package; print('ament_package:', ament_package.__file__)"
+
+      - name: Build and package deb
+        shell: bash
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+          scripts/build_release_deb.sh \
+            --ros-distro "${{ steps.meta.outputs.ros_distro }}" \
+            --deb-version "${{ steps.meta.outputs.deb_version }}" \
+            --release-tag "${{ steps.meta.outputs.release_tag }}" \
+            --deb-package-name "${DEB_PACKAGE_NAME}" \
+            --install-prefix "${INSTALL_PREFIX}" \
+            --required-packages "${REQUIRED_OCS2_PACKAGES}" \
+            --skip-deps
+
+      - name: Publish deb to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.release_tag }}
+          name: ${{ steps.meta.outputs.release_tag }}
+          draft: false
+          prerelease: false
+          files: ${{ steps.meta.outputs.deb_file }}
+
+      - name: Upload workflow artifact (fallback for workflow_dispatch)
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-bundle-${{ steps.meta.outputs.deb_version }}
+          path: ${{ steps.meta.outputs.deb_file }}
+          if-no-files-found: error
+          retention-days: 7
