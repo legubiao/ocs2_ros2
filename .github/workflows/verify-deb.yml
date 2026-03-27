@@ -22,8 +22,9 @@ permissions:
 
 env:
   DEFAULT_ROS_DISTRO: jazzy
-  DEB_PACKAGE_NAME: ocs2-ros2-bundle
-  INSTALL_PREFIX: /opt/fa/ocs2-ros2-bundle
+  DEB_PACKAGE_NAME: ocs2-ros2-jazzy-mobile-manipulator
+  DEB_FILE_PREFIX: ocs2_ros2_jazzy_mobile_manipulator
+  INSTALL_PREFIX: /opt/ros/jazzy
 
 jobs:
   verify_deb:
@@ -52,7 +53,7 @@ jobs:
           fi
 
           deb_version="${release_tag#v}"
-          deb_file="${DEB_PACKAGE_NAME}_${deb_version}_amd64.deb"
+          deb_file="${DEB_FILE_PREFIX}_${deb_version}_amd64.deb"
 
           echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
           echo "ros_distro=${ros_distro}"   >> "$GITHUB_OUTPUT"

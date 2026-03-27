@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 usage() {
   cat <<'EOF'
@@ -17,7 +17,7 @@ EOF
 
 DEB_FILE=""
 ROS_DISTRO=""
-INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/fa/ocs2-ros2-bundle}"
+INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ros/jazzy}"
 RELEASE_TAG=""
 REPO="${GITHUB_REPOSITORY:-}"
 DOWNLOAD_FROM_RELEASE=0
