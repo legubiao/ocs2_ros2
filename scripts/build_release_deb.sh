@@ -16,7 +16,7 @@ ROS_DISTRO=""
 DEB_VERSION=""
 RELEASE_TAG=""
 DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ocs2-ros2-jazzy-mobile-manipulator}"
-DEB_FILE_PREFIX="${DEB_FILE_PREFIX:-ocs2_ros2_jazzy_mobile_manipulator}"
+DEB_FILE_PREFIX="${DEB_FILE_PREFIX:-ocs2-ros2-jazzy-mobile-manipulator}"
 INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ros/jazzy}"
 REQUIRED_PACKAGES="${REQUIRED_OCS2_PACKAGES:-}"
 SKIP_DEPS=0
@@ -49,6 +49,13 @@ if [[ -z "${REQUIRED_PACKAGES// }" ]]; then
   exit 1
 fi
 
+DEB_VERSION="${DEB_VERSION#v}"
+DEB_VERSION="${DEB_VERSION//\//-}"
+if [[ -z "${DEB_VERSION}" ]]; then
+  echo "Resolved deb version is empty after normalization."
+  exit 1
+fi
+
 DEB_FILE="${DEB_FILE_PREFIX}_${DEB_VERSION}_amd64.deb"
 STAGE_ROOT="${PWD}/deb_stage"
 INSTALL_ROOT="${STAGE_ROOT}${INSTALL_PREFIX}"
@@ -60,9 +67,11 @@ strip_prefix_common_files() {
     "${prefix_root}/setup.bash" \
     "${prefix_root}/setup.sh" \
     "${prefix_root}/setup.zsh" \
+    "${prefix_root}/setup.ps1" \
     "${prefix_root}/local_setup.bash" \
     "${prefix_root}/local_setup.sh" \
     "${prefix_root}/local_setup.zsh" \
+    "${prefix_root}/local_setup.ps1" \
     "${prefix_root}/_local_setup_util.py" \
     "${prefix_root}/_local_setup_util_sh.py" \
     "${prefix_root}/_local_setup_util_ps1.py" \

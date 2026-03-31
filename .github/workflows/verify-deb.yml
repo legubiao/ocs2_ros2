@@ -23,7 +23,7 @@ permissions:
 env:
   DEFAULT_ROS_DISTRO: jazzy
   DEB_PACKAGE_NAME: ocs2-ros2-jazzy-mobile-manipulator
-  DEB_FILE_PREFIX: ocs2_ros2_jazzy_mobile_manipulator
+  DEB_FILE_PREFIX: ocs2-ros2-jazzy-mobile-manipulator
   INSTALL_PREFIX: /opt/ros/jazzy
 
 jobs:
@@ -46,6 +46,9 @@ jobs:
           if [[ -z "${release_tag}" ]]; then
             release_tag="${{ github.event.inputs.release_tag }}"
           fi
+          if [[ "${release_tag}" != [vV]* ]]; then
+            release_tag="v${release_tag}"
+          fi
 
           ros_distro="${{ github.event.inputs.ros_distro }}"
           if [[ -z "${ros_distro}" ]]; then
@@ -53,6 +56,12 @@ jobs:
           fi
 
           deb_version="${release_tag#v}"
+          deb_version="${deb_version#V}"
+          deb_version="${deb_version//\//-}"
+          if [[ -z "${deb_version}" ]]; then
+            echo "Unable to derive a deb version from release tag: ${release_tag}" >&2
+            exit 1
+          fi
           deb_file="${DEB_FILE_PREFIX}_${deb_version}_amd64.deb"
 
           echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
