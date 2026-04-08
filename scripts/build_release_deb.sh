@@ -161,7 +161,7 @@ Section: libs
 Priority: optional
 Architecture: amd64
 Maintainer: ocs2_ros2 CI <noreply@github.com>
-Depends: libc6 (>= 2.35), ros-${ROS_DISTRO}-ros-base
+Depends: libc6 (>= 2.35), ros-${ROS_DISTRO}-ros-base, ros-${ROS_DISTRO}-pinocchio, ros-${ROS_DISTRO}-urdf, ros-${ROS_DISTRO}-kdl-parser, ros-${ROS_DISTRO}-robot-state-publisher, ros-${ROS_DISTRO}-tf2-ros
 Description: Prebuilt OCS2 ROS2 bundle for selected mobile manipulator dependency chain
  Built from ${GITHUB_REPOSITORY:-local/ocs2_ros2} at tag/ref ${RELEASE_TAG}.
  Installed under ${INSTALL_PREFIX}.
