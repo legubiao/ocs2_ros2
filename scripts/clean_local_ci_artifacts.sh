@@ -28,7 +28,7 @@ paths=(
 deb_files=()
 while IFS= read -r file; do
   deb_files+=("${file}")
-done < <(compgen -G "ocs2-ros2-jazzy-mobile-manipulator_*_amd64.deb" || true)
+done < <(compgen -G "ros-jazzy-ocs2-ros2-mobile-manipulator_*_amd64.deb" || true)
 
 for file in "${deb_files[@]}"; do
   paths+=("${file}")

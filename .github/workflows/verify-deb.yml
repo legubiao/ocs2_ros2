@@ -22,8 +22,8 @@ permissions:
 
 env:
   DEFAULT_ROS_DISTRO: jazzy
-  DEB_PACKAGE_NAME: ocs2-ros2-jazzy-mobile-manipulator
-  DEB_FILE_PREFIX: ocs2-ros2-jazzy-mobile-manipulator
+  DEB_PACKAGE_NAME: ros-jazzy-ocs2-ros2-mobile-manipulator
+  DEB_FILE_PREFIX: ros-jazzy-ocs2-ros2-mobile-manipulator
   INSTALL_PREFIX: /opt/ros/jazzy
 
 jobs:

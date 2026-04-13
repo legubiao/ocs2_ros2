@@ -15,8 +15,8 @@ EOF
 ROS_DISTRO=""
 DEB_VERSION=""
 RELEASE_TAG=""
-DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ocs2-ros2-jazzy-mobile-manipulator}"
-DEB_FILE_PREFIX="${DEB_FILE_PREFIX:-ocs2-ros2-jazzy-mobile-manipulator}"
+DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ros-jazzy-ocs2-ros2-mobile-manipulator}"
+DEB_FILE_PREFIX="${DEB_FILE_PREFIX:-ros-jazzy-ocs2-ros2-mobile-manipulator}"
 INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ros/jazzy}"
 REQUIRED_PACKAGES="${REQUIRED_OCS2_PACKAGES:-}"
 SKIP_DEPS=0
