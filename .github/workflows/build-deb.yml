@@ -27,8 +27,8 @@ permissions:
 
 env:
   DEFAULT_ROS_DISTRO: jazzy
-  DEB_PACKAGE_NAME: ocs2-ros2-jazzy-mobile-manipulator
-  DEB_FILE_PREFIX: ocs2-ros2-jazzy-mobile-manipulator
+  DEB_PACKAGE_NAME: ros-jazzy-ocs2-ros2-mobile-manipulator
+  DEB_FILE_PREFIX: ros-jazzy-ocs2-ros2-mobile-manipulator
   INSTALL_PREFIX: /opt/ros/jazzy
   REQUIRED_OCS2_PACKAGES: >-
     ocs2_core
@@ -104,7 +104,6 @@ jobs:
 
           sudo rosdep init || true
           rosdep update
-
           source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
           python3 -c "import ament_package; print('ament_package ready:', ament_package.__file__)"
 
@@ -154,7 +153,7 @@ jobs:
       - name: Upload workflow artifact (fallback for workflow_dispatch)
         uses: actions/upload-artifact@v4
         with:
-          name: ocs2-ros2-jazzy-mobile-manipulator-${{ steps.meta.outputs.deb_version }}
+          name: ros-jazzy-ocs2-ros2-mobile-manipulator-${{ steps.meta.outputs.deb_version }}
           path: ${{ steps.meta.outputs.deb_file }}
           if-no-files-found: error
           retention-days: 7
