@@ -48,6 +48,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/penalties/Penalties.h>
 #include <ocs2_core/soft_constraint/StateInputSoftBoxConstraint.h>
 #include <ocs2_core/soft_constraint/StateSoftConstraint.h>
+#include <ocs2_core/augmented_lagrangian/StateAugmentedLagrangian.h>
+#include <ocs2_core/penalties/augmented/SlacknessSquaredHingePenalty.h>
 #include <ocs2_oc/synchronized_module/ReferenceManager.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematicsCppAd.h>
@@ -229,9 +231,38 @@ namespace ocs2::mobile_manipulator
         // joint 6/7 coupling constraint (only for 7-DOF arms)
         bool activateJoint67Coupling = false;
         loadData::loadPtreeValue(pt, activateJoint67Coupling, "joint67Coupling.activate", true);
+        std::cerr << " #### [Joint67] taskFile=" << taskFile
+                  << " activate=" << activateJoint67Coupling
+                  << " armDim=" << manipulatorModelInfo_.armDim
+                  << " stateDim=" << manipulatorModelInfo_.stateDim
+                  << " inputDim=" << manipulatorModelInfo_.inputDim << std::endl;
         if (activateJoint67Coupling && (manipulatorModelInfo_.armDim == 7 || manipulatorModelInfo_.armDim == 14))
         {
-            problem_.stateSoftConstraintPtr->add("joint67Coupling", getJoint67CouplingConstraint(taskFile));
+            std::string constraintMode = "augmented_lagrangian";
+            loadData::loadPtreeValue(pt, constraintMode, "joint67Coupling.mode", false);
+
+            if (constraintMode == "soft") {
+                std::cerr << " #### [Joint67] mode=SOFT (barrier penalty)\n";
+                problem_.stateSoftConstraintPtr->add("joint67Coupling", getJoint67CouplingConstraint(taskFile));
+                problem_.finalSoftConstraintPtr->add("joint67Coupling_terminal", getJoint67CouplingConstraint(taskFile));
+            } else {
+                std::cerr << " #### [Joint67] mode=AUGMENTED_LAGRANGIAN (near-hard inequality constraint)\n";
+                auto alPtr = getJoint67CouplingAugmentedLagrangian(taskFile);
+                problem_.stateInequalityConstraintPtr->add("joint67Coupling",
+                    std::make_unique<Joint67CouplingConstraint>(
+                        manipulatorModelInfo_.stateDim, manipulatorModelInfo_.armDim, 1e-6));
+                problem_.stateInequalityLagrangianPtr->add("joint67Coupling", std::move(alPtr));
+
+                problem_.finalInequalityConstraintPtr->add("joint67Coupling_terminal",
+                    std::make_unique<Joint67CouplingConstraint>(
+                        manipulatorModelInfo_.stateDim, manipulatorModelInfo_.armDim, 1e-6));
+                problem_.finalInequalityLagrangianPtr->add("joint67Coupling_terminal",
+                    getJoint67CouplingAugmentedLagrangian(taskFile));
+            }
+        }
+        else
+        {
+            std::cerr << " #### [Joint67] constraint SKIPPED\n";
         }
 
         // Dynamics
@@ -794,6 +825,32 @@ namespace ocs2::mobile_manipulator
         return std::make_unique<StateSoftConstraint>(
             std::move(constraint),
             std::make_unique<ThresholdRelaxedBarrierPenalty>(barrierConfig));
+    }
+
+    std::unique_ptr<StateAugmentedLagrangian> MobileManipulatorInterface::getJoint67CouplingAugmentedLagrangian(
+        const std::string& taskFile)
+    {
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_info(taskFile, pt);
+
+        scalar_t scale = 10.0;
+        scalar_t stepSize = 1.0;
+        scalar_t smoothAbsEps = 1e-6;
+
+        loadData::loadPtreeValue(pt, scale, "joint67Coupling.alScale", false);
+        loadData::loadPtreeValue(pt, stepSize, "joint67Coupling.alStepSize", false);
+        loadData::loadPtreeValue(pt, smoothAbsEps, "joint67Coupling.smoothAbsEps", false);
+
+        std::cerr << " #### [Joint67 AL] scale=" << scale << " stepSize=" << stepSize << std::endl;
+
+        auto constraint = std::make_unique<Joint67CouplingConstraint>(
+            manipulatorModelInfo_.stateDim, manipulatorModelInfo_.armDim, smoothAbsEps);
+
+        augmented::SlacknessSquaredHingePenalty::Config alConfig{scale, stepSize};
+        std::vector<std::unique_ptr<augmented::AugmentedPenaltyBase>> penaltyArray;
+        penaltyArray.push_back(std::make_unique<augmented::SlacknessSquaredHingePenalty>(alConfig));
+
+        return std::make_unique<StateAugmentedLagrangian>(std::move(constraint), std::move(penaltyArray));
     }
 
     std::unique_ptr<PinocchioGeometryInterface> MobileManipulatorInterface::getPinocchioGeometryInterface() const

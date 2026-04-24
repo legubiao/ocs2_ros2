@@ -36,12 +36,13 @@
  {
      /**
       * 6/7 joint coupling constraint for 7-DOF arms.
-      *
-      * Coupling model (degrees):
-      *  - |J7| <= 40 deg  =>  |J6| <= 60 deg
-      *  - 40 < |J7| <= 90 =>  |J6| <= 92 - 0.8 * |J7| (so |J6| = 20 at |J7|=90)
-      *
-      * This matches the Marvin M3S/M6S CCS 6/7 joint coupling chart.
+     *
+     * Coupling model (degrees):
+     *  - |J7| <= 49 deg  =>  |J6| <= 60 deg
+     *  - 49 < |J7| <= 90 =>  |J6| <= 60 + (20-60)/(90-49) * (|J7| - 49) ≈ 60 - 0.976*(|J7|-49)
+     *                             so |J6| = 20 at |J7|=90
+     *
+     * This matches the Marvin M3S/M6S CCS 6/7 joint coupling chart.
      *
      * Output convention:
      *  - This constraint returns the inequality margin h = limit(|J7|) - |J6|.

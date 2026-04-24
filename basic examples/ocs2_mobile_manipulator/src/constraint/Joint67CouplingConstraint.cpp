@@ -35,11 +35,11 @@
      namespace
      {
          constexpr scalar_t kDegToRad = M_PI / 180.0;
-         constexpr scalar_t kJ7Knee = 40.0 * kDegToRad;
-         constexpr scalar_t kJ7Max = 90.0 * kDegToRad;
-         constexpr scalar_t kJ6AtKnee = 60.0 * kDegToRad;
-         constexpr scalar_t kJ6AtMax = 20.0 * kDegToRad;
-         constexpr scalar_t kSlope = (kJ6AtMax - kJ6AtKnee) / (kJ7Max - kJ7Knee); // -0.8
+        constexpr scalar_t kJ7Knee = 49.0 * kDegToRad;   // 斜线起点 |q7|
+        constexpr scalar_t kJ7Max = 90.0 * kDegToRad;     // 最大 |q7|
+        constexpr scalar_t kJ6AtKnee = 60.0 * kDegToRad;  // 斜线起点 |q6| limit
+        constexpr scalar_t kJ6AtMax = 20.0 * kDegToRad;   // 最大 |q7| 时 |q6| limit
+        constexpr scalar_t kSlope = (kJ6AtMax - kJ6AtKnee) / (kJ7Max - kJ7Knee); // (20-60)/(90-49) ≈ -0.976
      }
  
     Joint67CouplingConstraint::Joint67CouplingConstraint(int stateDim, int armDim, scalar_t smoothAbsEps)

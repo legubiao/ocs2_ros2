@@ -31,6 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // OCS2
 #include <ocs2_core/Types.h>
+#include <ocs2_core/augmented_lagrangian/StateAugmentedLagrangian.h>
 #include <ocs2_core/initialization/Initializer.h>
 #include <ocs2_ddp/DDP_Settings.h>
 #include <ocs2_mpc/MPC_Settings.h>
@@ -118,6 +119,7 @@ namespace ocs2::mobile_manipulator
                                                              const std::string& libraryFolder,
                                                              bool recompileLibraries);
         std::unique_ptr<StateCost> getJoint67CouplingConstraint(const std::string& taskFile);
+        std::unique_ptr<StateAugmentedLagrangian> getJoint67CouplingAugmentedLagrangian(const std::string& taskFile);
         std::unique_ptr<StateInputCost> getJointLimitSoftConstraint(const PinocchioInterface& pinocchioInterface,
                                                                     const std::string& taskFile);
 
