@@ -57,6 +57,8 @@ namespace ocs2::mobile_manipulator
         PinocchioInterface& getPinocchioInterface() { return pinocchioInterface_; }
         const PinocchioInterface& getPinocchioInterface() const { return pinocchioInterface_; }
 
+        const MobileManipulatorPinocchioMapping& getPinocchioMapping() const { return pinocchioMapping_; }
+
     private:
         PinocchioInterface pinocchioInterface_;
         MobileManipulatorPinocchioMapping pinocchioMapping_;

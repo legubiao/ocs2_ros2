@@ -56,8 +56,20 @@ namespace ocs2::mobile_manipulator
          * @param [in] verbose : Display information.
          */
         DefaultManipulatorDynamics(const ManipulatorModelInfo& modelInfo, const std::string& modelName,
+                                   vector_t positionLowerLimit = vector_t(),
+                                   vector_t positionUpperLimit = vector_t(),
+                                   scalar_t jointLimitEps = 0.0,
                                    const std::string& modelFolder = "/tmp/ocs2", bool recompileLibraries = true,
                                    bool verbose = true);
+
+        // Backward-compatible constructor (no baked-in limits).
+        DefaultManipulatorDynamics(const ManipulatorModelInfo& modelInfo, const std::string& modelName,
+                                   const std::string& modelFolder, bool recompileLibraries = true,
+                                   bool verbose = true)
+            : DefaultManipulatorDynamics(modelInfo, modelName, vector_t(), vector_t(), 0.0, modelFolder,
+                                         recompileLibraries, verbose)
+        {
+        }
 
         ~DefaultManipulatorDynamics() override = default;
         DefaultManipulatorDynamics* clone() const override { return new DefaultManipulatorDynamics(*this); }
@@ -67,5 +79,9 @@ namespace ocs2::mobile_manipulator
 
         ad_vector_t systemFlowMap(ad_scalar_t time, const ad_vector_t& state, const ad_vector_t& input,
                                   const ad_vector_t& /*parameters*/) const override;
+
+        vector_t positionLowerLimit_;
+        vector_t positionUpperLimit_;
+        scalar_t jointLimitEps_{0.0};
     };
 }

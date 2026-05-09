@@ -59,6 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mobile_manipulator/ManipulatorModelInfo.h"
 #include "ocs2_mobile_manipulator/MobileManipulatorPreComputation.h"
 #include "ocs2_mobile_manipulator/constraint/EndEffectorConstraint.h"
+#include "ocs2_mobile_manipulator/constraint/EndEffectorSe3LogConstraint.h"
 #include "ocs2_mobile_manipulator/constraint/BodyRelativeConstraint.h"
 
 #include "ocs2_mobile_manipulator/constraint/MobileManipulatorSelfCollisionConstraint.h"
@@ -248,14 +249,47 @@ namespace ocs2::mobile_manipulator
             } else {
                 std::cerr << " #### [Joint67] mode=AUGMENTED_LAGRANGIAN (near-hard inequality constraint)\n";
                 auto alPtr = getJoint67CouplingAugmentedLagrangian(taskFile);
-                problem_.stateInequalityConstraintPtr->add("joint67Coupling",
-                    std::make_unique<Joint67CouplingConstraint>(
-                        manipulatorModelInfo_.stateDim, manipulatorModelInfo_.armDim, 1e-6));
+                // Support optional safety margin via shifting: h' = h - margin >= 0
+                scalar_t margin = 0.0;
+                loadData::loadPtreeValue(pt, margin, "joint67Coupling.margin", false);
+                scalar_t smoothAbsEps = 1e-6;
+                loadData::loadPtreeValue(pt, smoothAbsEps, "joint67Coupling.smoothAbsEps", false);
+
+                class ShiftedStateConstraint final : public StateConstraint {
+                public:
+                    ShiftedStateConstraint(std::unique_ptr<StateConstraint> inner, scalar_t shift)
+                        : StateConstraint(ConstraintOrder::Linear), inner_(std::move(inner)), shift_(shift) {}
+                    ShiftedStateConstraint* clone() const override {
+                        return new ShiftedStateConstraint(std::unique_ptr<StateConstraint>(inner_->clone()), shift_);
+                    }
+                    size_t getNumConstraints(scalar_t time) const override { return inner_->getNumConstraints(time); }
+                    vector_t getValue(scalar_t time, const vector_t& state, const PreComputation& pre) const override {
+                        return inner_->getValue(time, state, pre).array() - shift_;
+                    }
+                    VectorFunctionLinearApproximation getLinearApproximation(
+                        scalar_t time, const vector_t& state, const PreComputation& pre) const override {
+                        auto approx = inner_->getLinearApproximation(time, state, pre);
+                        approx.f.array() -= shift_;
+                        return approx;
+                    }
+                private:
+                    std::unique_ptr<StateConstraint> inner_;
+                    scalar_t shift_{0.0};
+                };
+
+                auto makeCouplingConstraint = [&]() -> std::unique_ptr<StateConstraint> {
+                    std::unique_ptr<StateConstraint> c = std::make_unique<Joint67CouplingConstraint>(
+                        manipulatorModelInfo_.stateDim, manipulatorModelInfo_.armDim, smoothAbsEps);
+                    if (margin > 0.0) {
+                        c = std::make_unique<ShiftedStateConstraint>(std::move(c), margin);
+                    }
+                    return c;
+                };
+
+                problem_.stateInequalityConstraintPtr->add("joint67Coupling", makeCouplingConstraint());
                 problem_.stateInequalityLagrangianPtr->add("joint67Coupling", std::move(alPtr));
 
-                problem_.finalInequalityConstraintPtr->add("joint67Coupling_terminal",
-                    std::make_unique<Joint67CouplingConstraint>(
-                        manipulatorModelInfo_.stateDim, manipulatorModelInfo_.armDim, 1e-6));
+                problem_.finalInequalityConstraintPtr->add("joint67Coupling_terminal", makeCouplingConstraint());
                 problem_.finalInequalityLagrangianPtr->add("joint67Coupling_terminal",
                     getJoint67CouplingAugmentedLagrangian(taskFile));
             }
@@ -265,34 +299,49 @@ namespace ocs2::mobile_manipulator
             std::cerr << " #### [Joint67] constraint SKIPPED\n";
         }
 
+        // Rollout dynamics joint-limit baking (smooth outward velocity attenuation)
+        bool bakeJointPositionLimits = false;
+        scalar_t jointLimitEps = 0.02; // [rad] smoothing distance around limits
+        loadData::loadPtreeValue(pt, bakeJointPositionLimits, "rollout.bakeJointPositionLimits", true);
+        loadData::loadPtreeValue(pt, jointLimitEps, "rollout.jointLimitEps", true);
+
+        vector_t armPosLower, armPosUpper;
+        if (bakeJointPositionLimits)
+        {
+            const auto& model = pinocchioInterfacePtr_->getModel();
+            armPosLower = model.lowerPositionLimit.tail(armStateDim);
+            armPosUpper = model.upperPositionLimit.tail(armStateDim);
+            std::cerr << " #### [Rollout] bakeJointPositionLimits=true, jointLimitEps=" << jointLimitEps << "\n";
+        }
+
         // Dynamics
         switch (manipulatorModelInfo_.manipulatorModelType)
         {
         case ManipulatorModelType::DefaultManipulator:
             {
                 problem_.dynamicsPtr = std::make_unique<DefaultManipulatorDynamics>(
-                    manipulatorModelInfo_, "dynamics", libraryFolder,
+                    manipulatorModelInfo_, "dynamics", armPosLower, armPosUpper, jointLimitEps, libraryFolder,
                     recompileLibraries, true);
                 break;
             }
         case ManipulatorModelType::FloatingArmManipulator:
             {
                 problem_.dynamicsPtr = std::make_unique<FloatingArmManipulatorDynamics>(
-                    manipulatorModelInfo_, "dynamics", libraryFolder,
+                    manipulatorModelInfo_, "dynamics", armPosLower, armPosUpper, jointLimitEps, libraryFolder,
                     recompileLibraries, true);
                 break;
             }
         case ManipulatorModelType::FullyActuatedFloatingArmManipulator:
             {
                 problem_.dynamicsPtr = std::make_unique<FullyActuatedFloatingArmManipulatorDynamics>(
-                    manipulatorModelInfo_, "dynamics",
+                    manipulatorModelInfo_, "dynamics", armPosLower, armPosUpper, jointLimitEps,
                     libraryFolder, recompileLibraries, true);
                 break;
             }
         case ManipulatorModelType::WheelBasedMobileManipulator:
             {
                 problem_.dynamicsPtr = std::make_unique<WheelBasedMobileManipulatorDynamics>(
-                    manipulatorModelInfo_, "dynamics", libraryFolder,
+                    manipulatorModelInfo_, "dynamics", armPosLower, armPosUpper, jointLimitEps, libraryFolder,
                     recompileLibraries, true);
                 break;
             }
@@ -367,6 +416,10 @@ namespace ocs2::mobile_manipulator
 
         loadData::loadPtreeValue(pt, muPosition, prefix + ".muPosition", true);
         loadData::loadPtreeValue(pt, muOrientation, prefix + ".muOrientation", true);
+        std::string trackingError = "pos_quat";  // legacy: position difference + SO(3) orientation error
+        loadData::loadPtreeValue(pt, trackingError, prefix + ".trackingError", false);
+        std::string se3Invariant = "right";  // for trackingError=se3_log
+        loadData::loadPtreeValue(pt, se3Invariant, prefix + ".se3Invariant", false);
         std::string positionPenalty = "quadratic";
         scalar_t logPositionScale = 1.0;
         loadData::loadPtreeValue(pt, positionPenalty, prefix + ".positionPenalty", false);
@@ -386,6 +439,13 @@ namespace ocs2::mobile_manipulator
         loadData::loadPtreeValue(pt, logTrackingError, prefix + ".logTrackingError", false);
         loadData::loadPtreeValue(pt, logTrackingPeriod, prefix + ".logTrackingPeriod", false);
 
+        if (trackingError == "se3_log" && !usePreComputation)
+        {
+            std::cerr << "[WARN] " << prefix << ".trackingError=se3_log requires usePreComputation=true; "
+                         "falling back to pos_quat.\n";
+            trackingError = "pos_quat";
+        }
+
         if (usePreComputation)
         {
             MobileManipulatorPinocchioMapping pinocchioMapping(manipulatorModelInfo_);
@@ -398,15 +458,39 @@ namespace ocs2::mobile_manipulator
                                                                 manipulatorModelInfo_.eeFrame,
                                                                 manipulatorModelInfo_.eeFrame1
                                                             });
-                constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true,
-                                                                     logTrackingError, logTrackingPeriod);
+                if (trackingError == "se3_log")
+                {
+                    const auto inv = (se3Invariant == "left")
+                                         ? EndEffectorSe3LogConstraint::InvariantType::Left
+                                         : EndEffectorSe3LogConstraint::InvariantType::Right;
+                    constraint = std::make_unique<EndEffectorSe3LogConstraint>(
+                        std::vector<std::string>{manipulatorModelInfo_.eeFrame, manipulatorModelInfo_.eeFrame1},
+                        *referenceManagerPtr_, true, inv);
+                }
+                else
+                {
+                    constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, true,
+                                                                         logTrackingError, logTrackingPeriod);
+                }
             }
             else
             {
                 PinocchioEndEffectorKinematics eeKinematics(pinocchioInterface, pinocchioMapping,
                                                             {manipulatorModelInfo_.eeFrame});
-                constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, false,
-                                                                     logTrackingError, logTrackingPeriod);
+                if (trackingError == "se3_log")
+                {
+                    const auto inv = (se3Invariant == "left")
+                                         ? EndEffectorSe3LogConstraint::InvariantType::Left
+                                         : EndEffectorSe3LogConstraint::InvariantType::Right;
+                    constraint = std::make_unique<EndEffectorSe3LogConstraint>(
+                        std::vector<std::string>{manipulatorModelInfo_.eeFrame},
+                        *referenceManagerPtr_, false, inv);
+                }
+                else
+                {
+                    constraint = std::make_unique<EndEffectorConstraint>(eeKinematics, *referenceManagerPtr_, false,
+                                                                         logTrackingError, logTrackingPeriod);
+                }
             }
         }
         else
@@ -468,7 +552,7 @@ namespace ocs2::mobile_manipulator
             // Left arm: position + orientation
             std::generate_n(penaltyArray.begin(), 3, [&]() -> std::unique_ptr<PenaltyBase>
             {
-                if (leftPositionPenalty == "log")
+                if (trackingError != "se3_log" && leftPositionPenalty == "log")
                 {
                     return std::make_unique<LogQuadraticPenalty>(leftMuPosition, leftLogPositionScale);
                 }
@@ -481,7 +565,7 @@ namespace ocs2::mobile_manipulator
             // Right arm: position + orientation
             std::generate_n(penaltyArray.begin() + 6, 3, [&]() -> std::unique_ptr<PenaltyBase>
             {
-                if (rightPositionPenalty == "log")
+                if (trackingError != "se3_log" && rightPositionPenalty == "log")
                 {
                     return std::make_unique<LogQuadraticPenalty>(rightMuPosition, rightLogPositionScale);
                 }
@@ -497,7 +581,7 @@ namespace ocs2::mobile_manipulator
             penaltyArray.resize(6);
             std::generate_n(penaltyArray.begin(), 3, [&]() -> std::unique_ptr<PenaltyBase>
             {
-                if (positionPenalty == "log")
+                if (trackingError != "se3_log" && positionPenalty == "log")
                 {
                     return std::make_unique<LogQuadraticPenalty>(muPosition, logPositionScale);
                 }
@@ -606,6 +690,7 @@ namespace ocs2::mobile_manipulator
         {
             scalar_t muPositionLimits = 1e-2;
             scalar_t deltaPositionLimits = 1e-3;
+            scalar_t margin = 0.0; // [rad] shrink each limit inward for solver (reduces border clipping / monitor spikes)
 
             // arm joint DOF limits from the parsed URDF
             const vector_t lowerBound = model.lowerPositionLimit.tail(armStateDim);
@@ -617,6 +702,8 @@ namespace ocs2::mobile_manipulator
             std::cerr << " #### upperBound: " << upperBound.transpose() << '\n';
             loadData::loadPtreeValue(pt, muPositionLimits, "jointPositionLimits.mu", true);
             loadData::loadPtreeValue(pt, deltaPositionLimits, "jointPositionLimits.delta", true);
+            loadData::loadPtreeValue(pt, margin, "jointPositionLimits.margin", true);
+            std::cerr << " #### margin (inward, rad): " << margin << std::endl;
             std::cerr << " #### =============================================================================\n";
 
             stateLimits.reserve(armStateDim);
@@ -624,8 +711,15 @@ namespace ocs2::mobile_manipulator
             {
                 StateInputSoftBoxConstraint::BoxConstraint boxConstraint;
                 boxConstraint.index = baseStateDim + i;
-                boxConstraint.lowerBound = lowerBound(i);
-                boxConstraint.upperBound = upperBound(i);
+                scalar_t lo = lowerBound(i) + margin;
+                scalar_t hi = upperBound(i) - margin;
+                if (!(hi > lo))
+                {
+                    lo = lowerBound(i);
+                    hi = upperBound(i);
+                }
+                boxConstraint.lowerBound = lo;
+                boxConstraint.upperBound = hi;
                 boxConstraint.penaltyPtr.reset(new RelaxedBarrierPenalty({muPositionLimits, deltaPositionLimits}));
                 stateLimits.push_back(std::move(boxConstraint));
             }
@@ -796,6 +890,7 @@ namespace ocs2::mobile_manipulator
         scalar_t mu = 1e-2;
         scalar_t delta = 1e-3;
         scalar_t activationThreshold = 0.05;
+        scalar_t margin = 0.0;
         scalar_t smoothAbsEps = 1e-6;
         // Support a few key variants for convenience/backward compatibility.
         loadData::loadPtreeValue(pt, mu, "joint67Coupling.mu", false);
@@ -810,16 +905,43 @@ namespace ocs2::mobile_manipulator
         loadData::loadPtreeValue(pt, activationThreshold, "joint67Coupling.barrierActivationThreshold", false);
         loadData::loadPtreeValue(pt, activationThreshold, "joint67Coupling.barrier.activationThreshold", false);
 
+        loadData::loadPtreeValue(pt, margin, "joint67Coupling.margin", false);
         loadData::loadPtreeValue(pt, smoothAbsEps, "joint67Coupling.smoothAbsEps", false);
 
         std::cerr << " #### threshold barrier mu: " << mu << std::endl;
         std::cerr << " #### threshold barrier delta: " << delta << std::endl;
         std::cerr << " #### threshold barrier activationThreshold: " << activationThreshold << std::endl;
+        std::cerr << " #### margin (shift): " << margin << std::endl;
         std::cerr << " #### smoothAbsEps: " << smoothAbsEps << std::endl;
         std::cerr << " #### =============================================================================\n";
 
-        auto constraint = std::make_unique<Joint67CouplingConstraint>(
+        class ShiftedStateConstraint final : public StateConstraint {
+        public:
+            ShiftedStateConstraint(std::unique_ptr<StateConstraint> inner, scalar_t shift)
+                : StateConstraint(ConstraintOrder::Linear), inner_(std::move(inner)), shift_(shift) {}
+            ShiftedStateConstraint* clone() const override {
+                return new ShiftedStateConstraint(std::unique_ptr<StateConstraint>(inner_->clone()), shift_);
+            }
+            size_t getNumConstraints(scalar_t time) const override { return inner_->getNumConstraints(time); }
+            vector_t getValue(scalar_t time, const vector_t& state, const PreComputation& pre) const override {
+                return inner_->getValue(time, state, pre).array() - shift_;
+            }
+            VectorFunctionLinearApproximation getLinearApproximation(
+                scalar_t time, const vector_t& state, const PreComputation& pre) const override {
+                auto approx = inner_->getLinearApproximation(time, state, pre);
+                approx.f.array() -= shift_;
+                return approx;
+            }
+        private:
+            std::unique_ptr<StateConstraint> inner_;
+            scalar_t shift_{0.0};
+        };
+
+        std::unique_ptr<StateConstraint> constraint = std::make_unique<Joint67CouplingConstraint>(
             manipulatorModelInfo_.stateDim, manipulatorModelInfo_.armDim, smoothAbsEps);
+        if (margin > 0.0) {
+            constraint = std::make_unique<ShiftedStateConstraint>(std::move(constraint), margin);
+        }
 
         ThresholdRelaxedBarrierPenalty::Config barrierConfig{mu, delta, activationThreshold};
         return std::make_unique<StateSoftConstraint>(

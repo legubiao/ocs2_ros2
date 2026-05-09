@@ -29,13 +29,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_mobile_manipulator/dynamics/WheelBasedMobileManipulatorDynamics.h"
 
+#include <cppad/cppad.hpp>
+
 namespace ocs2::mobile_manipulator
 {
+    namespace
+    {
+        inline ocs2::ad_scalar_t smoothOutwardScale(const ocs2::ad_scalar_t& distToBound, ocs2::scalar_t eps)
+        {
+            const ocs2::ad_scalar_t x = distToBound / ocs2::ad_scalar_t(eps);
+            return ocs2::ad_scalar_t(0.5) * (CppAD::tanh(x) + ocs2::ad_scalar_t(1.0));
+        }
+    }
+
     WheelBasedMobileManipulatorDynamics::WheelBasedMobileManipulatorDynamics(
         ManipulatorModelInfo info, const std::string& modelName,
+        vector_t positionLowerLimit, vector_t positionUpperLimit, scalar_t jointLimitEps,
         const std::string& modelFolder /*= "/tmp/ocs2"*/,
         bool recompileLibraries /*= true*/, bool verbose /*= true*/)
-        : info_(std::move(info))
+        : info_(std::move(info)),
+          positionLowerLimit_(std::move(positionLowerLimit)),
+          positionUpperLimit_(std::move(positionUpperLimit)),
+          jointLimitEps_(jointLimitEps)
     {
         this->initialize(info_.stateDim, info_.inputDim, modelName, modelFolder, recompileLibraries, verbose);
     }
@@ -49,6 +64,27 @@ namespace ocs2::mobile_manipulator
         const auto theta = state(2);
         const auto v = input(0); // forward velocity in base frame
         dxdt << cos(theta) * v, sin(theta) * v, input(1), input.tail(info_.armDim);
+
+        // Bake in joint position limits (arm joints only).
+        if (jointLimitEps_ > 0.0 && positionLowerLimit_.size() == info_.armDim && positionUpperLimit_.size() == info_.armDim)
+        {
+            const int armStart = 3;
+            for (int j = 0; j < info_.armDim; ++j)
+            {
+                const scalar_t lo = positionLowerLimit_(j);
+                const scalar_t hi = positionUpperLimit_(j);
+                if (!(hi > lo))
+                {
+                    continue;
+                }
+                const int idx = armStart + j;
+                const auto vj = dxdt(idx);
+                const auto sPos = smoothOutwardScale(ocs2::ad_scalar_t(hi) - state(idx), jointLimitEps_);
+                const auto sNeg = smoothOutwardScale(state(idx) - ocs2::ad_scalar_t(lo), jointLimitEps_);
+                dxdt(idx) = CppAD::CondExpGt(vj, ocs2::ad_scalar_t(0.0), vj * sPos,
+                                            CppAD::CondExpLt(vj, ocs2::ad_scalar_t(0.0), vj * sNeg, vj));
+            }
+        }
         return dxdt;
     }
 }

@@ -34,6 +34,7 @@ add_library(${PROJECT_NAME}
         src/MobileManipulatorPreComputation.cpp
         src/MobileManipulatorPinocchioMapping.cpp
         src/constraint/EndEffectorConstraint.cpp
+        src/constraint/EndEffectorSe3LogConstraint.cpp
         src/constraint/BodyRelativeConstraint.cpp
         src/constraint/Joint67CouplingConstraint.cpp
         src/LogQuadraticPenalty.cpp

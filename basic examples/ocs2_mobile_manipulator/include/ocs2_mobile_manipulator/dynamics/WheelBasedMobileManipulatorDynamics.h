@@ -58,8 +58,20 @@ namespace ocs2::mobile_manipulator
          * @param [in] verbose : Display information.
          */
         WheelBasedMobileManipulatorDynamics(ManipulatorModelInfo modelInfo, const std::string& modelName,
+                                            vector_t positionLowerLimit = vector_t(),
+                                            vector_t positionUpperLimit = vector_t(),
+                                            scalar_t jointLimitEps = 0.0,
                                             const std::string& modelFolder = "/tmp/ocs2",
                                             bool recompileLibraries = true, bool verbose = true);
+
+        // Backward-compatible constructor (no baked-in limits).
+        WheelBasedMobileManipulatorDynamics(ManipulatorModelInfo modelInfo, const std::string& modelName,
+                                            const std::string& modelFolder,
+                                            bool recompileLibraries = true, bool verbose = true)
+            : WheelBasedMobileManipulatorDynamics(std::move(modelInfo), modelName, vector_t(), vector_t(), 0.0,
+                                                  modelFolder, recompileLibraries, verbose)
+        {
+        }
 
         ~WheelBasedMobileManipulatorDynamics() override = default;
 
@@ -75,5 +87,8 @@ namespace ocs2::mobile_manipulator
                                   const ad_vector_t& /*parameters*/) const override;
 
         const ManipulatorModelInfo info_;
+        vector_t positionLowerLimit_;
+        vector_t positionUpperLimit_;
+        scalar_t jointLimitEps_{0.0};
     };
 }
