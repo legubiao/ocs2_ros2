@@ -1,41 +1,42 @@
 cmake_minimum_required(VERSION 3.14)
 project(ocs2_core)
 
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# CMake 4 deprecates the FindBoost module (CMP0167). Opt in to the new policy
+# so find_package(Boost ...) goes directly through Boost's own BoostConfig.cmake
+# (Boost >= 1.70 modular packaging). Falls back silently on older CMake.
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
+# ============================================================
+# Dependencies
+# ============================================================
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_thirdparty REQUIRED)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+find_package(Boost CONFIG REQUIRED COMPONENTS
+        log
+        log_setup
+        filesystem
+)
 
-
-# pthread and OpenMp
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
-if (Threads_FOUND) # Rename for ament_cmake
-    set(Threads_INCLUDE_DIRS ${THREADS_PTHREADS_INCLUDE_DIR})
-    set(Threads_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
-endif (Threads_FOUND)
 find_package(OpenMP REQUIRED)
 
-# Load ocs2 compile flags
 include(cmake/ocs2_cxx_flags.cmake)
-message(STATUS "OCS2_CXX_FLAGS: " ${OCS2_CXX_FLAGS})
+message(STATUS "OCS2_CXX_FLAGS: ${OCS2_CXX_FLAGS}")
+message(STATUS "OCS2_CXX_DEFINITIONS: ${OCS2_CXX_DEFINITIONS}")
 
-###########
-## Build ##
-###########
-
-set(dependencies
-        ocs2_thirdparty
-        Boost
-        Eigen3
-        OpenMP_CXX
-        Threads
-)
-
-# Declare a C++ library
+# ============================================================
+# Library
+# ============================================================
 add_library(${PROJECT_NAME}
         src/Types.cpp
         src/augmented_lagrangian/AugmentedLagrangian.cpp
@@ -125,20 +126,31 @@ add_library(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC
-        ${EIGEN3_INCLUDE_DIRS}
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/include>"
-        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-
-ament_target_dependencies(${PROJECT_NAME}
-        ${dependencies}
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
+
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${OCS2_CXX_DEFINITIONS})
+target_link_options(${PROJECT_NAME} PRIVATE ${OCS2_LINK_FLAGS_PRIVATE})
+set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-#############
-## Install ##
-#############
+target_link_libraries(${PROJECT_NAME} PUBLIC
+        ${ocs2_thirdparty_TARGETS}
+        Eigen3::Eigen
+        Boost::log
+        Boost::log_setup
+        Boost::filesystem
+        ${OCS2_BOOST_SYSTEM_TARGET}
+        OpenMP::OpenMP_CXX
+        Threads::Threads
+)
 
+# ============================================================
+# Install
+# ============================================================
 install(
         DIRECTORY include/ test/include/
         DESTINATION include/${PROJECT_NAME}
@@ -152,30 +164,42 @@ install(
         RUNTIME DESTINATION bin
 )
 
+# ============================================================
+# Export
+# ============================================================
+# Order matters: ament_export_dependencies must come BEFORE ament_export_targets so
+# that downstream find_package(ocs2_core) resolves Boost/Eigen3/OpenMP/Threads imported
+# targets before the exported ocs2_core::ocs2_core target (which references them in
+# its INTERFACE_LINK_LIBRARIES) is imported.
+ament_export_dependencies(
+        ocs2_thirdparty
+        Boost
+        Eigen3
+        OpenMP
+        Threads
+)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(${dependencies})
 
-#############
-## Testing ##
-#############
-if (BUILD_TESTING)
+# ============================================================
+# Tests
+# ============================================================
+if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
     ament_lint_auto_find_test_dependencies()
 
     find_package(ament_cmake_gtest REQUIRED)
+
+    # All test targets transitively inherit compile flags, include dirs and link
+    # libraries (Boost, Eigen, OpenMP, Threads, ocs2_thirdparty) from ${PROJECT_NAME}.
 
     ament_add_gtest(test_control
             test/control/testLinearController.cpp
             test/control/testFeedforwardController.cpp
     )
     target_link_libraries(test_control ${PROJECT_NAME})
-    ament_target_dependencies(test_control ${dependencies})
-
 
     ament_add_gtest(initialization_unittest test/initialization/InitializationTest.cpp)
     target_link_libraries(initialization_unittest ${PROJECT_NAME})
-    ament_target_dependencies(initialization_unittest ${dependencies})
-
 
     ament_add_gtest(test_integration
             test/integration/testSensitivityIntegrator.cpp
@@ -184,13 +208,9 @@ if (BUILD_TESTING)
             test/integration/TrapezoidalIntegrationTest.cpp
     )
     target_link_libraries(test_integration ${PROJECT_NAME})
-    ament_target_dependencies(test_integration ${dependencies})
-
 
     ament_add_gtest(interpolation_unittest test/misc/testInterpolation.cpp)
     target_link_libraries(interpolation_unittest ${PROJECT_NAME})
-    ament_target_dependencies(interpolation_unittest ${dependencies})
-
 
     ament_add_gtest(${PROJECT_NAME}_cppadcg
             test/cppad_cg/testCppADCG_dynamics.cpp
@@ -198,15 +218,11 @@ if (BUILD_TESTING)
             test/cppad_cg/testCppAdInterface.cpp
     )
     target_link_libraries(${PROJECT_NAME}_cppadcg ${PROJECT_NAME})
-    ament_target_dependencies(${PROJECT_NAME}_cppadcg ${dependencies})
-
 
     ament_add_gtest(test_transferfunctionbase
             test/dynamics/testTransferfunctionBase.cpp
     )
     target_link_libraries(test_transferfunctionbase ${PROJECT_NAME})
-    ament_target_dependencies(test_transferfunctionbase ${dependencies})
-
 
     ament_add_gtest(${PROJECT_NAME}_loopshaping
             test/loopshaping/testLoopshapingConfiguration.cpp
@@ -219,9 +235,7 @@ if (BUILD_TESTING)
             test/loopshaping/testLoopshapingFilterDynamics.cpp
             test/loopshaping/testLoopshapingPreComputation.cpp
     )
-    target_link_libraries(${PROJECT_NAME}_loopshaping ${PROJECT_NAME} ${Boost_LIBRARIES} -lstdc++fs)
-    ament_target_dependencies(${PROJECT_NAME}_loopshaping ${dependencies})
-
+    target_link_libraries(${PROJECT_NAME}_loopshaping ${PROJECT_NAME} -lstdc++fs)
 
     ament_add_gtest(${PROJECT_NAME}_test_misc
             test/misc/testInterpolation.cpp
@@ -231,16 +245,12 @@ if (BUILD_TESTING)
             test/misc/testLookup.cpp
     )
     target_link_libraries(${PROJECT_NAME}_test_misc ${PROJECT_NAME})
-    ament_target_dependencies(${PROJECT_NAME}_test_misc ${dependencies})
-
 
     ament_add_gtest(test_dynamics
             test/dynamics/testSystemDynamicsLinearizer.cpp
             test/dynamics/testSystemDynamicsPreComputation.cpp
     )
     target_link_libraries(test_dynamics ${PROJECT_NAME})
-    ament_target_dependencies(test_dynamics ${dependencies})
-
 
     ament_add_gtest(test_cost
             test/cost/testCostCollection.cpp
@@ -248,8 +258,6 @@ if (BUILD_TESTING)
             test/cost/testQuadraticCostFunction.cpp
     )
     target_link_libraries(test_cost ${PROJECT_NAME})
-    ament_target_dependencies(test_cost ${dependencies})
-
 
     ament_add_gtest(test_constraint
             test/constraint/testConstraintCollection.cpp
@@ -257,36 +265,24 @@ if (BUILD_TESTING)
             test/constraint/testLinearConstraint.cpp
     )
     target_link_libraries(test_constraint ${PROJECT_NAME})
-    ament_target_dependencies(test_constraint ${dependencies})
-
 
     ament_add_gtest(test_metrics test/model_data/testMetrics.cpp)
     target_link_libraries(test_metrics ${PROJECT_NAME})
-    ament_target_dependencies(test_metrics ${dependencies})
-
 
     ament_add_gtest(test_multiplier test/model_data/testMultiplier.cpp)
     target_link_libraries(test_multiplier ${PROJECT_NAME})
-    ament_target_dependencies(test_multiplier ${dependencies})
-
 
     ament_add_gtest(test_ModelData test/model_data/testModelData.cpp)
     target_link_libraries(test_ModelData ${PROJECT_NAME})
-    ament_target_dependencies(test_ModelData ${dependencies})
-
 
     ament_add_gtest(test_ModeSchedule test/reference/testModeSchedule.cpp)
     target_link_libraries(test_ModeSchedule ${PROJECT_NAME})
-    ament_target_dependencies(test_ModeSchedule ${dependencies})
-
 
     ament_add_gtest(test_softConstraint
             test/soft_constraint/testSoftConstraint.cpp
             test/soft_constraint/testDoubleSidedPenalty.cpp
     )
     target_link_libraries(test_softConstraint ${PROJECT_NAME})
-    ament_target_dependencies(test_softConstraint ${dependencies})
-
 
     ament_add_gtest(${PROJECT_NAME}_test_thread_support
             test/thread_support/testBufferedValue.cpp
@@ -294,16 +290,13 @@ if (BUILD_TESTING)
             test/thread_support/testThreadPool.cpp
     )
     target_link_libraries(${PROJECT_NAME}_test_thread_support ${PROJECT_NAME})
-    ament_target_dependencies(${PROJECT_NAME}_test_thread_support ${dependencies})
-
 
     ament_add_gtest(${PROJECT_NAME}_test_core
             test/testPrecomputation.cpp
             test/testTypes.cpp
     )
     target_link_libraries(${PROJECT_NAME}_test_core ${PROJECT_NAME})
-    ament_target_dependencies(${PROJECT_NAME}_test_core ${dependencies})
 
-endif ()
+endif()
 
 ament_package(CONFIG_EXTRAS "cmake/ocs2_cxx_flags.cmake")

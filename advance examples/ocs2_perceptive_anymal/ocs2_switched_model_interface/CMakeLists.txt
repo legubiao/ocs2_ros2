@@ -1,26 +1,15 @@
 cmake_minimum_required(VERSION 3.14)
-set(CMAKE_CXX_STANDARD 17)
 project(ocs2_switched_model_interface)
 
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-## ament_cmake Dependencies
-set(dependencies
-        ocs2_ros_interfaces
-        ocs2_robotic_tools
-        ocs2_switched_model_msgs
-)
 find_package(ament_cmake REQUIRED)
-
 find_package(ocs2_ros_interfaces REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)
 find_package(ocs2_switched_model_msgs REQUIRED)
-
-
-###########
-## Build ##
-###########
 
 add_library(${PROJECT_NAME}
         src/analytical_inverse_kinematics/AnalyticalInverseKinematics.cpp
@@ -69,14 +58,18 @@ add_library(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
 
-ament_target_dependencies(${PROJECT_NAME} ${dependencies})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${OCS2_CXX_DEFINITIONS})
 
-#############
-## Install ##
-#############
+target_link_libraries(${PROJECT_NAME} PUBLIC
+        ${ocs2_ros_interfaces_TARGETS}
+        ${ocs2_robotic_tools_TARGETS}
+        ${ocs2_switched_model_msgs_TARGETS}
+)
 
 install(
         DIRECTORY include/
@@ -91,43 +84,33 @@ install(
         RUNTIME DESTINATION bin
 )
 
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(ocs2_ros_interfaces ocs2_robotic_tools ocs2_switched_model_msgs)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
-#############
-## Testing ##
-#############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
-
-if (BUILD_TESTING)
+if(BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
     find_package(ament_cmake_gtest)
 
     ament_add_gtest(test_constraints
             test/constraint/testZeroForceConstraint.cpp
             test/constraint/testFrictionConeConstraint.cpp
     )
-    ament_target_dependencies(test_constraints ${dependencies})
     target_link_libraries(test_constraints ${PROJECT_NAME})
 
-
     ament_add_gtest(test_${PROJECT_NAME}_core test/core/testRotation.cpp)
-    ament_target_dependencies(test_${PROJECT_NAME}_core ${dependencies})
     target_link_libraries(test_${PROJECT_NAME}_core ${PROJECT_NAME})
-
 
     ament_add_gtest(test_${PROJECT_NAME}_cost
             test/cost/testFootplacementCost.cpp
             test/cost/testFrictionConeCost.cpp
             test/cost/testTorqueLimitsSoftConstraint.cpp
     )
-    ament_target_dependencies(test_${PROJECT_NAME}_cost ${dependencies})
     target_link_libraries(test_${PROJECT_NAME}_cost ${PROJECT_NAME})
 
-
     ament_add_gtest(test_${PROJECT_NAME}_footplanner test/foot_planner/testSwingPhase.cpp)
-    ament_target_dependencies(test_${PROJECT_NAME}_footplanner ${dependencies})
     target_link_libraries(test_${PROJECT_NAME}_footplanner ${PROJECT_NAME})
+
     ament_add_gtest(test_${PROJECT_NAME}_logic
             test/logic/testEarlyTouchDown.cpp
             test/logic/testExtractContractTimings.cpp
@@ -136,20 +119,13 @@ if (BUILD_TESTING)
             test/logic/testGaitSchedule.cpp
             test/logic/testSingleLegLogic.cpp
     )
-    ament_target_dependencies(test_${PROJECT_NAME}_logic ${dependencies})
-    target_link_libraries(test_${PROJECT_NAME}_logic
-            ${PROJECT_NAME})
-
+    target_link_libraries(test_${PROJECT_NAME}_logic ${PROJECT_NAME})
 
     ament_add_gtest(test_${PROJECT_NAME}_terrain test/terrain/testTerrainPlane.cpp)
-    ament_target_dependencies(test_${PROJECT_NAME}_terrain ${dependencies})
     target_link_libraries(test_${PROJECT_NAME}_terrain ${PROJECT_NAME})
 
-
     ament_add_gtest(test_${PROJECT_NAME}_convexTerrain test/terrain/testConvexTerrain.cpp)
-    ament_target_dependencies(test_${PROJECT_NAME}_convexTerrain ${dependencies})
     target_link_libraries(test_${PROJECT_NAME}_convexTerrain ${PROJECT_NAME})
-
-endif ()
+endif()
 
 ament_package()

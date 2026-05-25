@@ -30,7 +30,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <cstddef>
+#include <cstdlib>
+#include <sstream>
 #include <string>
+#include <sys/types.h>
+#include <unistd.h>
+
+// Pulled in only when this translation unit's include paths can already see
+// pinocchio (i.e. the package actually depends on pinocchio). Provides the
+// PINOCCHIO_VERSION string literal used to tag the codegen cache directory.
+#if __has_include(<pinocchio/config.hpp>)
+#include <pinocchio/config.hpp>
+#endif
 
 namespace ocs2 {
 namespace mobile_manipulator {
@@ -38,6 +49,42 @@ namespace mobile_manipulator {
 /** Gets the path to the package source directory. */
 inline std::string getPath() {
   return "@PROJECT_SOURCE_DIR@";
+}
+
+/**
+ * Gets the runtime cache directory for CppAD code-generated libraries.
+ *
+ * Default: /tmp/ocs2_<USER>_<UID>/<package>/auto_generated[/pinocchio-<ver>]
+ *   - User/UID isolated to avoid permission conflicts on multi-user hosts.
+ *   - Living under /tmp guarantees a clean slate after reboot (when paired
+ *     with a tmpfiles.d rule, or natively on tmpfs `/tmp`), so system
+ *     upgrades of pinocchio/boost/eigen cannot silently leave stale .so
+ *     caches behind that mismatch the new headers ABI.
+ *   - When the package is linked against pinocchio, a `pinocchio-<ver>`
+ *     suffix is appended so that apt-upgrading pinocchio automatically falls
+ *     into a fresh cache subdirectory (no reboot required).
+ *
+ * Override via env var `OCS2_CODEGEN_DIR=/some/path` — the package name is
+ * appended automatically. Useful for heavy local development where you want
+ * cache to survive reboots (e.g. `OCS2_CODEGEN_DIR=$HOME/.cache/ocs2`).
+ */
+inline std::string getCodegenPath() {
+  std::string base;
+  if (const char* override_dir = std::getenv("OCS2_CODEGEN_DIR")) {
+    base = override_dir;
+  } else {
+    const char* user = std::getenv("USER");
+    std::ostringstream oss;
+    oss << "/tmp/ocs2_" << (user != nullptr ? user : "anon") << "_"
+        << ::getuid();
+    base = oss.str();
+  }
+  std::string path = base + "/@PROJECT_NAME@/auto_generated";
+#ifdef PINOCCHIO_VERSION
+  path += "/pinocchio-";
+  path += PINOCCHIO_VERSION;
+#endif
+  return path;
 }
 
 }  // namespace mobile_manipulator

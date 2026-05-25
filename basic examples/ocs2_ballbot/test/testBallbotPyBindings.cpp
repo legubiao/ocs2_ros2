@@ -27,6 +27,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
+#include <iomanip>
+
 #include <gtest/gtest.h>
 
 #include <ocs2_ballbot/BallbotPyBindings.h>
@@ -35,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 TEST(Ballbot, PyBindings) {
   // create binding interface
   const std::string taskFile = ocs2::ballbot::getPath() + "/config/mpc/task.info";
-  const std::string libFolder = ocs2::ballbot::getPath() + "/auto_generated";
+  const std::string libFolder = ocs2::ballbot::getCodegenPath();
   ocs2::ballbot::BallbotPyBindings bindings(taskFile, libFolder);
 
   ocs2::vector_t initState = ocs2::vector_t::Zero(ocs2::ballbot::STATE_DIM);

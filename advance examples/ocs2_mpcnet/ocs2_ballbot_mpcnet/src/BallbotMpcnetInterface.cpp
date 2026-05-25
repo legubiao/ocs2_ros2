@@ -30,6 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_ballbot_mpcnet/BallbotMpcnetInterface.h"
 
 #include <ocs2_ddp/GaussNewtonDDP_MPC.h>
+#include <ocs2_ballbot/package_path.h>
 #include <ocs2_mpcnet_core/control/MpcnetOnnxController.h>
 
 #include "ocs2_ballbot_mpcnet/BallbotMpcnetDefinition.h"
@@ -47,8 +48,7 @@ namespace ocs2::ballbot {
                 ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
                 "/config/mpc/task.info";
         const std::string libFolder =
-                ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
-                "/auto_generated";
+                ocs2::ballbot::getCodegenPath();
         // set up MPC-Net rollout manager for data generation and policy evaluation
         std::vector<std::unique_ptr<MPC_BASE> > mpcPtrs;
         std::vector<std::unique_ptr<mpcnet::MpcnetControllerBase> > mpcnetPtrs;

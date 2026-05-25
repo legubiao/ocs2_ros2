@@ -67,7 +67,7 @@ void EnvironmentGeometryInterface::addBox(
 
     Obstacle obs;
     obs.name = name;
-    obs.geometry = std::make_shared<hpp::fcl::Box>(
+    obs.geometry = std::make_shared<ocs2::collision::Box>(
         halfExtents.x() * 2, halfExtents.y() * 2, halfExtents.z() * 2);
     obs.transform.setTranslation(position);
     obs.transform.setRotation(orientation.toRotationMatrix());
@@ -91,7 +91,7 @@ void EnvironmentGeometryInterface::addSphere(
 
     Obstacle obs;
     obs.name = name;
-    obs.geometry = std::make_shared<hpp::fcl::Sphere>(radius);
+    obs.geometry = std::make_shared<ocs2::collision::Sphere>(radius);
     obs.transform.setTranslation(position);
     obs.transform.setRotation(Eigen::Matrix3d::Identity());
     obs.minimumDistance = minimumDistance;
@@ -115,7 +115,7 @@ void EnvironmentGeometryInterface::addCylinder(
 
     Obstacle obs;
     obs.name = name;
-    obs.geometry = std::make_shared<hpp::fcl::Cylinder>(radius, height);
+    obs.geometry = std::make_shared<ocs2::collision::Cylinder>(radius, height);
     obs.transform.setTranslation(position);
     obs.transform.setRotation(orientation.toRotationMatrix());
     obs.minimumDistance = minimumDistance;
@@ -205,7 +205,7 @@ EnvironmentGeometryInterface::computeDistances(
         robotGeomData);
 
     // For each robot collision geometry and each obstacle, compute distance
-    hpp::fcl::DistanceRequest request(true);  // Enable nearest points computation
+    ocs2::collision::DistanceRequest request(true);  // Enable nearest points computation
 
     results.reserve(robotGeomIndices_.size() * obstacles_.size());
 
@@ -214,14 +214,14 @@ EnvironmentGeometryInterface::computeDistances(
         const auto& robotPlacement = robotGeomData.oMg[robotIdx];
 
         // Build robot collision object transform
-        hpp::fcl::Transform3f robotTransform;
+        ocs2::collision_transform_t robotTransform;
         robotTransform.setTranslation(robotPlacement.translation());
         robotTransform.setRotation(robotPlacement.rotation());
 
         for (const auto& [obsName, obstacle] : obstacles_) {
-            hpp::fcl::DistanceResult fclResult;
+            ocs2::collision::DistanceResult fclResult;
 
-            hpp::fcl::distance(
+            ocs2::collision::distance(
                 robotGeomObj.geometry.get(), robotTransform,
                 obstacle.geometry.get(), obstacle.transform,
                 request, fclResult);

@@ -67,8 +67,8 @@ private:
      */
     visualization_msgs::msg::Marker createBoxMarker(
         const std::string& name,
-        const hpp::fcl::Box& box,
-        const hpp::fcl::Transform3f& transform,
+        const ocs2::collision::Box& box,
+        const ocs2::collision_transform_t& transform,
         int id);
     
     /**
@@ -76,8 +76,8 @@ private:
      */
     visualization_msgs::msg::Marker createSphereMarker(
         const std::string& name,
-        const hpp::fcl::Sphere& sphere,
-        const hpp::fcl::Transform3f& transform,
+        const ocs2::collision::Sphere& sphere,
+        const ocs2::collision_transform_t& transform,
         int id);
     
     /**
@@ -85,8 +85,8 @@ private:
      */
     visualization_msgs::msg::Marker createCylinderMarker(
         const std::string& name,
-        const hpp::fcl::Cylinder& cylinder,
-        const hpp::fcl::Transform3f& transform,
+        const ocs2::collision::Cylinder& cylinder,
+        const ocs2::collision_transform_t& transform,
         int id);
 };
 

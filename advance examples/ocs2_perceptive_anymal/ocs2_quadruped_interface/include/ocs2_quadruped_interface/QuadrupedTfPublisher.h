@@ -5,7 +5,7 @@
 #pragma once
 
 #include <ocs2_switched_model_interface/core/SwitchedModel.h>
-#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.hpp>
 
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <robot_state_publisher/robot_state_publisher.hpp>

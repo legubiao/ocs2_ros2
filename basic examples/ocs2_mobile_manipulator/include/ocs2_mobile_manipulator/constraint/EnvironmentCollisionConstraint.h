@@ -15,7 +15,7 @@ namespace ocs2::mobile_manipulator {
  *   h = distance - minimumDistance
  * where h > 0 means safe (no collision).
  *
- * The constraint uses hpp-fcl for distance computation and provides
+ * The constraint uses coal for distance computation and provides
  * analytical Jacobians based on the nearest points between robot links
  * and obstacles.
  */

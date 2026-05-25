@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2
 {
-    SphereApproximation::SphereApproximation(const hpp::fcl::CollisionGeometry& geometry, size_t geomObjId,
+    SphereApproximation::SphereApproximation(const ocs2::collision::CollisionGeometry& geometry, size_t geomObjId,
                                              scalar_t maxExcess,
                                              scalar_t shrinkRatio)
         : geomObjId_(geomObjId), maxExcess_(maxExcess), shrinkRatio_(shrinkRatio)
@@ -47,21 +47,21 @@ namespace ocs2
         const auto& nodeType = geometry.getNodeType();
         switch (nodeType)
         {
-        case hpp::fcl::NODE_TYPE::GEOM_BOX:
+        case ocs2::collision::NODE_TYPE::GEOM_BOX:
             {
-                const auto* boxPtr = dynamic_cast<const hpp::fcl::Box*>(&geometry);
+                const auto* boxPtr = dynamic_cast<const ocs2::collision::Box*>(&geometry);
                 approximateBox(boxPtr->halfSide * 2);
                 break;
             }
-        case hpp::fcl::NODE_TYPE::GEOM_CYLINDER:
+        case ocs2::collision::NODE_TYPE::GEOM_CYLINDER:
             {
-                const auto* cylinderPtr = dynamic_cast<const hpp::fcl::Cylinder*>(&geometry);
+                const auto* cylinderPtr = dynamic_cast<const ocs2::collision::Cylinder*>(&geometry);
                 approximateCylinder(cylinderPtr->radius, cylinderPtr->halfLength * 2);
                 break;
             }
-        case hpp::fcl::NODE_TYPE::GEOM_SPHERE:
+        case ocs2::collision::NODE_TYPE::GEOM_SPHERE:
             {
-                const auto* spherePtr = dynamic_cast<const hpp::fcl::Sphere*>(&geometry);
+                const auto* spherePtr = dynamic_cast<const ocs2::collision::Sphere*>(&geometry);
                 numSpheres_ = 1;
                 sphereRadius_ = spherePtr->radius;
                 sphereCentersToObjectCenter_.resize(1);

@@ -76,7 +76,7 @@ protected:
 
     const std::string getLibFolder() const
     {
-        return ocs2::mobile_manipulator::getPath() + "/auto_generated/" + std::get<1>(GetParam());
+        return ocs2::mobile_manipulator::getCodegenPath() + "/" + std::get<1>(GetParam());
     }
 
     const std::string getUrdfFile() const

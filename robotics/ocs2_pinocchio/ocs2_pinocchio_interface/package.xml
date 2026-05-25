@@ -15,6 +15,8 @@
   <depend>ocs2_robotic_tools</depend>
   <depend>urdf</depend>
   <depend>urdfdom</depend>
+  <!-- pinocchio brings hpp-fcl (Jazzy) or coal (Lyrical+) as a transitive
+       dependency via rosdep, so OCS2 does not list either explicitly. -->
   <depend>pinocchio</depend>
 
   <export>                               

@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
 #include <ocs2_ros_interfaces/mrt/DummyObserver.h>
 #include <ocs2_ros_interfaces/visualization/VisualizationColors.h>
-#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.hpp>
 
 #include <robot_state_publisher/robot_state_publisher.hpp>
 #include <visualization_msgs/msg/marker.hpp>

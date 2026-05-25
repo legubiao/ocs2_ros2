@@ -32,12 +32,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pinocchio/algorithm/geometry.hpp>
 #include <pinocchio/multibody/geometry.hpp>
 #include <pinocchio/parsers/urdf.hpp>
-#include <urdf_parser/urdf_parser.h>
 #include <ocs2_sphere_approximation/PinocchioSphereInterface.h>
 
-#ifdef URDFDOM_VERSION_GT_4
-#include <tinyxml2.h>
-#endif
+#include <sstream>
 
 
 namespace ocs2
@@ -102,27 +99,19 @@ namespace ocs2
     void PinocchioSphereInterface::buildGeomFromPinocchioInterface(const PinocchioInterface& pinocchioInterface,
                                                                    pinocchio::GeometryModel& geomModel)
     {
-        if (!pinocchioInterface.getUrdfModelPtr())
+        // See PinocchioGeometryInterface::buildGeomFromPinocchioInterface for the
+        // rationale: we replay the cached raw URDF XML directly into pinocchio's
+        // builder, since urdfdom 5.0 (Lyrical+) dropped urdf::exportURDF.
+        const std::string& urdfXml = pinocchioInterface.getUrdfXmlString();
+        if (urdfXml.empty())
         {
             throw std::runtime_error(
-                "[PinocchioSphereInterface::buildGeomFromPinocchioInterface]: The PinocchioInterface passed to PinocchioGeometryInterface(...) "
-                "does not contain a urdf model!");
+                "[PinocchioSphereInterface]: cannot rebuild GeometryModel because the "
+                "PinocchioInterface was not built from a URDF source. Construct it via "
+                "getPinocchioInterfaceFromUrdfFile/String.");
         }
 
-#ifdef URDFDOM_VERSION_GT_4
-        const std::unique_ptr<const tinyxml2::XMLDocument> urdfAsXml(
-            exportURDF(*pinocchioInterface.getUrdfModelPtr()));
-        tinyxml2::XMLPrinter printer;
-        urdfAsXml->Print(&printer);
-        const std::stringstream urdfAsStringStream(printer.CStr());
-#else
-        const std::unique_ptr<const TiXmlDocument> urdfAsXml(
-            urdf::exportURDF(*pinocchioInterface.getUrdfModelPtr()));
-        TiXmlPrinter printer;
-        urdfAsXml->Accept(&printer);
-        const std::stringstream urdfAsStringStream(printer.Str());
-#endif
-
+        std::istringstream urdfAsStringStream(urdfXml);
         pinocchio::urdf::buildGeom(pinocchioInterface.getModel(), urdfAsStringStream, pinocchio::COLLISION, geomModel);
     }
 

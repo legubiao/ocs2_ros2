@@ -4,20 +4,29 @@
 
 OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), it was refactored to be compatible with ROS2 and modern cmake.
 
+### What's New (2026.05)
+
+**ROS 2 Lyrical Support**
+- Add support for ROS 2 Lyrical on Ubuntu 26.04.
+- Modernize launch files for newer `robot_state_publisher`: URDF files are now parsed and passed through the `robot_description` parameter instead of the removed positional URDF path argument.
+- Replace deprecated `tf2` / `tf2_ros` `.h` includes with `.hpp` headers for Jazzy and Lyrical compatibility.
+- Remove dependency on the removed `urdf::exportURDF` API by keeping the original URDF XML inside the Pinocchio interface.
+- Make RViz plugins select the matching Qt major version automatically (`Qt5` on Jazzy, `Qt6` on Lyrical).
+- Avoid OctoMap ABI conflicts by letting the collision backend own its native OctoMap linkage.
+- Default launch terminal prefix is now `xterm -e`, which works better in WSL and container environments such as distrobox. Override it with `OCS2_TERMINAL_PREFIX` if needed.
+
 ### What's New (2026.01)
 
 **Environment Collision for Mobile Manipulator**
 - Add basic geometry environment collision support.
 - Please check Franka demo for more details.
 
-The IDE I used is CLion, you can follow the [guide](https://www.jetbrains.com/help/clion/ros2-tutorial.html) to set up
-the IDE.
-
 ### Tested Platform
 
 * Intel Nuc X15 (i7-11800H):
     * Ubuntu 22.04 ROS2 Humble  (WSL2 included)
     * Ubuntu 24.04 ROS2 Jazzy   (WSL2 included)
+    * Ubuntu 26.04 ROS2 Lyrical (distrobox)
 * Lenovo P16v (i7-13800H):
     * Ubuntu 24.04 ROS2 Jazzy
 * Jetson Orin Nano
@@ -32,8 +41,19 @@ sources.
 
 Tested system and ROS2 version:
 
+* Ubuntu 26.04 ROS2 Lyrical
 * Ubuntu 24.04 ROS2 Jazzy
 * Ubuntu 22.04 ROS2 Humble
+
+> **Note:** Some demos open auxiliary nodes in a new terminal. The default terminal prefix is `xterm -e`
+> for better compatibility with WSL and distrobox. Install it if necessary:
+> ```bash
+> sudo apt install xterm
+> ```
+> You can override the terminal prefix, for example:
+> ```bash
+> export OCS2_TERMINAL_PREFIX="gnome-terminal --"
+> ```
 
 ### 2.2 Dependencies
 

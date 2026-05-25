@@ -27,3 +27,9 @@ mpc/ocs2_ddp/test/ddp_test_generated/
 .vscode/
 runs/
 *.vscode
+# CppAD code-generated test artifacts. Tests now route codegen to the package
+# build directory via getCodegenPath() (see */include/*/package_path.h.in), so
+# the source tree must stay clean. The rule below guards against legacy
+# pollution and any out-of-source CppAD usage that still falls back to
+# getPath().
+**/auto_generated/

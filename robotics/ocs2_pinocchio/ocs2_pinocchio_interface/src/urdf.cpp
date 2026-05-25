@@ -32,50 +32,66 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pinocchio/parsers/urdf.hpp>
 #include <urdf_parser/urdf_parser.h>
 
+#include <fstream>
+#include <sstream>
+
 #include "ocs2_pinocchio_interface/urdf.h"
 
 namespace ocs2
 {
+    namespace
+    {
+        // Read the entire URDF file into a string so it can be cached inside
+        // PinocchioInterface and later replayed into pinocchio::urdf::buildGeom
+        // without having to re-serialise the parsed urdf::ModelInterface (which
+        // is impossible on urdfdom >= 5.0 since urdf::exportURDF was removed).
+        std::string readFileToString(const std::string& path)
+        {
+            std::ifstream file(path);
+            if (!file.is_open())
+            {
+                throw std::invalid_argument("Failed to open URDF file: " + path);
+            }
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            return buffer.str();
+        }
+    } // namespace
+
     PinocchioInterface getPinocchioInterfaceFromUrdfFile(const std::string& urdfFile)
     {
-        urdf::ModelInterfaceSharedPtr urdfTree = urdf::parseURDFFile(urdfFile);
-        if (urdfTree != nullptr)
-        {
-            return getPinocchioInterfaceFromUrdfModel(urdfTree);
-        }
-        throw std::invalid_argument("The file " + urdfFile + " does not contain a valid URDF model.");
+        return getPinocchioInterfaceFromUrdfString(readFileToString(urdfFile));
     }
 
     PinocchioInterface getPinocchioInterfaceFromUrdfFile(const std::string& urdfFile,
                                                          const PinocchioInterface::JointModel& rootJoint)
     {
-        urdf::ModelInterfaceSharedPtr urdfTree = urdf::parseURDFFile(urdfFile);
-        if (urdfTree != nullptr)
-        {
-            return getPinocchioInterfaceFromUrdfModel(urdfTree, rootJoint);
-        }
-        throw std::invalid_argument("The file " + urdfFile + " does not contain a valid URDF model.");
+        return getPinocchioInterfaceFromUrdfString(readFileToString(urdfFile), rootJoint);
     }
 
     PinocchioInterface getPinocchioInterfaceFromUrdfString(const std::string& xmlString)
     {
         urdf::ModelInterfaceSharedPtr urdfTree = urdf::parseURDF(xmlString);
-        if (urdfTree != nullptr)
+        if (urdfTree == nullptr)
         {
-            return getPinocchioInterfaceFromUrdfModel(urdfTree);
+            throw std::invalid_argument("The XML stream does not contain a valid URDF model.");
         }
-        throw std::invalid_argument("The XML stream does not contain a valid URDF model.");
+        pinocchio::ModelTpl<scalar_t> model;
+        pinocchio::urdf::buildModel(urdfTree, model);
+        return PinocchioInterface(model, urdfTree, xmlString);
     }
 
     PinocchioInterface getPinocchioInterfaceFromUrdfString(const std::string& xmlString,
                                                            const PinocchioInterface::JointModel& rootJoint)
     {
         urdf::ModelInterfaceSharedPtr urdfTree = urdf::parseURDF(xmlString);
-        if (urdfTree != nullptr)
+        if (urdfTree == nullptr)
         {
-            return getPinocchioInterfaceFromUrdfModel(urdfTree, rootJoint);
+            throw std::invalid_argument("The XML stream does not contain a valid URDF model.");
         }
-        throw std::invalid_argument("The XML stream does not contain a valid URDF model.");
+        pinocchio::ModelTpl<scalar_t> model;
+        pinocchio::urdf::buildModel(urdfTree, rootJoint, model);
+        return PinocchioInterface(model, urdfTree, xmlString);
     }
 
     PinocchioInterface getPinocchioInterfaceFromUrdfModel(const std::shared_ptr<urdf::ModelInterface>& urdfTree)

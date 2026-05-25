@@ -1,8 +1,6 @@
 #pragma once
 
-#include <hpp/fcl/collision_object.h>
-#include <hpp/fcl/distance.h>
-#include <hpp/fcl/shape/geometric_shapes.h>
+#include <ocs2_pinocchio_interface/collision_compat.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_self_collision/PinocchioGeometryInterface.h>
 
@@ -18,7 +16,7 @@ namespace ocs2::mobile_manipulator {
 
 /**
  * @brief Environment Geometry Interface - Manages environment obstacles and computes
- *        collision distances between robot and obstacles using hpp-fcl.
+ *        collision distances between robot and obstacles using coal.
  *
  * This class provides a thread-safe interface for dynamically adding, removing, and
  * updating obstacle poses at runtime. It computes distances and nearest points between
@@ -34,8 +32,8 @@ public:
      */
     struct Obstacle {
         std::string name;
-        std::shared_ptr<hpp::fcl::CollisionGeometry> geometry;
-        hpp::fcl::Transform3f transform;
+        std::shared_ptr<ocs2::collision::CollisionGeometry> geometry;
+        ocs2::collision_transform_t transform;
         double minimumDistance = 0.0;  ///< Per-obstacle minimum distance (0 uses default)
     };
 

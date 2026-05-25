@@ -1,3 +1,5 @@
+#include <iomanip>
+
 #include <gtest/gtest.h>
 
 #include <ocs2_quadrotor/QuadrotorPyBindings.h>
@@ -5,7 +7,7 @@
 
 TEST(QuadrotorTest, PyBindings) {
   const std::string taskFile = ocs2::quadrotor::getPath() + "/config/mpc/task.info";
-  const std::string libFolder = ocs2::quadrotor::getPath() + "/auto_generated";
+  const std::string libFolder = ocs2::quadrotor::getCodegenPath();
   ocs2::quadrotor::QuadrotorPyBindings bindings(taskFile, libFolder);
 
   ocs2::vector_t initState = ocs2::vector_t::Zero(ocs2::quadrotor::STATE_DIM);

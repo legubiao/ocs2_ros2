@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <hpp/fcl/collision_data.h>
+#include <ocs2_pinocchio_interface/collision_compat.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <urdf_model/model.h>
 
@@ -100,7 +100,7 @@ namespace ocs2
          * @return An array of distances between pairs of collision bodies defined in
          * the constructor.
          */
-        std::vector<hpp::fcl::DistanceResult> computeDistances(
+        std::vector<ocs2::collision::DistanceResult> computeDistances(
             const PinocchioInterface& pinocchioInterface) const;
 
         /** Get the number of collision pairs */

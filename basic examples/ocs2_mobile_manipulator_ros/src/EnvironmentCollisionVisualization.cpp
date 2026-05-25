@@ -56,13 +56,13 @@ void EnvironmentCollisionVisualization::publishObstacles()
         const auto* geom = obstacle->geometry.get();
         
         // Determine geometry type and create appropriate marker
-        if (const auto* box = dynamic_cast<const hpp::fcl::Box*>(geom)) {
+        if (const auto* box = dynamic_cast<const ocs2::collision::Box*>(geom)) {
             markerArray.markers.push_back(createBoxMarker(name, *box, obstacle->transform, id++));
         }
-        else if (const auto* sphere = dynamic_cast<const hpp::fcl::Sphere*>(geom)) {
+        else if (const auto* sphere = dynamic_cast<const ocs2::collision::Sphere*>(geom)) {
             markerArray.markers.push_back(createSphereMarker(name, *sphere, obstacle->transform, id++));
         }
-        else if (const auto* cylinder = dynamic_cast<const hpp::fcl::Cylinder*>(geom)) {
+        else if (const auto* cylinder = dynamic_cast<const ocs2::collision::Cylinder*>(geom)) {
             markerArray.markers.push_back(createCylinderMarker(name, *cylinder, obstacle->transform, id++));
         }
     }
@@ -214,8 +214,8 @@ void EnvironmentCollisionVisualization::clearObstacles()
 
 visualization_msgs::msg::Marker EnvironmentCollisionVisualization::createBoxMarker(
     const std::string& name,
-    const hpp::fcl::Box& box,
-    const hpp::fcl::Transform3f& transform,
+    const ocs2::collision::Box& box,
+    const ocs2::collision_transform_t& transform,
     int id)
 {
     visualization_msgs::msg::Marker marker;
@@ -250,8 +250,8 @@ visualization_msgs::msg::Marker EnvironmentCollisionVisualization::createBoxMark
 
 visualization_msgs::msg::Marker EnvironmentCollisionVisualization::createSphereMarker(
     const std::string& name,
-    const hpp::fcl::Sphere& sphere,
-    const hpp::fcl::Transform3f& transform,
+    const ocs2::collision::Sphere& sphere,
+    const ocs2::collision_transform_t& transform,
     int id)
 {
     visualization_msgs::msg::Marker marker;
@@ -279,8 +279,8 @@ visualization_msgs::msg::Marker EnvironmentCollisionVisualization::createSphereM
 
 visualization_msgs::msg::Marker EnvironmentCollisionVisualization::createCylinderMarker(
     const std::string& name,
-    const hpp::fcl::Cylinder& cylinder,
-    const hpp::fcl::Transform3f& transform,
+    const ocs2::collision::Cylinder& cylinder,
+    const ocs2::collision_transform_t& transform,
     int id)
 {
     visualization_msgs::msg::Marker marker;
