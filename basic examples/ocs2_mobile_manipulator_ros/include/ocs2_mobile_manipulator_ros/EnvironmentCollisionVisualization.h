@@ -33,7 +33,7 @@ public:
     /**
      * @brief Publish obstacle markers (call once or when obstacles change)
      */
-    void publishObstacles();
+    void publishObstacles(bool logPublication = true);
 
     /**
      * @brief Publish distance visualization markers for current robot state
@@ -58,6 +58,7 @@ private:
     
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstaclePublisher_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr distancePublisher_;
+    rclcpp::TimerBase::SharedPtr obstacleRepublishTimer_;
     
     std::string worldFrame_;
     scalar_t activationDistance_;

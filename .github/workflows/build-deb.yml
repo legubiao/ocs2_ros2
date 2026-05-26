@@ -12,7 +12,7 @@ on:
         default: ""
         type: string
       ros_distro:
-        description: "ROS 2 distro"
+        description: "ROS 2 distro (container build currently supports jazzy)"
         required: false
         default: jazzy
         type: string
@@ -24,6 +24,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.release_tag || github.ref_name }}
+  cancel-in-progress: true
 
 env:
   DEFAULT_ROS_DISTRO: jazzy
@@ -49,7 +53,24 @@ env:
 
 jobs:
   build_deb:
-    runs-on: ubuntu-24.04
+    name: build deb (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+            ros_distro: jazzy
+            image: ros:jazzy-ros-base-noble
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            ros_distro: jazzy
+            image: ros:jazzy-ros-base-noble
+    container:
+      image: ${{ matrix.image }}
 
     steps:
       - name: Checkout repository
@@ -63,9 +84,16 @@ jobs:
         run: |
           set -eo pipefail
           chmod +x scripts/*.sh
+          requested_ros_distro="${{ github.event.inputs.ros_distro }}"
+          if [[ -n "${requested_ros_distro}" && "${requested_ros_distro}" != "${{ matrix.ros_distro }}" ]]; then
+            echo "This containerized deb workflow currently supports only ROS 2 ${{ matrix.ros_distro }}." >&2
+            echo "Requested: ${requested_ros_distro}" >&2
+            exit 1
+          fi
           INPUT_RELEASE_TAG="${{ github.event.inputs.release_tag }}" \
-          INPUT_ROS_DISTRO="${{ github.event.inputs.ros_distro }}" \
+          INPUT_ROS_DISTRO="${{ matrix.ros_distro }}" \
           INPUT_DEB_VERSION="${{ github.event.inputs.deb_version }}" \
+          INPUT_DEB_ARCH="${{ matrix.arch }}" \
           RELEASE_TAG_OVERRIDE="${{ github.ref_name }}" \
           scripts/resolve_release_meta.sh | tee /tmp/release_meta.txt
 
@@ -73,20 +101,12 @@ jobs:
             echo "${key}=${value}" >> "$GITHUB_OUTPUT"
           done < /tmp/release_meta.txt
 
-      - name: Setup ROS
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: ${{ steps.meta.outputs.ros_distro }}
-
       - name: Install system tools
         shell: bash
         run: |
           set -eo pipefail
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository universe
-          sudo apt-get update
-          sudo apt-get install -y \
+          apt-get update
+          apt-get install -y \
             python3-rosdep \
             python3-colcon-core \
             python3-colcon-common-extensions \
@@ -95,18 +115,26 @@ jobs:
             fakeroot \
             dpkg-dev \
             rsync \
+            ccache \
             build-essential \
             cmake \
             ros-${{ steps.meta.outputs.ros_distro }}-ament-cmake \
             ros-${{ steps.meta.outputs.ros_distro }}-ament-cmake-core \
-            ros-${{ steps.meta.outputs.ros_distro }}-ament-package \
-            ros-${{ steps.meta.outputs.ros_distro }}-ros-base
+            ros-${{ steps.meta.outputs.ros_distro }}-ament-package
 
-          sudo rosdep init || true
+          rosdep init || true
           rosdep update
 
           source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
           python3 -c "import ament_package; print('ament_package ready:', ament_package.__file__)"
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-${{ runner.os }}-${{ matrix.arch }}-${{ steps.meta.outputs.ros_distro }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ runner.os }}-${{ matrix.arch }}-${{ steps.meta.outputs.ros_distro }}-
 
       - name: Install package dependencies via rosdep
         shell: bash
@@ -125,6 +153,7 @@ jobs:
           echo "Python: $(python3 --version)"
           echo "CMake: $(cmake --version | sed -n '1p')"
           echo "Colcon: $(colcon --version)"
+          echo "ccache: $(ccache --version | sed -n '1p')"
           python3 -c "import ament_package; print('ament_package:', ament_package.__file__)"
 
       - name: Build and package deb
@@ -138,6 +167,7 @@ jobs:
             --release-tag "${{ steps.meta.outputs.release_tag }}" \
             --deb-package-name "${DEB_PACKAGE_NAME}" \
             --deb-file-prefix "${DEB_FILE_PREFIX}" \
+            --deb-arch "${{ matrix.arch }}" \
             --install-prefix "${INSTALL_PREFIX}" \
             --required-packages "${REQUIRED_OCS2_PACKAGES}" \
             --skip-deps
@@ -154,7 +184,7 @@ jobs:
       - name: Upload workflow artifact (fallback for workflow_dispatch)
         uses: actions/upload-artifact@v4
         with:
-          name: ocs2-ros2-jazzy-mobile-manipulator-${{ steps.meta.outputs.deb_version }}
+          name: ocs2-ros2-jazzy-mobile-manipulator-${{ steps.meta.outputs.deb_version }}-${{ matrix.arch }}
           path: ${{ steps.meta.outputs.deb_file }}
           if-no-files-found: error
           retention-days: 7

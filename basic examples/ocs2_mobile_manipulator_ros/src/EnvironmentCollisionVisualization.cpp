@@ -5,6 +5,7 @@
 #include <pinocchio/algorithm/kinematics.hpp>
 #include <ocs2_ros_interfaces/common/RosMsgHelpers.h>
 
+#include <chrono>
 #include <iomanip>
 #include <sstream>
 
@@ -29,9 +30,11 @@ EnvironmentCollisionVisualization::EnvironmentCollisionVisualization(
         "environment_obstacles", obstacleQos);
     distancePublisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
         "environment_distances", 1);
+    obstacleRepublishTimer_ = node_->create_wall_timer(
+        std::chrono::seconds(1), [this]() { publishObstacles(false); });
 }
 
-void EnvironmentCollisionVisualization::publishObstacles()
+void EnvironmentCollisionVisualization::publishObstacles(bool logPublication)
 {
     if (!envGeomInterface_) return;
 
@@ -69,7 +72,7 @@ void EnvironmentCollisionVisualization::publishObstacles()
     
     obstaclePublisher_->publish(markerArray);
     
-    if (!obstacleNames.empty()) {
+    if (logPublication && !obstacleNames.empty()) {
         RCLCPP_INFO(node_->get_logger(), "Published %zu environment obstacles", obstacleNames.size());
     }
 }

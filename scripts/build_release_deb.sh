@@ -5,7 +5,8 @@ usage() {
   cat <<'EOF'
 Usage:
   build_release_deb.sh --ros-distro <distro> --deb-version <version> --release-tag <tag>
-                       [--deb-package-name <name>] [--install-prefix <prefix>]
+                       [--deb-package-name <name>] [--deb-file-prefix <prefix>]
+                       [--deb-arch <arch>] [--install-prefix <prefix>]
                        [--required-packages "<pkg1 pkg2 ...>"] [--skip-deps] [--skip-colcon]
 
 Build selected OCS2 packages and create a bundled .deb package.
@@ -17,6 +18,7 @@ DEB_VERSION=""
 RELEASE_TAG=""
 DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ocs2-ros2-jazzy-mobile-manipulator}"
 DEB_FILE_PREFIX="${DEB_FILE_PREFIX:-ocs2-ros2-jazzy-mobile-manipulator}"
+DEB_ARCH="${DEB_ARCH:-}"
 INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ros/jazzy}"
 REQUIRED_PACKAGES="${REQUIRED_OCS2_PACKAGES:-}"
 SKIP_DEPS=0
@@ -29,6 +31,7 @@ while [[ $# -gt 0 ]]; do
     --release-tag) RELEASE_TAG="$2"; shift 2 ;;
     --deb-package-name) DEB_PACKAGE_NAME="$2"; shift 2 ;;
     --deb-file-prefix) DEB_FILE_PREFIX="$2"; shift 2 ;;
+    --deb-arch) DEB_ARCH="$2"; shift 2 ;;
     --install-prefix) INSTALL_PREFIX="$2"; shift 2 ;;
     --required-packages) REQUIRED_PACKAGES="$2"; shift 2 ;;
     --skip-deps) SKIP_DEPS=1; shift ;;
@@ -56,7 +59,15 @@ if [[ -z "${DEB_VERSION}" ]]; then
   exit 1
 fi
 
-DEB_FILE="${DEB_FILE_PREFIX}_${DEB_VERSION}_amd64.deb"
+if [[ -z "${DEB_ARCH}" ]]; then
+  DEB_ARCH="$(dpkg --print-architecture)"
+fi
+if [[ -z "${DEB_ARCH}" ]]; then
+  echo "Unable to resolve Debian architecture."
+  exit 1
+fi
+
+DEB_FILE="${DEB_FILE_PREFIX}_${DEB_VERSION}_${DEB_ARCH}.deb"
 STAGE_ROOT="${PWD}/deb_stage"
 INSTALL_ROOT="${STAGE_ROOT}${INSTALL_PREFIX}"
 DEBIAN_DIR="${STAGE_ROOT}/DEBIAN"
@@ -132,12 +143,31 @@ if [[ "${SKIP_COLCON}" -eq 0 ]]; then
   ensure_ros_pythonpath "${ROS_DISTRO}"
   rm -rf "${STAGE_ROOT}"
   mkdir -p "${INSTALL_ROOT}" "${DEBIAN_DIR}"
+
+  COLCON_CMAKE_ARGS=()
+  if command -v ccache >/dev/null 2>&1; then
+    export CCACHE_BASEDIR="${CCACHE_BASEDIR:-${PWD}}"
+    export CCACHE_NOHASHDIR="${CCACHE_NOHASHDIR:-true}"
+    mkdir -p "${CCACHE_DIR:-${HOME}/.ccache}"
+    ccache --zero-stats || true
+    COLCON_CMAKE_ARGS=(
+      --cmake-args
+      -DCMAKE_C_COMPILER_LAUNCHER=ccache
+      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+    )
+  fi
+
   # No --symlink-install: release .deb must contain real files; symlinks to CI
   # workspace paths break on any other machine (including the consume_deb job).
   colcon build \
     --merge-install \
     --packages-select ${REQUIRED_PACKAGES} \
-    --install-base "${INSTALL_ROOT}"
+    --install-base "${INSTALL_ROOT}" \
+    "${COLCON_CMAKE_ARGS[@]}"
+
+  if command -v ccache >/dev/null 2>&1; then
+    ccache --show-stats || true
+  fi
 fi
 
 echo "[debug] Checking installed config files before packaging..."
@@ -159,7 +189,7 @@ Package: ${DEB_PACKAGE_NAME}
 Version: ${DEB_VERSION}
 Section: libs
 Priority: optional
-Architecture: amd64
+Architecture: ${DEB_ARCH}
 Maintainer: ocs2_ros2 CI <noreply@github.com>
 Depends: libc6 (>= 2.35), ros-${ROS_DISTRO}-ros-base, ros-${ROS_DISTRO}-pinocchio, ros-${ROS_DISTRO}-urdf, ros-${ROS_DISTRO}-kdl-parser, ros-${ROS_DISTRO}-robot-state-publisher, ros-${ROS_DISTRO}-tf2-ros
 Description: Prebuilt OCS2 ROS2 bundle for selected mobile manipulator dependency chain
@@ -177,5 +207,6 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     echo "deb_version=${DEB_VERSION}"
     echo "release_tag=${RELEASE_TAG}"
     echo "ros_distro=${ROS_DISTRO}"
+    echo "deb_arch=${DEB_ARCH}"
   } >> "${GITHUB_OUTPUT}"
 fi
