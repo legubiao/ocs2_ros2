@@ -8,7 +8,7 @@
 #include <ocs2_ros_interfaces/visualization/VisualizationColors.h>
 #include <ocs2_switched_model_interface/core/KinematicsModelBase.h>
 #include <ocs2_switched_model_interface/core/SwitchedModel.h>
-#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.hpp>
 
 #include <robot_state_publisher/robot_state_publisher.hpp>
 

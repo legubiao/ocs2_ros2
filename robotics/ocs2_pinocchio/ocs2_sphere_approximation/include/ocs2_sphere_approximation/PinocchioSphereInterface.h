@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <hpp/fcl/collision_data.h>
+#include <ocs2_pinocchio_interface/collision_compat.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_sphere_approximation/SphereApproximation.h>
 

@@ -1,53 +1,41 @@
 cmake_minimum_required(VERSION 3.14)
-set(CMAKE_CXX_STANDARD 17)
 project(ocs2_sphere_approximation)
 
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-set(dependencies
-        ocs2_pinocchio_interface
-)
-
-# Include the FindPkgConfig module
-include(FindPkgConfig)
-
-# Use pkg_check_modules to find urdfdom and get its version
-pkg_check_modules(URDFDOM urdfdom)
-
-if (URDFDOM_VERSION VERSION_GREATER_EQUAL 4.0.0)
-    add_definitions(-DURDFDOM_VERSION_GT_4)
-    find_package(tinyxml2 REQUIRED)
-    list(APPEND dependencies tinyxml2)
-endif ()
 
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_pinocchio_interface REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
 
-###########
-## Build ##
-###########
+# urdfdom 4 vs 5 detection / tinyxml2 are no longer needed: we feed the cached
+# raw URDF XML straight into pinocchio::urdf::buildGeom (see
+# PinocchioSphereInterface::buildGeomFromPinocchioInterface). This avoids
+# urdf::exportURDF, which urdfdom 5.0 (Lyrical+) removed.
 
-# ocs2 sphere approximation library
 add_library(${PROJECT_NAME}
         src/SphereApproximation.cpp
         src/PinocchioSphereInterface.cpp
         src/PinocchioSphereKinematics.cpp
         src/PinocchioSphereKinematicsCppAd.cpp
 )
+
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-if (URDFDOM_VERSION VERSION_GREATER_EQUAL 4.0.0)
-    target_link_libraries(${PROJECT_NAME} tinyxml2)
-endif ()
-ament_target_dependencies(${PROJECT_NAME} ${dependencies})
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
 
-#############
-## Install ##
-#############
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_PINOCCHIO_FLAGS})
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${OCS2_CXX_DEFINITIONS})
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+        ${ocs2_pinocchio_interface_TARGETS}
+)
+
 install(
         DIRECTORY include/
         DESTINATION include/${PROJECT_NAME}
@@ -60,23 +48,16 @@ install(
         RUNTIME DESTINATION bin
 )
 
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(ocs2_pinocchio_interface ocs2_robotic_assets)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
-############
-# Testing ##
-############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
-
-if (BUILD_TESTING)
+if(BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
     find_package(ament_cmake_gtest REQUIRED)
 
     ament_add_gtest(PinocchioSphereKinematicsTest test/testPinocchioSphereKinematics.cpp)
-    ament_target_dependencies(PinocchioSphereKinematicsTest ${dependencies} ocs2_robotic_assets)
-    target_link_libraries(PinocchioSphereKinematicsTest ${PROJECT_NAME} ${COAL_LIBRARIES})
-    target_compile_options(PinocchioSphereKinematicsTest PUBLIC ${FLAGS})
-
-endif ()
+    target_link_libraries(PinocchioSphereKinematicsTest ${PROJECT_NAME} ${ocs2_robotic_assets_TARGETS})
+endif()
 
 ament_package()

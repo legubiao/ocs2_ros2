@@ -20,6 +20,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.release_tag || github.event.release.tag_name || github.ref_name }}
+  cancel-in-progress: true
+
 env:
   DEFAULT_ROS_DISTRO: jazzy
   DEB_PACKAGE_NAME: ocs2-ros2-jazzy-mobile-manipulator
@@ -28,7 +32,16 @@ env:
 
 jobs:
   verify_deb:
-    runs-on: ubuntu-24.04
+    name: verify deb (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
 
     steps:
       - name: Checkout repository
@@ -62,14 +75,16 @@ jobs:
             echo "Unable to derive a deb version from release tag: ${release_tag}" >&2
             exit 1
           fi
-          deb_file="${DEB_FILE_PREFIX}_${deb_version}_amd64.deb"
+          deb_arch="${{ matrix.arch }}"
+          deb_file="${DEB_FILE_PREFIX}_${deb_version}_${deb_arch}.deb"
 
           echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
           echo "ros_distro=${ros_distro}"   >> "$GITHUB_OUTPUT"
           echo "deb_version=${deb_version}" >> "$GITHUB_OUTPUT"
+          echo "deb_arch=${deb_arch}"       >> "$GITHUB_OUTPUT"
           echo "deb_file=${deb_file}"       >> "$GITHUB_OUTPUT"
 
-          echo "Tag: ${release_tag}, distro: ${ros_distro}, deb: ${deb_file}"
+          echo "Tag: ${release_tag}, distro: ${ros_distro}, arch: ${deb_arch}, deb: ${deb_file}"
 
       - name: Setup ROS
         uses: ros-tooling/setup-ros@v0.7

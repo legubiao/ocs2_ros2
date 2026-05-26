@@ -11,7 +11,7 @@ colcon build --packages-up-to ocs2_anymal_loopshaping_mpc --symlink-install
 
 ## 2. Perceptive MPC demo
 
-In this launch file, you can tried different terrains.
+In this launch file, you can try different terrains.
 
 ### 2.1 basic step
 

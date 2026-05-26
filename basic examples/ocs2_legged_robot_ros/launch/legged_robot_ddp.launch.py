@@ -1,31 +1,20 @@
-import shutil
+import os
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
-from launch.actions import IncludeLaunchDescription,  SetEnvironmentVariable
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
 from ament_index_python.packages import get_package_share_directory
 
-def is_wsl():
-    try:
-        with open('/proc/version', 'r') as f:
-            version_info = f.read().lower()
-            return 'microsoft' in version_info or 'wsl' in version_info
-    except FileNotFoundError:
-        return False
 
 def generate_launch_description():
-
-    if shutil.which("terminator"):
-        prefix = "terminator --new-tab -x"
-        print("Terminator is installed, use terminator as terminal")
-    elif is_wsl():
-        prefix = "xterm -e"
-        print("Current system is WSL, use xterm as terminal")
-    else:
-        prefix = "gnome-terminal --"
-        print("Current system is not WSL, use gnome-terminal as terminal")
+    # Default to xterm because it is the most portable choice across desktop
+    # Linux, WSL, and container environments (e.g. distrobox), where
+    # gnome-terminal is typically unavailable. Override via OCS2_TERMINAL_PREFIX,
+    # e.g. `export OCS2_TERMINAL_PREFIX="gnome-terminal --"`.
+    prefix = os.environ.get("OCS2_TERMINAL_PREFIX", "xterm -e")
 
 
     return LaunchDescription([

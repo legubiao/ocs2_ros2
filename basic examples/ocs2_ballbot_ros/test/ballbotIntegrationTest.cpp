@@ -29,6 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <gtest/gtest.h>
 #include <ocs2_ballbot/BallbotInterface.h>
+#include <ocs2_ballbot/package_path.h>
 #include <ocs2_ballbot/definitions.h>
 #include <ocs2_ddp/GaussNewtonDDP_MPC.h>
 #include <ocs2_ros_interfaces/mpc/MPC_ROS_Interface.h>
@@ -45,8 +46,7 @@ TEST(BallbotIntegrationTest, createDummyMRT) {
             ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
             "/config/mpc/task.info";
     const std::string libFolder =
-            ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
-            "/auto_generated";
+            ocs2::ballbot::getCodegenPath();
     ballbot::BallbotInterface ballbotInterface(taskFile, libFolder);
 
     MRT_ROS_Interface mrt("ballbot");
@@ -68,8 +68,7 @@ TEST(BallbotIntegrationTest, createMPC) {
             ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
             "/config/mpc/task.info";
     const std::string libFolder =
-            ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
-            "/auto_generated";
+            ocs2::ballbot::getCodegenPath();
     ballbot::BallbotInterface ballbotInterface(taskFile, libFolder);
 
     // MPC

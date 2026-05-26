@@ -1,20 +1,21 @@
 cmake_minimum_required(VERSION 3.14)
-set(CMAKE_CXX_STANDARD 17)
 project(ocs2_oc)
 
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ============================================================
+# Dependencies
+# ============================================================
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_core REQUIRED)
+# ocs2_core's CONFIG_EXTRAS exposes OCS2_CXX_FLAGS / OCS2_CXX_DEFINITIONS used below.
 
-###########
-## Build ##
-###########
-set(dependencies
-        ocs2_core
-)
-
+# ============================================================
+# Library
+# ============================================================
 add_library(${PROJECT_NAME}
         src/approximate_model/ChangeOfInputVariables.cpp
         src/approximate_model/LinearQuadraticApproximator.cpp
@@ -54,15 +55,20 @@ target_include_directories(${PROJECT_NAME}
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/include>"
-        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
 
-ament_target_dependencies(${PROJECT_NAME} ${dependencies})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${OCS2_CXX_DEFINITIONS})
 
-#############
-## Install ##
-#############
+target_link_libraries(${PROJECT_NAME} PUBLIC
+        ${ocs2_core_TARGETS}
+)
 
+# ============================================================
+# Install
+# ============================================================
 install(
         DIRECTORY include/ test/include/
         DESTINATION include/${PROJECT_NAME}
@@ -76,63 +82,51 @@ install(
         RUNTIME DESTINATION bin
 )
 
-ament_export_dependencies(${dependencies})
+# ============================================================
+# Export (deps BEFORE targets so consumers find imported targets first)
+# ============================================================
+ament_export_dependencies(ocs2_core)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
-
-#############
-## Testing ##
-#############
-
-if (BUILD_TESTING)
-
+# ============================================================
+# Tests
+# ============================================================
+if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
     ament_lint_auto_find_test_dependencies()
-
     find_package(ament_cmake_gtest REQUIRED)
+
+    # All test targets transitively inherit compile flags, include dirs and link
+    # libraries (ocs2_core + its public deps) from ${PROJECT_NAME}.
 
     ament_add_gtest(test_${PROJECT_NAME}_multiple_shooting
             test/multiple_shooting/testProjectionMultiplierCoefficients.cpp
             test/multiple_shooting/testTranscriptionMetrics.cpp
             test/multiple_shooting/testTranscriptionPerformanceIndex.cpp
     )
-    ament_target_dependencies(test_${PROJECT_NAME}_multiple_shooting ${dependencies})
     target_link_libraries(test_${PROJECT_NAME}_multiple_shooting ${PROJECT_NAME})
 
-
     ament_add_gtest(test_${PROJECT_NAME}_data test/oc_data/testTimeDiscretization.cpp)
-    ament_target_dependencies(test_${PROJECT_NAME}_data ${dependencies})
     target_link_libraries(test_${PROJECT_NAME}_data ${PROJECT_NAME})
-
 
     ament_add_gtest(test_${PROJECT_NAME}_rollout
             test/rollout/testTimeTriggeredRollout.cpp
             test/rollout/testStateTriggeredRollout.cpp
     )
-    target_link_libraries(test_${PROJECT_NAME}_rollout ${PROJECT_NAME} ${ocs2_core_TARGETS})
-    ament_target_dependencies(test_${PROJECT_NAME}_rollout ${dependencies})
-
+    target_link_libraries(test_${PROJECT_NAME}_rollout ${PROJECT_NAME})
 
     ament_add_gtest(test_change_of_variables test/testChangeOfInputVariables.cpp)
-    ament_target_dependencies(test_change_of_variables ${dependencies})
     target_link_libraries(test_change_of_variables ${PROJECT_NAME})
 
-
     ament_add_gtest(test_trajectory_spreading test/trajectory_adjustment/TrajectorySpreadingTest.cpp)
-    ament_target_dependencies(test_trajectory_spreading ${dependencies})
     target_link_libraries(test_trajectory_spreading ${PROJECT_NAME})
-
 
     ament_add_gtest(test_ocp_to_kkt test/oc_problem/testOcpToKkt.cpp)
     target_link_libraries(test_ocp_to_kkt ${PROJECT_NAME})
-    ament_target_dependencies(test_ocp_to_kkt ${dependencies})
-
 
     ament_add_gtest(test_precondition test/precondition/testPrecondition.cpp)
     target_link_libraries(test_precondition ${PROJECT_NAME})
-    ament_target_dependencies(test_precondition ${dependencies})
 
-endif ()
-
+endif()
 
 ament_package()

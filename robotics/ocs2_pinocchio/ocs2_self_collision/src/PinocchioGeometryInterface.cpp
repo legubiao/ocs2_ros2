@@ -28,7 +28,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 #include <pinocchio/fwd.hpp>
 #include <ocs2_self_collision/PinocchioGeometryInterface.h>
-#include <urdf_parser/urdf_parser.h>
 
 #include <pinocchio/algorithm/geometry.hpp>
 #include <pinocchio/multibody/data.hpp>
@@ -38,9 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pinocchio/parsers/urdf.hpp>
 #include <pinocchio/collision/distance.hpp>
 
-#ifdef URDFDOM_VERSION_GT_4
-#include <tinyxml2.h>
-#endif
+#include <sstream>
 
 namespace ocs2
 {
@@ -80,7 +77,7 @@ namespace ocs2
     }
 
 
-    std::vector<hpp::fcl::DistanceResult>
+    std::vector<ocs2::collision::DistanceResult>
     PinocchioGeometryInterface::computeDistances(
         const PinocchioInterface& pinocchioInterface) const
     {
@@ -105,33 +102,26 @@ namespace ocs2
         const PinocchioInterface& pinocchioInterface,
         pinocchio::GeometryModel& geomModel)
     {
-        if (!pinocchioInterface.getUrdfModelPtr())
+        // Replay the original URDF XML that was used to build pinocchioInterface
+        // straight into pinocchio::urdf::buildGeom. Pre-urdfdom-5 we used to
+        // round-trip via urdf::exportURDF(ModelInterface), but that API was
+        // removed in urdfdom 5.0 (Lyrical+), so the raw XML is now the only
+        // stable bridge. Construct the PinocchioInterface via the
+        // getPinocchioInterfaceFromUrdf{File,String} helpers to guarantee
+        // getUrdfXmlString() is populated.
+        const std::string& urdfXml = pinocchioInterface.getUrdfXmlString();
+        if (urdfXml.empty())
         {
             throw std::runtime_error(
-                "The PinocchioInterface passed to PinocchioGeometryInterface(...) does "
-                "not contain a urdf model!");
+                "PinocchioGeometryInterface: cannot rebuild GeometryModel because "
+                "the PinocchioInterface was not constructed from a URDF source "
+                "(empty getUrdfXmlString()). Build it via "
+                "getPinocchioInterfaceFromUrdfFile/String, or use the "
+                "PinocchioGeometryInterface(pinocchioInterface, urdf_path, ...) "
+                "overload that reads the URDF file directly.");
         }
 
-        pinocchio::Model model;
-
-        // TODO: Replace with pinocchio function that uses the ModelInterface directly
-        // As of 19-04-21 there is no buildGeom that takes a ModelInterface, so we
-        // deconstruct the modelInterface into a std::stringstream first
-#ifdef URDFDOM_VERSION_GT_4
-  const std::unique_ptr<const tinyxml2::XMLDocument> urdfAsXml(
-      exportURDF(*pinocchioInterface.getUrdfModelPtr()));
-  tinyxml2::XMLPrinter printer;
-  urdfAsXml->Print(&printer);
-  const std::stringstream urdfAsStringStream(printer.CStr());
-#else
-        const std::unique_ptr<const TiXmlDocument> urdfAsXml(
-            urdf::exportURDF(*pinocchioInterface.getUrdfModelPtr()));
-        TiXmlPrinter printer;
-        urdfAsXml->Accept(&printer);
-        const std::stringstream urdfAsStringStream(printer.Str());
-        // std::cout << "urdf content: " << urdfAsStringStream.str() << std::endl;
-#endif
-
+        std::istringstream urdfAsStringStream(urdfXml);
         pinocchio::urdf::buildGeom(pinocchioInterface.getModel(), urdfAsStringStream,
                                    pinocchio::COLLISION, geomModel);
     }

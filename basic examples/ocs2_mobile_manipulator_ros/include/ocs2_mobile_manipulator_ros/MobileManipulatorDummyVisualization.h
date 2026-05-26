@@ -33,7 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_mobile_manipulator/MobileManipulatorInterface.h>
 #include <ocs2_ros_interfaces/mrt/DummyObserver.h>
 #include <ocs2_self_collision_visualization/GeometryInterfaceVisualization.h>
-#include <tf2_ros/transform_broadcaster.h>
+#include <ocs2_mobile_manipulator_ros/EnvironmentCollisionVisualization.h>
+#include <tf2_ros/transform_broadcaster.hpp>
 
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -49,7 +50,8 @@ namespace ocs2::mobile_manipulator
             : node_(node),
               pinocchioInterface_(interface.getPinocchioInterface()),
               modelInfo_(interface.getManipulatorModelInfo()),
-              tfBroadcaster_(node)
+              tfBroadcaster_(node),
+              envGeomInterface_(interface.getEnvironmentGeometryInterface())
         {
             launchVisualizerNode();
         }
@@ -84,5 +86,9 @@ namespace ocs2::mobile_manipulator
         stateOptimizedPosePublisher_;
 
         std::unique_ptr<GeometryInterfaceVisualization> geometryVisualization_;
+        
+        // Environment collision visualization
+        std::shared_ptr<EnvironmentGeometryInterface> envGeomInterface_;
+        std::unique_ptr<EnvironmentCollisionVisualization> envCollisionVisualization_;
     };
 }

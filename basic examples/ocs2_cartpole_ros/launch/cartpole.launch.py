@@ -6,23 +6,16 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
+import os
 
-def is_wsl():
-    try:
-        with open('/proc/version', 'r') as f:
-            version_info = f.read().lower()
-            return 'microsoft' in version_info or 'wsl' in version_info
-    except FileNotFoundError:
-        return False
 
 def generate_launch_description():
-    prefix = "gnome-terminal --"
-    if is_wsl():
-        prefix = "xterm -e"
-        print("Current system is WSL, use xterm as terminal")
-    else:
-        print("Current system is not WSL, use gnome-terminal as terminal")
-        
+    # Default to xterm because it is the most portable choice across desktop
+    # Linux, WSL, and container environments (e.g. distrobox), where
+    # gnome-terminal is typically unavailable. Override via OCS2_TERMINAL_PREFIX,
+    # e.g. `export OCS2_TERMINAL_PREFIX="gnome-terminal --"`.
+    prefix = os.environ.get("OCS2_TERMINAL_PREFIX", "xterm -e")
+
     return LaunchDescription([
         DeclareLaunchArgument(
             name='rviz',

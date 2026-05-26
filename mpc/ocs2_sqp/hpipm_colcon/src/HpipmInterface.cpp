@@ -104,9 +104,22 @@ class HpipmInterface::Impl {
     const int dim_size = d_ocp_qp_dim_memsize(ocpSize_.numStages);
     dimMem_.reserve(dim_size);
     d_ocp_qp_dim_create(ocpSize_.numStages, &dim_, dimMem_.get());
-    d_ocp_qp_dim_set_all(ocpSize_.numStates.data(), ocpSize_.numInputs.data(), ocpSize_.numStateBoxConstraints.data(),
-                         ocpSize_.numInputBoxConstraints.data(), ocpSize_.numIneqConstraints.data(), ocpSize_.numStateBoxSlack.data(),
-                         ocpSize_.numInputBoxSlack.data(), ocpSize_.numIneqSlack.data(), &dim_);
+
+    // HPIPM upstream replaced the per-slack-category arrays (nsbx, nsbu, nsg)
+    // with a single combined `ns` array (total number of soft constraints per
+    // stage). We aggregate the three OCS2 slack counts here. This wrapper has
+    // never actually enabled soft constraints anyway (`hidxs == nullptr` below)
+    // so the per-stage totals are expected to be zero in practice.
+    std::vector<int> numSlack(ocpSize_.numStages + 1);
+    for (int i = 0; i <= ocpSize_.numStages; ++i) {
+      numSlack[i] = ocpSize_.numStateBoxSlack[i] + ocpSize_.numInputBoxSlack[i] +
+                    ocpSize_.numIneqSlack[i];
+    }
+    d_ocp_qp_dim_set_all(ocpSize_.numStates.data(), ocpSize_.numInputs.data(),
+                         ocpSize_.numStateBoxConstraints.data(),
+                         ocpSize_.numInputBoxConstraints.data(),
+                         ocpSize_.numIneqConstraints.data(), numSlack.data(),
+                         &dim_);
 
     const int qp_size = d_ocp_qp_memsize(&dim_);
     qpMem_.reserve(qp_size);
@@ -275,12 +288,13 @@ class HpipmInterface::Impl {
     scalar_t** hzl = nullptr;
     scalar_t** hzu = nullptr;
     int** hidxs = nullptr;
+    int** hidxs_rev = nullptr;  // HPIPM upstream added this reverse-mapping arg.
     scalar_t** hlls = nullptr;
     scalar_t** hlus = nullptr;
 
     // === Set and solve ===
     d_ocp_qp_set_all(AA.data(), BB.data(), bb.data(), QQ.data(), SS.data(), RR.data(), qq.data(), rr.data(), hidxbx, hlbx, hubx, hidxbu,
-                     hlbu, hubu, CC.data(), DD.data(), llg.data(), uug.data(), hZl, hZu, hzl, hzu, hidxs, hlls, hlus, &qp_);
+                     hlbu, hubu, CC.data(), DD.data(), llg.data(), uug.data(), hZl, hZu, hzl, hzu, hidxs, hidxs_rev, hlls, hlus, &qp_);
     d_ocp_qp_ipm_solve(&qp_, &qpSol_, &arg_, &workspace_);
 
     if (verbose) {

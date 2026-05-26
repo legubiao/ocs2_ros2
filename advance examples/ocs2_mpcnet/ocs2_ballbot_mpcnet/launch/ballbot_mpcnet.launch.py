@@ -8,6 +8,12 @@ from ament_index_python.packages import get_package_share_directory
 import os
 
 def generate_launch_description():
+    # Default to xterm because it is the most portable choice across desktop
+    # Linux, WSL, and container environments (e.g. distrobox), where
+    # gnome-terminal is typically unavailable. Override via OCS2_TERMINAL_PREFIX,
+    # e.g. `export OCS2_TERMINAL_PREFIX="gnome-terminal --"`.
+    prefix = os.environ.get("OCS2_TERMINAL_PREFIX", "xterm -e")
+
     rviz_arg = DeclareLaunchArgument('rviz', default_value='true')
     multiplot_arg = DeclareLaunchArgument('multiplot', default_value='false')
     task_name_arg = DeclareLaunchArgument('task_name', default_value='mpc')
@@ -52,7 +58,7 @@ def generate_launch_description():
         executable='ballbot_target',
         name='ballbot_target',
         output='screen',
-        prefix='gnome-terminal --',
+        prefix=prefix,
         arguments=[LaunchConfiguration('task_name')],
     )
 

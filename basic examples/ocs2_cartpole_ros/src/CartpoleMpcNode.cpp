@@ -28,6 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
 #include <ocs2_cartpole/CartPoleInterface.h>
+#include <ocs2_cartpole/package_path.h>
 #include <ocs2_ddp/GaussNewtonDDP_MPC.h>
 #include <ocs2_ros_interfaces/mpc/MPC_ROS_Interface.h>
 #include <ocs2_ros_interfaces/synchronized_module/SolverObserverRosCallbacks.h>
@@ -58,8 +59,7 @@ int main(int argc, char **argv) {
             ament_index_cpp::get_package_share_directory("ocs2_cartpole") +
             "/config/" + taskFileFolderName + "/task.info";
     const std::string libFolder =
-            ament_index_cpp::get_package_share_directory("ocs2_cartpole") +
-            "/auto_generated";
+            ocs2::cartpole::getCodegenPath();
     ocs2::cartpole::CartPoleInterface cartPoleInterface(taskFile, libFolder,
                                                         true /*verbose*/);
 

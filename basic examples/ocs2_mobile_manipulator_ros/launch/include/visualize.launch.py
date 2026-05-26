@@ -1,10 +1,28 @@
 import os
+
+import xacro
 import launch
 import launch_ros.actions
+from launch.actions import OpaqueFunction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
+
+
+def _robot_state_publisher_node(context, *args, **kwargs):
+    urdf_file = context.launch_configurations['urdfFile']
+    robot_description = xacro.process_file(urdf_file).toxml()
+    return [Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        output='screen',
+        parameters=[{
+            'publish_frequency': 100.0,
+            'use_tf_static': True,
+            'robot_description': robot_description,
+        }],
+    )]
 
 
 def generate_launch_description():
@@ -25,12 +43,7 @@ def generate_launch_description():
             name='rvizconfig',
             default_value=get_package_share_directory('ocs2_mobile_manipulator_ros') + "/rviz/mobile_manipulator.rviz"
         ),
-        Node(
-            package="robot_state_publisher",
-            executable="robot_state_publisher",
-            output="screen",
-            arguments=[LaunchConfiguration("urdfFile")],
-        ),
+        OpaqueFunction(function=_robot_state_publisher_node),
         Node(
             package="joint_state_publisher_gui",
             executable="joint_state_publisher_gui",

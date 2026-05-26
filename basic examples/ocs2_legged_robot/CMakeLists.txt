@@ -1,17 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
-set(CMAKE_CXX_STANDARD 17)
 project(ocs2_legged_robot)
 
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-set(dependencies
-        ocs2_ddp
-        ocs2_mpc
-        ocs2_sqp
-        ocs2_ipm
-        ocs2_centroidal_model
-)
 
 find_package(ament_cmake REQUIRED)
 find_package(ocs2_ddp REQUIRED)
@@ -19,27 +12,14 @@ find_package(ocs2_mpc REQUIRED)
 find_package(ocs2_sqp REQUIRED)
 find_package(ocs2_ipm REQUIRED)
 find_package(ocs2_centroidal_model REQUIRED)
+# ocs2_centroidal_model transitively brings ocs2_pinocchio_interface, whose
+# CONFIG_EXTRAS exports OCS2_PINOCCHIO_FLAGS used below.
 
-###########
-## Build ##
-###########
-
-# Resolve for the package path at compile time.
 configure_file(
         "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/package_path.h.in"
         "${PROJECT_BINARY_DIR}/include/${PROJECT_NAME}/package_path.h" @ONLY
 )
 
-set(FLAGS
-        ${OCS2_CXX_FLAGS}
-        ${pinocchio_CFLAGS_OTHER}
-        -Wno-ignored-attributes
-        -Wno-invalid-partial-specialization   # to silence warning with unsupported Eigen Tensor
-        -DPINOCCHIO_URDFDOM_TYPEDEF_SHARED_PTR
-        -DPINOCCHIO_URDFDOM_USE_STD_SHARED_PTR
-)
-
-# Legged robot interface library
 add_library(${PROJECT_NAME}
         src/common/ModelSettings.cpp
         src/dynamics/LeggedRobotDynamicsAD.cpp
@@ -64,14 +44,20 @@ add_library(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+        "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
 
-ament_target_dependencies(${PROJECT_NAME} ${dependencies})
-target_compile_options(${PROJECT_NAME} PUBLIC ${FLAGS})
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_PINOCCHIO_FLAGS})
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${OCS2_CXX_DEFINITIONS})
 
-#############
-## Install ##
-#############
+target_link_libraries(${PROJECT_NAME} PUBLIC
+        ${ocs2_ddp_TARGETS}
+        ${ocs2_mpc_TARGETS}
+        ${ocs2_sqp_TARGETS}
+        ${ocs2_ipm_TARGETS}
+        ${ocs2_centroidal_model_TARGETS}
+)
 
 install(
         DIRECTORY include/
@@ -91,17 +77,15 @@ install(
         DESTINATION share/${PROJECT_NAME}/
 )
 
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(ocs2_ddp ocs2_mpc ocs2_sqp ocs2_ipm ocs2_centroidal_model)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
-#############
-## Testing ##
-#############
-find_package(ament_lint_auto REQUIRED)
-ament_lint_auto_find_test_dependencies()
-
-if (BUILD_TESTING)
+if(BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
     find_package(ament_cmake_gtest)
+
+    find_package(ocs2_robotic_assets REQUIRED)
 
     ament_add_gtest(${PROJECT_NAME}_test
             test/AnymalFactoryFunctions.cpp
@@ -113,9 +97,7 @@ if (BUILD_TESTING)
             test/include
             ${PROJECT_BINARY_DIR}/include
     )
-    ament_target_dependencies(${PROJECT_NAME}_test ${dependencies})
-    target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
-    target_compile_options(${PROJECT_NAME}_test PRIVATE ${FLAGS})
-endif ()
+    target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME} ${ocs2_robotic_assets_TARGETS})
+endif()
 
 ament_package()

@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/Types.h>
 
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
-#include <hpp/fcl/shape/geometric_shapes.h>
+#include <ocs2_pinocchio_interface/collision_compat.h>
 
 namespace ocs2
 {
@@ -56,7 +56,7 @@ namespace ocs2
          * @param [in] maxExcess : maximum allowed excess from the object surface to the sphere surface
          * @param [in] shrinkRatio: ratio of shrinking maxExcess when recursive approximation of the cylinder base is necessary
          */
-        SphereApproximation(const hpp::fcl::CollisionGeometry& geometry, size_t geomObjectId, scalar_t maxExcess,
+        SphereApproximation(const ocs2::collision::CollisionGeometry& geometry, size_t geomObjectId, scalar_t maxExcess,
                             scalar_t shrinkRatio);
 
         /** Get the index of the geometry object stored in GeometryModel */

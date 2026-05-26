@@ -37,8 +37,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_oc/rollout/TimeTriggeredRollout.h>
 #include <ocs2_oc/synchronized_module/ReferenceManager.h>
 #include <ocs2_robotic_tools/common/RobotInterface.h>
+#include <ocs2_sqp/SqpSettings.h>
 
 #include <ocs2_mobile_manipulator/FactoryFunctions.h>
+#include <ocs2_mobile_manipulator/collision/EnvironmentGeometryInterface.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_self_collision/PinocchioGeometryInterface.h>
 
@@ -69,6 +71,8 @@ namespace ocs2::mobile_manipulator
 
         mpc::Settings& mpcSettings() { return mpcSettings_; }
 
+        sqp::Settings& sqpSettings() { return sqpSettings_; }
+
         const OptimalControlProblem& getOptimalControlProblem() const override { return problem_; }
 
         std::shared_ptr<ReferenceManagerInterface> getReferenceManagerPtr() const override
@@ -96,6 +100,37 @@ namespace ocs2::mobile_manipulator
         // 获取自碰撞约束是否启用
         bool isSelfCollisionEnabled() const { return selfCollisionEnabled_; }
 
+        // ========== 环境碰撞接口 ==========
+
+        /**
+         * @brief 获取环境几何接口（用于动态添加/移除障碍物）
+         * @return 环境几何接口的共享指针，如果未启用则返回nullptr
+         */
+        std::shared_ptr<EnvironmentGeometryInterface> getEnvironmentGeometryInterface() const {
+            return envGeomInterfacePtr_;
+        }
+
+        /**
+         * @brief 获取环境碰撞最小安全距离
+         */
+        scalar_t getEnvironmentCollisionMinimumDistance() const {
+            return envCollisionMinimumDistance_;
+        }
+
+        /**
+         * @brief 获取环境碰撞激活距离
+         */
+        scalar_t getEnvironmentCollisionActivationDistance() const {
+            return envCollisionActivationDistance_;
+        }
+
+        /**
+         * @brief 检查环境碰撞约束是否启用
+         */
+        bool isEnvironmentCollisionEnabled() const {
+            return envCollisionEnabled_;
+        }
+
         bool dual_arm_ = false;
 
     private:
@@ -107,7 +142,8 @@ namespace ocs2::mobile_manipulator
                                                             bool recompileLibraries);
         std::unique_ptr<StateCost> getSelfCollisionConstraint(const PinocchioInterface& pinocchioInterface,
                                                               const std::string& taskFile,
-                                                              const std::string& urdfFile, const std::string& prefix,
+                                                              const std::string& urdfFile,
+                                                              const std::string& prefix,
                                                               bool useCaching,
                                                               const std::string& libraryFolder,
                                                               bool recompileLibraries);
@@ -119,9 +155,14 @@ namespace ocs2::mobile_manipulator
                                                              bool recompileLibraries);
         std::unique_ptr<StateInputCost> getJointLimitSoftConstraint(const PinocchioInterface& pinocchioInterface,
                                                                     const std::string& taskFile);
+        std::unique_ptr<StateCost> getEnvironmentCollisionConstraint(const PinocchioInterface& pinocchioInterface,
+                                                                     const std::string& taskFile,
+                                                                     const std::string& prefix);
+        void loadInitialObstacles(const std::string& taskFile, const std::string& prefix);
 
         ddp::Settings ddpSettings_;
         mpc::Settings mpcSettings_;
+        sqp::Settings sqpSettings_;
 
         OptimalControlProblem problem_;
         std::shared_ptr<ReferenceManager> referenceManagerPtr_;
@@ -143,6 +184,18 @@ namespace ocs2::mobile_manipulator
 
         // 自碰撞约束是否启用
         bool selfCollisionEnabled_ = false;
+
+        // 环境碰撞几何接口
+        std::shared_ptr<EnvironmentGeometryInterface> envGeomInterfacePtr_;
+
+        // 环境碰撞激活距离
+        scalar_t envCollisionActivationDistance_ = 0.0;
+
+        // 环境碰撞最小安全距离
+        scalar_t envCollisionMinimumDistance_ = 0.0;
+
+        // 环境碰撞约束是否启用
+        bool envCollisionEnabled_ = false;
 
         vector_t initialState_;
     };
