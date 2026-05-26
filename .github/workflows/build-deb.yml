@@ -34,22 +34,8 @@ env:
   DEB_PACKAGE_NAME: ocs2-ros2-jazzy-mobile-manipulator
   DEB_FILE_PREFIX: ocs2-ros2-jazzy-mobile-manipulator
   INSTALL_PREFIX: /opt/ros/jazzy
-  REQUIRED_OCS2_PACKAGES: >-
-    ocs2_core
-    ocs2_ddp
-    ocs2_mobile_manipulator
-    ocs2_mobile_manipulator_ros
-    ocs2_mpc
-    ocs2_msgs
-    ocs2_oc
-    ocs2_pinocchio_interface
-    ocs2_qp_solver
-    ocs2_robotic_assets
-    ocs2_robotic_tools
-    ocs2_ros_interfaces
-    ocs2_self_collision
-    ocs2_self_collision_visualization
-    ocs2_thirdparty
+  # Colcon uses --packages-up-to (see build_release_deb.sh); only roots are listed here.
+  REQUIRED_OCS2_PACKAGES: ocs2_mobile_manipulator_ros
 
 jobs:
   build_deb:
@@ -132,16 +118,25 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ccache-${{ runner.os }}-${{ matrix.arch }}-${{ steps.meta.outputs.ros_distro }}-${{ github.sha }}
+          key: ccache-${{ runner.os }}-${{ matrix.arch }}-${{ steps.meta.outputs.ros_distro }}-${{ steps.meta.outputs.deb_version }}
           restore-keys: |
             ccache-${{ runner.os }}-${{ matrix.arch }}-${{ steps.meta.outputs.ros_distro }}-
+            ccache-${{ runner.os }}-${{ matrix.arch }}-
 
       - name: Install package dependencies via rosdep
         shell: bash
         run: |
           set -eo pipefail
           source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
-          rosdep install --from-paths . --ignore-src -r -y
+          # Limit paths to the mobile-manipulator subtree; scanning advance examples /
+          # plane_segmentation submodules pulls extra keys and can fail unrelated packages.
+          rosdep install --from-paths \
+            core \
+            mpc \
+            robotics \
+            "basic examples" \
+            submodules/ocs2_robotic_assets \
+            --ignore-src -y
 
       - name: Fast preflight diagnostics
         shell: bash
@@ -152,7 +147,7 @@ jobs:
           set -u
           echo "Python: $(python3 --version)"
           echo "CMake: $(cmake --version | sed -n '1p')"
-          echo "Colcon: $(colcon --version)"
+          echo "Colcon: $(python3 -c 'import colcon_core; print(colcon_core.__version__)')"
           echo "ccache: $(ccache --version | sed -n '1p')"
           python3 -c "import ament_package; print('ament_package:', ament_package.__file__)"
 
@@ -161,6 +156,9 @@ jobs:
         run: |
           set -eo pipefail
           chmod +x scripts/*.sh
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          echo "Expected colcon closure:"
+          colcon list --names-only --packages-up-to ${REQUIRED_OCS2_PACKAGES}
           scripts/build_release_deb.sh \
             --ros-distro "${{ steps.meta.outputs.ros_distro }}" \
             --deb-version "${{ steps.meta.outputs.deb_version }}" \
@@ -172,15 +170,6 @@ jobs:
             --required-packages "${REQUIRED_OCS2_PACKAGES}" \
             --skip-deps
 
-      - name: Publish deb to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.meta.outputs.release_tag }}
-          name: ${{ steps.meta.outputs.release_tag }}
-          draft: false
-          prerelease: false
-          files: ${{ steps.meta.outputs.deb_file }}
-
       - name: Upload workflow artifact (fallback for workflow_dispatch)
         uses: actions/upload-artifact@v4
         with:
@@ -188,3 +177,52 @@ jobs:
           path: ${{ steps.meta.outputs.deb_file }}
           if-no-files-found: error
           retention-days: 7
+
+  publish_deb:
+    name: publish debs
+    runs-on: ubuntu-24.04
+    needs: build_deb
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve publish metadata
+        id: meta
+        shell: bash
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+          INPUT_RELEASE_TAG="${{ github.event.inputs.release_tag }}" \
+          INPUT_ROS_DISTRO="${DEFAULT_ROS_DISTRO}" \
+          INPUT_DEB_VERSION="${{ github.event.inputs.deb_version }}" \
+          INPUT_DEB_ARCH="amd64" \
+          RELEASE_TAG_OVERRIDE="${{ github.ref_name }}" \
+          scripts/resolve_release_meta.sh | tee /tmp/release_meta.txt
+
+          while IFS='=' read -r key value; do
+            echo "${key}=${value}" >> "$GITHUB_OUTPUT"
+          done < /tmp/release_meta.txt
+
+      - name: Download built deb artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ocs2-ros2-jazzy-mobile-manipulator-${{ steps.meta.outputs.deb_version }}-*
+          merge-multiple: true
+
+      - name: List release assets
+        shell: bash
+        run: |
+          set -eo pipefail
+          ls -lh *.deb
+
+      - name: Publish debs to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.release_tag }}
+          name: ${{ steps.meta.outputs.release_tag }}
+          draft: false
+          prerelease: false
+          # Re-run on the same tag: replace .deb assets instead of failing on duplicates.
+          overwrite_files: true
+          files: "*.deb"

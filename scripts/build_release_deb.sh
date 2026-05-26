@@ -9,7 +9,7 @@ Usage:
                        [--deb-arch <arch>] [--install-prefix <prefix>]
                        [--required-packages "<pkg1 pkg2 ...>"] [--skip-deps] [--skip-colcon]
 
-Build selected OCS2 packages and create a bundled .deb package.
+Build OCS2 packages (--packages-up-to roots) and create a bundled .deb package.
 EOF
 }
 
@@ -144,30 +144,63 @@ if [[ "${SKIP_COLCON}" -eq 0 ]]; then
   rm -rf "${STAGE_ROOT}"
   mkdir -p "${INSTALL_ROOT}" "${DEBIAN_DIR}"
 
-  COLCON_CMAKE_ARGS=()
+  COLCON_CMAKE_ARGS=(
+    --cmake-args
+    -DBUILD_TESTING=OFF
+    -DCMAKE_BUILD_TYPE=Release
+    -DOCS2_USE_SYSTEM_BLASFEO=OFF
+    -DOCS2_USE_SYSTEM_HPIPM=OFF
+  )
   if command -v ccache >/dev/null 2>&1; then
     export CCACHE_BASEDIR="${CCACHE_BASEDIR:-${PWD}}"
     export CCACHE_NOHASHDIR="${CCACHE_NOHASHDIR:-true}"
     mkdir -p "${CCACHE_DIR:-${HOME}/.ccache}"
     ccache --zero-stats || true
-    COLCON_CMAKE_ARGS=(
-      --cmake-args
+    COLCON_CMAKE_ARGS+=(
       -DCMAKE_C_COMPILER_LAUNCHER=ccache
       -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
     )
   fi
 
+  # Resolve the full dependency closure, then --packages-select that set explicitly.
+  # A hand-picked --packages-select list omits ocs2_sqp / hpipm_colcon / blasfeo_colcon
+  # and fails ocs2_mobile_manipulator with missing package.sh (CI saw 12/15 success).
+  # shellcheck disable=SC2206
+  colcon_roots=(${REQUIRED_PACKAGES})
+  mapfile -t colcon_packages < <(
+    colcon list --names-only --packages-up-to "${colcon_roots[@]}"
+  )
+  if [[ ${#colcon_packages[@]} -eq 0 ]]; then
+    echo "colcon list --packages-up-to returned no packages for: ${REQUIRED_PACKAGES}" >&2
+    exit 1
+  fi
+  echo "Colcon closure (${#colcon_packages[@]} packages): ${colcon_packages[*]}"
+  for required_pkg in blasfeo_colcon hpipm_colcon ocs2_sqp; do
+    if [[ ! " ${colcon_packages[*]} " =~ [[:space:]]${required_pkg}[[:space:]] ]]; then
+      echo "Missing ${required_pkg} in colcon closure; check package.xml depends." >&2
+      exit 1
+    fi
+  done
+
   # No --symlink-install: release .deb must contain real files; symlinks to CI
   # workspace paths break on any other machine (including the consume_deb job).
   colcon build \
     --merge-install \
-    --packages-select ${REQUIRED_PACKAGES} \
+    --packages-select "${colcon_packages[@]}" \
     --install-base "${INSTALL_ROOT}" \
     "${COLCON_CMAKE_ARGS[@]}"
 
   if command -v ccache >/dev/null 2>&1; then
     ccache --show-stats || true
   fi
+
+  for required_pkg in blasfeo_colcon hpipm_colcon ocs2_sqp ocs2_mobile_manipulator_ros; do
+    pkg_sh="${INSTALL_ROOT}/share/${required_pkg}/package.sh"
+    if [[ ! -f "${pkg_sh}" ]]; then
+      echo "Expected install artifact missing: ${pkg_sh}" >&2
+      exit 1
+    fi
+  done
 fi
 
 echo "[debug] Checking installed config files before packaging..."

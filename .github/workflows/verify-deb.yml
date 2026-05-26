@@ -86,17 +86,43 @@ jobs:
 
           echo "Tag: ${release_tag}, distro: ${ros_distro}, arch: ${deb_arch}, deb: ${deb_file}"
 
-      - name: Setup ROS
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: ${{ steps.meta.outputs.ros_distro }}
-
-      - name: Install base tools
+      - name: Install ROS and base tools
         shell: bash
         run: |
           set -eo pipefail
           sudo apt-get update
-          sudo apt-get install -y cmake build-essential
+          sudo apt-get install -y curl ca-certificates python3 cmake build-essential
+
+          ubuntu_codename=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-${VERSION_CODENAME}}")
+          ros_apt_url="$(python3 - "${ubuntu_codename}" <<'PY'
+          import json
+          import sys
+          import urllib.request
+
+          codename = sys.argv[1]
+          req = urllib.request.Request(
+              "https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest",
+              headers={"User-Agent": "ocs2_ros2-verify-deb"},
+          )
+          with urllib.request.urlopen(req) as response:
+              release = json.load(response)
+
+          expected = f"ros2-apt-source_{release['tag_name']}.{codename}_all.deb"
+          for asset in release.get("assets", []):
+              if asset.get("name") == expected:
+                  print(asset["browser_download_url"])
+                  break
+          else:
+              available = "\n".join(asset.get("name", "") for asset in release.get("assets", []))
+              raise SystemExit(f"Unable to find ROS apt source asset {expected}. Available assets:\n{available}")
+          PY
+          )"
+          curl --fail --location --retry 3 --retry-delay 2 -o /tmp/ros2-apt-source.deb "${ros_apt_url}"
+          sudo dpkg -i /tmp/ros2-apt-source.deb
+          rm -f /tmp/ros2-apt-source.deb
+
+          sudo apt-get update
+          sudo apt-get install -y "ros-${{ steps.meta.outputs.ros_distro }}-ros-base"
 
       - name: Download deb from release
         env:
