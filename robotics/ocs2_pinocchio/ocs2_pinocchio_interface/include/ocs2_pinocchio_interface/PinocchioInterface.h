@@ -73,11 +73,19 @@ namespace ocs2
         /**
          * Construct from given pinocchio model
          * @param[in] model pinocchio model
+         * @param[in] urdfModelPtr optional parsed urdf::ModelInterface
+         * @param[in] urdfXmlString optional raw URDF XML string. Storing the
+         *    original text lets downstream consumers (e.g.
+         *    PinocchioGeometryInterface) rebuild a pinocchio::GeometryModel
+         *    without serialising the parsed ModelInterface back to XML, which
+         *    is no longer possible on urdfdom >= 5.0 since urdf::exportURDF
+         *    was removed.
          */
         explicit PinocchioInterfaceTpl(
             const Model& model,
             std::shared_ptr<const urdf::ModelInterface> urdfModelPtr =
-                std::shared_ptr<const urdf::ModelInterface>());
+                std::shared_ptr<const urdf::ModelInterface>(),
+            std::string urdfXmlString = {});
 
         /** Destructor */
         ~PinocchioInterfaceTpl();
@@ -107,6 +115,9 @@ namespace ocs2
             return urdfModelPtr_;
         }
 
+        /** Get the raw URDF XML used to build this interface (may be empty). */
+        const std::string& getUrdfXmlString() const { return urdfXmlString_; }
+
         /** Cast pinocchio interface to CppAD scalar type. */
         template <typename T = SCALAR, EnableIfScalar_t<T>  = true>
         PinocchioInterfaceCppAd toCppAd() const;
@@ -118,6 +129,7 @@ namespace ocs2
         std::shared_ptr<const Model> robotModelPtr_;
         std::unique_ptr<Data> robotDataPtr_;
         std::shared_ptr<const urdf::ModelInterface> urdfModelPtr_;
+        std::string urdfXmlString_;
     };
 
     /** Print PinocchioInterfaceTpl info to stream */

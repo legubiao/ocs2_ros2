@@ -28,6 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
 #include <ocs2_ballbot/BallbotInterface.h>
+#include <ocs2_ballbot/package_path.h>
 #include <ocs2_ros_interfaces/mpc/MPC_ROS_Interface.h>
 #include <ocs2_ros_interfaces/synchronized_module/RosReferenceManager.h>
 #include <ocs2_slp/SlpMpc.h>
@@ -57,8 +58,7 @@ int main(int argc, char **argv) {
             ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
             "/config/" + taskFileFolderName + "/task.info";
     const std::string libFolder =
-            ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
-            "/auto_generated";
+            ocs2::ballbot::getCodegenPath();
     ocs2::ballbot::BallbotInterface ballbotInterface(taskFile, libFolder);
 
     // ROS ReferenceManager

@@ -1,0 +1,177 @@
+name: Verify Deb
+
+# Called by build-deb.yml after release assets are uploaded, or run manually to
+# re-verify any existing release tag.
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: "Release tag to verify (e.g. v1.0.0)"
+        required: true
+        type: string
+      ros_distro:
+        description: "ROS 2 distro"
+        required: false
+        default: jazzy
+        type: string
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to verify (e.g. v1.0.0)"
+        required: true
+        type: string
+      ros_distro:
+        description: "ROS 2 distro"
+        required: false
+        default: jazzy
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # In workflow_call, github.workflow is the caller workflow name. Keep this
+  # group independent from build-deb.yml to avoid caller/callee deadlocks.
+  group: verify-deb-${{ inputs.release_tag || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  DEFAULT_ROS_DISTRO: jazzy
+  DEB_PACKAGE_NAME: ros-jazzy-ocs2
+  DEB_FILE_PREFIX: ros-jazzy-ocs2
+  INSTALL_PREFIX: /opt/ros/jazzy
+
+jobs:
+  verify_deb:
+    name: verify deb (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve metadata
+        id: meta
+        shell: bash
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+
+          release_tag="${{ inputs.release_tag }}"
+          if [[ "${release_tag}" != [vV]* ]]; then
+            release_tag="v${release_tag}"
+          fi
+
+          ros_distro="${{ inputs.ros_distro }}"
+          if [[ -z "${ros_distro}" ]]; then
+            ros_distro="${DEFAULT_ROS_DISTRO}"
+          fi
+
+          deb_version="${release_tag#v}"
+          deb_version="${deb_version#V}"
+          deb_version="${deb_version//\//-}"
+          if [[ -z "${deb_version}" ]]; then
+            echo "Unable to derive a deb version from release tag: ${release_tag}" >&2
+            exit 1
+          fi
+          deb_arch="${{ matrix.arch }}"
+          deb_file="${DEB_FILE_PREFIX}_${deb_version}_${deb_arch}.deb"
+
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+          echo "ros_distro=${ros_distro}"   >> "$GITHUB_OUTPUT"
+          echo "deb_version=${deb_version}" >> "$GITHUB_OUTPUT"
+          echo "deb_arch=${deb_arch}"       >> "$GITHUB_OUTPUT"
+          echo "deb_file=${deb_file}"       >> "$GITHUB_OUTPUT"
+
+          echo "Tag: ${release_tag}, distro: ${ros_distro}, arch: ${deb_arch}, deb: ${deb_file}"
+
+      - name: Install ROS and base tools
+        shell: bash
+        run: |
+          set -eo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates python3 cmake build-essential
+
+          ubuntu_codename=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-${VERSION_CODENAME}}")
+          ros_apt_url="$(python3 - "${ubuntu_codename}" <<'PY'
+          import json
+          import sys
+          import urllib.request
+
+          codename = sys.argv[1]
+          req = urllib.request.Request(
+              "https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest",
+              headers={"User-Agent": "ocs2_ros2-verify-deb"},
+          )
+          with urllib.request.urlopen(req) as response:
+              release = json.load(response)
+
+          expected = f"ros2-apt-source_{release['tag_name']}.{codename}_all.deb"
+          for asset in release.get("assets", []):
+              if asset.get("name") == expected:
+                  print(asset["browser_download_url"])
+                  break
+          else:
+              available = "\n".join(asset.get("name", "") for asset in release.get("assets", []))
+              raise SystemExit(f"Unable to find ROS apt source asset {expected}. Available assets:\n{available}")
+          PY
+          )"
+          curl --fail --location --retry 3 --retry-delay 2 -o /tmp/ros2-apt-source.deb "${ros_apt_url}"
+          sudo dpkg -i /tmp/ros2-apt-source.deb
+          rm -f /tmp/ros2-apt-source.deb
+
+          sudo apt-get update
+          sudo apt-get install -y "ros-${{ steps.meta.outputs.ros_distro }}-ros-base"
+
+      - name: Download deb from release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -eo pipefail
+          deb_file="${{ steps.meta.outputs.deb_file }}"
+          release_tag="${{ steps.meta.outputs.release_tag }}"
+
+          # The publish job has completed, but keep a short wait for GitHub's
+          # release asset API to become consistent on both architectures.
+          for attempt in {1..60}; do
+            rm -f "${deb_file}"
+            if gh release download "${release_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --pattern "${deb_file}"; then
+              break
+            fi
+            echo "Asset ${deb_file} is not available yet (attempt ${attempt}/60); retrying in 30s..."
+            sleep 30
+          done
+
+          if [[ ! -f "${deb_file}" ]]; then
+            echo "Timed out waiting for ${deb_file} in release ${release_tag}." >&2
+            echo "Current release assets:" >&2
+            gh release view "${release_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --json assets \
+              --jq '.assets[].name' || true
+            exit 1
+          fi
+
+          echo "Downloaded: ${deb_file}"
+          ls -lh "${deb_file}"
+
+      - name: Install deb and verify downstream configure
+        shell: bash
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+          scripts/consume_release_deb.sh \
+            --deb-file "${{ steps.meta.outputs.deb_file }}" \
+            --ros-distro "${{ steps.meta.outputs.ros_distro }}" \
+            --install-prefix "${INSTALL_PREFIX}"

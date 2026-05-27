@@ -72,10 +72,37 @@ rollout
   checkNumericalStability         false
 }
 
+; Multiple-Shooting SQP settings
+sqp
+{
+  nThreads                              3
+  dt                                    0.015
+  sqpIteration                          3
+  deltaTol                              1e-4
+  costTol                               1e-4
+  g_max                                 1e-2
+  g_min                                 1e-6
+  alpha_decay                           0.5
+  alpha_min                             1e-4
+  armijoFactor                          1e-4
+  gamma_c                               1e-6
+  inequalityConstraintMu                0.1
+  inequalityConstraintDelta             1.0
+  projectStateInputEqualityConstraints  true
+  printSolverStatistics                 true
+  printSolverStatus                     false
+  printLinesearch                       false
+  useFeedbackPolicy                     true
+  createValueFunction                   false
+  integratorType                        RK2
+  threadPriority                        50
+  enableLogging                         false
+}
+
 ; MPC settings
 mpc
 {
-  timeHorizon                     1.0   ; [s]
+  timeHorizon                     5.0   ; [s]
   solutionTimeWindow              0.2   ; [s]
   coldStart                       false
   
@@ -224,6 +251,113 @@ selfCollision
 
   ; relaxed log barrier delta
   delta   1e-3
+}
+
+; Environment collision avoidance settings
+; NOTE: Requires selfCollision.activate = true (reuses robot geometry model)
+environmentCollision
+{
+  ; activate environment collision constraint
+  activate  true
+
+  ; Robot links to check for collision with environment
+  ; These links will be checked against all obstacles added via EnvironmentGeometryInterface
+  collisionLinks
+  {
+    [0] "panda_link3"
+    [1] "panda_link4"
+    [2] "panda_link5"
+    [3] "panda_link6"
+    [4] "panda_link7"
+    [5] "panda_hand"
+  }
+
+  ; minimum distance allowed between robot and obstacles [m]
+  minimumDistance  0.02
+
+  ; distance at which the penalty becomes active [m]
+  ; obstacles further than this distance do not contribute to the cost
+  ; default: 5 * minimumDistance if not specified
+  activationDistance  0.25
+
+  ; relaxed log barrier mu
+  mu      1e-3
+
+  ; relaxed log barrier delta
+  delta   1e-3
+
+  ; Initial obstacles configuration (optional)
+  ; Can also be added/removed at runtime via EnvironmentGeometryInterface
+  ; Supported types: box, sphere, cylinder
+  obstacles
+  {
+    ; Table surface obstacle - lower minimum distance
+    table
+    {
+      type          box
+      halfExtents
+      {
+        [0] 0.4
+        [1] 0.3
+        [2] 0.02
+      }
+      position
+      {
+        [0] 0.0
+        [1] 0.6
+        [2] 0.25
+      }
+      ; Per-obstacle minimum distance (0 or omit to use default)
+      minimumDistance  0.01
+    }
+
+    table2
+    {
+      type          box
+      halfExtents
+      {
+        [0] 0.4
+        [1] 0.3
+        [2] 0.02
+      }
+      position
+      {
+        [0] 0.0
+        [1] 0.6
+        [2] 0.6
+      }
+      ; Per-obstacle minimum distance (0 or omit to use default)
+      minimumDistance  0.01
+    }
+    
+    ; Sphere obstacle - higher minimum distance (e.g. hot object)
+    ;ball
+    ;{
+      ;type      sphere
+      ;radius    0.08
+      ;position
+      ;{
+        ;[0] 0.4
+        ;[1] 0.0
+        ;[2] 0.4
+      ;}
+      ; Per-obstacle minimum distance (larger for dangerous object)
+    ;}
+    
+    ; Example: cylinder obstacle (commented)
+    ; pillar
+    ; {
+    ;   type      cylinder
+    ;   radius    0.05
+    ;   height    0.5
+    ;   position
+    ;   {
+    ;     [0] 0.4
+    ;     [1] -0.3
+    ;     [2] 0.25
+    ;   }
+    ; }
+  }
 }
 
 ; Only applied for arm joints: limits parsed from URDF

@@ -1,3 +1,4 @@
+import xacro
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
@@ -8,7 +9,10 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     rviz_config_file = get_package_share_directory('ocs2_anymal_loopshaping_mpc') + "/config/rviz/demo_config.rviz"
     urdf_model_path = get_package_share_directory('ocs2_robotic_assets') + "/resources/anymal_c/urdf/anymal.urdf"
-    
+    # ROS 2 Jazzy/Lyrical robot_state_publisher no longer accepts a URDF path
+    # as positional argument; parse here and pass as `robot_description`.
+    robot_description = xacro.process_file(urdf_model_path).toxml()
+
     return LaunchDescription([
         DeclareLaunchArgument(
             name='robot_name',
@@ -40,7 +44,11 @@ def generate_launch_description():
             executable="robot_state_publisher",
             name='robot_state_publisher',
             output='screen',
-            arguments=[urdf_model_path],
+            parameters=[{
+                'publish_frequency': 100.0,
+                'use_tf_static': True,
+                'robot_description': robot_description,
+            }],
         ),
         Node(
             package='rviz2',

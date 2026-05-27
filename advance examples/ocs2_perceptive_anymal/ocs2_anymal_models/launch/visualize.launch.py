@@ -1,3 +1,4 @@
+import xacro
 from launch import LaunchDescription, LaunchContext
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
@@ -21,6 +22,7 @@ def launch_setup(context, *args, **kwargs):
     robot_name = LaunchConfiguration('robot_name').perform(context)
     print("Visualizing robot: " + robot_name)
     urdf_file = get_urdf_file(robot_name)
+    robot_description = xacro.process_file(urdf_file).toxml()
 
     return [
         Node(
@@ -32,9 +34,9 @@ def launch_setup(context, *args, **kwargs):
                 {
                     'publish_frequency': 100.0,
                     'use_tf_static': True,
+                    'robot_description': robot_description,
                 },
             ],
-            arguments=[urdf_file],
         ),
         Node(
             package='joint_state_publisher_gui',

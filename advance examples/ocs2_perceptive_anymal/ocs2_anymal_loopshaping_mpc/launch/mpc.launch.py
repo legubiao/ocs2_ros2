@@ -1,27 +1,38 @@
+import os
+
+import xacro
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 
-def is_wsl():
-    try:
-        with open('/proc/version', 'r') as f:
-            version_info = f.read().lower()
-            return 'microsoft' in version_info or 'wsl' in version_info
-    except FileNotFoundError:
-        return False
+
+def _robot_state_publisher_node(context, *args, **kwargs):
+    urdf_file = context.launch_configurations['urdf_model_path']
+    robot_description = xacro.process_file(urdf_file).toxml()
+    return [Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='screen',
+        parameters=[{
+            'publish_frequency': 100.0,
+            'use_tf_static': True,
+            'robot_description': robot_description,
+        }],
+    )]
+
 
 def generate_launch_description():
-    
-    prefix = "gnome-terminal --"
-    if is_wsl():
-        prefix = "xterm -e"
-        print("Current system is WSL, use xterm as terminal")
-    else:
-        print("Current system is not WSL, use gnome-terminal as terminal")
-        
+    # Default to xterm because it is the most portable choice across desktop
+    # Linux, WSL, and container environments (e.g. distrobox), where
+    # gnome-terminal is typically unavailable. Override via OCS2_TERMINAL_PREFIX,
+    # e.g. `export OCS2_TERMINAL_PREFIX="gnome-terminal --"`.
+    prefix = os.environ.get("OCS2_TERMINAL_PREFIX", "xterm -e")
+
+
     return LaunchDescription([
         DeclareLaunchArgument(
             name='robot_name'
@@ -45,13 +56,7 @@ def generate_launch_description():
             name='urdf_model_path',
             default_value=get_package_share_directory('ocs2_robotic_assets') + "/resources/anymal_c/urdf/anymal.urdf"
         ),
-        Node(
-            package="robot_state_publisher",
-            executable="robot_state_publisher",
-            name='robot_state_publisher',
-            output='screen',
-            arguments=[LaunchConfiguration("urdf_model_path")],
-        ),
+        OpaqueFunction(function=_robot_state_publisher_node),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 get_package_share_directory('ocs2_quadruped_interface') + "/launch/visualization.launch.py"

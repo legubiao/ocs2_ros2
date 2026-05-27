@@ -1,4 +1,6 @@
 import os
+
+import xacro
 import launch
 import launch_ros.actions
 from launch.conditions import IfCondition
@@ -11,18 +13,25 @@ def generate_launch_description():
     rviz_config_file = get_package_share_directory('ocs2_cartpole_ros') + "/rviz/cartpole.rviz"
     urdf_dir = get_package_share_directory("ocs2_robotic_assets")
     urdf_model_path = os.path.join(urdf_dir, "resources/cartpole/urdf", "cartpole.urdf")
+    # ROS 2 Jazzy/Lyrical robot_state_publisher no longer accepts a URDF path
+    # as positional argument; parse here and pass as `robot_description`.
+    robot_description = xacro.process_file(urdf_model_path).toxml()
 
     use_joint_state_publisher_argument = launch.actions.DeclareLaunchArgument(
         name='use_joint_state_publisher',
         default_value='true'
     )
     use_joint_state_publisher = LaunchConfiguration("use_joint_state_publisher")
-    
+
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
-        arguments=[urdf_model_path],
+        parameters=[{
+            'publish_frequency': 100.0,
+            'use_tf_static': True,
+            'robot_description': robot_description,
+        }],
     )
     joint_state_publisher_node = Node(
         package="joint_state_publisher_gui",

@@ -74,7 +74,7 @@ namespace ocs2
 
     vector_t SelfCollisionCppAd::getValue(const PinocchioInterface& pinocchioInterface) const
     {
-        const std::vector<hpp::fcl::DistanceResult> distanceArray = pinocchioGeometryInterface_.computeDistances(
+        const std::vector<ocs2::collision::DistanceResult> distanceArray = pinocchioGeometryInterface_.computeDistances(
             pinocchioInterface);
 
         vector_t violations = vector_t::Zero(distanceArray.size());
@@ -91,7 +91,7 @@ namespace ocs2
         const PinocchioInterface& pinocchioInterface,
         const vector_t& q) const
     {
-        const std::vector<hpp::fcl::DistanceResult> distanceArray = pinocchioGeometryInterface_.computeDistances(
+        const std::vector<ocs2::collision::DistanceResult> distanceArray = pinocchioGeometryInterface_.computeDistances(
             pinocchioInterface);
 
         vector_t pointsInWorldFrame(distanceArray.size() * numberOfParamsPerResult_);

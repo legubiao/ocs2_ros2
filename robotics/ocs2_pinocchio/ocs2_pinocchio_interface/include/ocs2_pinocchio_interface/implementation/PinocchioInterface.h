@@ -39,7 +39,9 @@ namespace ocs2
     template <typename SCALAR>
     PinocchioInterfaceTpl<SCALAR>::PinocchioInterfaceTpl(const Model& model,
                                                          const std::shared_ptr<const ::urdf::ModelInterface>
-                                                         urdfModelPtr)
+                                                         urdfModelPtr,
+                                                         std::string urdfXmlString)
+        : urdfXmlString_(std::move(urdfXmlString))
     {
         robotModelPtr_ = std::make_shared<const Model>(model);
         robotDataPtr_ = std::make_unique<Data>(*robotModelPtr_);
@@ -56,7 +58,8 @@ namespace ocs2
     template <typename SCALAR>
     PinocchioInterfaceTpl<SCALAR>::PinocchioInterfaceTpl(const PinocchioInterfaceTpl& rhs)
         : robotModelPtr_(rhs.robotModelPtr_), robotDataPtr_(new Data(*rhs.robotDataPtr_)),
-          urdfModelPtr_(rhs.urdfModelPtr_)
+          urdfModelPtr_(rhs.urdfModelPtr_),
+          urdfXmlString_(rhs.urdfXmlString_)
     {
     }
 
@@ -64,7 +67,8 @@ namespace ocs2
     PinocchioInterfaceTpl<SCALAR>::PinocchioInterfaceTpl(PinocchioInterfaceTpl&& rhs)
         : robotModelPtr_(std::move(rhs.robotModelPtr_)),
           robotDataPtr_(std::move(rhs.robotDataPtr_)),
-          urdfModelPtr_(std::move(rhs.urdfModelPtr_))
+          urdfModelPtr_(std::move(rhs.urdfModelPtr_)),
+          urdfXmlString_(std::move(rhs.urdfXmlString_))
     {
     }
 
@@ -74,6 +78,7 @@ namespace ocs2
         robotModelPtr_ = rhs.robotModelPtr_;
         robotDataPtr_.reset(new Data(*rhs.robotDataPtr_));
         urdfModelPtr_ = rhs.urdfModelPtr_;
+        urdfXmlString_ = rhs.urdfXmlString_;
         return *this;
     }
 
@@ -83,6 +88,7 @@ namespace ocs2
         std::swap(robotModelPtr_, rhs.robotModelPtr_);
         std::swap(robotDataPtr_, rhs.robotDataPtr_);
         std::swap(urdfModelPtr_, rhs.urdfModelPtr_);
+        std::swap(urdfXmlString_, rhs.urdfXmlString_);
         return *this;
     }
 } // namespace ocs2

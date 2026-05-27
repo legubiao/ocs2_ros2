@@ -1,12 +1,36 @@
+import os
+
+import xacro
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch.conditions import IfCondition
 from ament_index_python.packages import get_package_share_directory
 
 
+def _robot_state_publisher_node(context, *args, **kwargs):
+    urdf_file = context.launch_configurations['urdfFile']
+    robot_description = xacro.process_file(urdf_file).toxml()
+    return [Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        output='screen',
+        parameters=[{
+            'publish_frequency': 100.0,
+            'use_tf_static': True,
+            'robot_description': robot_description,
+        }],
+    )]
+
+
 def generate_launch_description():
+    # Default to xterm because it is the most portable choice across desktop
+    # Linux, WSL, and container environments (e.g. distrobox), where
+    # gnome-terminal is typically unavailable. Override via OCS2_TERMINAL_PREFIX,
+    # e.g. `export OCS2_TERMINAL_PREFIX="gnome-terminal --"`.
+    prefix = os.environ.get("OCS2_TERMINAL_PREFIX", "xterm -e")
+
     rviz_config_file = get_package_share_directory('ocs2_legged_robot_ros') + "/rviz/legged_robot.rviz"
 
     return LaunchDescription([
@@ -49,12 +73,7 @@ def generate_launch_description():
                 'ocs2_robotic_assets') + '/resources/anymal_c/meshes'
         ),
 
-        Node(
-            package="robot_state_publisher",
-            executable="robot_state_publisher",
-            output="screen",
-            arguments=[LaunchConfiguration("urdfFile")],
-        ),
+        OpaqueFunction(function=_robot_state_publisher_node),
         Node(
             package='rviz2',
             executable='rviz2',
@@ -83,7 +102,7 @@ def generate_launch_description():
             executable='legged_robot_raisim_dummy',
             name='legged_robot_raisim_dummy',
             output='screen',
-            prefix="terminator --new-tab -x",
+            prefix=prefix,
             parameters=[
                 {
                     'taskFile': LaunchConfiguration('taskFile'),
@@ -99,7 +118,7 @@ def generate_launch_description():
             executable='legged_robot_target',
             name='legged_robot_target',
             output='screen',
-            prefix="terminator --new-tab -x",
+            prefix=prefix,
             parameters=[
                 {
                     'taskFile': LaunchConfiguration('taskFile'),
@@ -114,7 +133,7 @@ def generate_launch_description():
             executable='legged_robot_gait_command',
             name='legged_robot_gait_command',
             output='screen',
-            prefix="terminator --new-tab -x",
+            prefix=prefix,
             parameters=[
                 {
                     'taskFile': LaunchConfiguration('taskFile'),

@@ -1,12 +1,36 @@
 import os
 import sys
 
+import xacro
 import launch
 import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 
 
+def _robot_state_publisher_node(context, *args, **kwargs):
+    # ROS 2 Jazzy/Lyrical no longer accepts a URDF path as positional arg.
+    # Resolve LaunchConfiguration here and pass URDF/XML as a parameter.
+    urdf_file = context.launch_configurations['urdfFile']
+    robot_description = xacro.process_file(urdf_file).toxml()
+    return [launch_ros.actions.Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        output='screen',
+        parameters=[{
+            'publish_frequency': 100.0,
+            'use_tf_static': True,
+            'robot_description': robot_description,
+        }],
+    )]
+
+
 def generate_launch_description():
+    # Default to xterm because it is the most portable choice across desktop
+    # Linux, WSL, and container environments (e.g. distrobox), where
+    # gnome-terminal is typically unavailable. Override via OCS2_TERMINAL_PREFIX,
+    # e.g. `export OCS2_TERMINAL_PREFIX="gnome-terminal --"`.
+    prefix = os.environ.get("OCS2_TERMINAL_PREFIX", "xterm -e")
+
     rviz_config_file = get_package_share_directory('ocs2_legged_robot_ros') + "/rviz/legged_robot.rviz"
     ld = launch.LaunchDescription([
         launch.actions.DeclareLaunchArgument(
@@ -41,12 +65,7 @@ def generate_launch_description():
             default_value=get_package_share_directory(
                 'ocs2_legged_robot') + '/config/command/gait.info'
         ),
-        launch_ros.actions.Node(
-            package="robot_state_publisher",
-            executable="robot_state_publisher",
-            output="screen",
-            arguments=[launch.substitutions.LaunchConfiguration("urdfFile")],
-        ),
+        launch.actions.OpaqueFunction(function=_robot_state_publisher_node),
         launch_ros.actions.Node(
             package='rviz2',
             executable='rviz2',
@@ -85,7 +104,7 @@ def generate_launch_description():
             executable='legged_robot_dummy',
             name='legged_robot_dummy',
             output='screen',
-            prefix="gnome-terminal --",
+            prefix=prefix,
             parameters=[
                 {
                     'multiplot': launch.substitutions.LaunchConfiguration('multiplot')
@@ -109,7 +128,7 @@ def generate_launch_description():
             executable='legged_robot_target',
             name='legged_robot_target',
             output='screen',
-            prefix="gnome-terminal --",
+            prefix=prefix,
             parameters=[
                 {
                     'referenceFile': launch.substitutions.LaunchConfiguration('referenceFile')
@@ -121,7 +140,7 @@ def generate_launch_description():
             executable='legged_robot_gait_command',
             name='legged_robot_gait_command',
             output='screen',
-            prefix="gnome-terminal --",
+            prefix=prefix,
             parameters=[
                 {
                     'multiplot': launch.substitutions.LaunchConfiguration('multiplot')

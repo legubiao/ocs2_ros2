@@ -62,7 +62,7 @@ protected:
     TestCartpole() {
         // interface
         taskFile = getPath() + "/config/mpc/task.info";
-        const std::string libFolder = getPath() + "/auto_generated";
+        const std::string libFolder = getCodegenPath();
         cartPoleInterfacePtr = std::make_unique<CartPoleInterface>(taskFile, libFolder, false /*verbose*/);
 
         // Since the problem only uses final cost for swing-up, the final cost should be scaled proportional to

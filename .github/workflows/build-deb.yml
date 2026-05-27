@@ -1,0 +1,247 @@
+name: Build and Publish Deb
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to publish (optional if triggered by pushing a tag; if omitted here, provide a v-prefixed tag trigger)"
+        required: false
+        default: ""
+        type: string
+      ros_distro:
+        description: "ROS 2 distro (container build currently supports jazzy)"
+        required: false
+        default: jazzy
+        type: string
+      deb_version:
+        description: "Override deb version (default: tag without leading v)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.release_tag || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  DEFAULT_ROS_DISTRO: jazzy
+  DEB_PACKAGE_NAME: ros-jazzy-ocs2
+  DEB_FILE_PREFIX: ros-jazzy-ocs2
+  INSTALL_PREFIX: /opt/ros/jazzy
+  # Colcon --packages-up-to roots: all basic example *_ros packages (see build_release_deb.sh).
+  REQUIRED_OCS2_PACKAGES: >-
+    ocs2_ballbot_ros
+    ocs2_cartpole_ros
+    ocs2_double_integrator_ros
+    ocs2_legged_robot_ros
+    ocs2_mobile_manipulator_ros
+    ocs2_quadrotor_ros
+
+jobs:
+  build_deb:
+    name: build deb (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+            ros_distro: jazzy
+            image: ros:jazzy-ros-base-noble
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            ros_distro: jazzy
+            image: ros:jazzy-ros-base-noble
+    container:
+      image: ${{ matrix.image }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Resolve build metadata
+        id: meta
+        shell: bash
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+          requested_ros_distro="${{ github.event.inputs.ros_distro }}"
+          if [[ -n "${requested_ros_distro}" && "${requested_ros_distro}" != "${{ matrix.ros_distro }}" ]]; then
+            echo "This containerized deb workflow currently supports only ROS 2 ${{ matrix.ros_distro }}." >&2
+            echo "Requested: ${requested_ros_distro}" >&2
+            exit 1
+          fi
+          INPUT_RELEASE_TAG="${{ github.event.inputs.release_tag }}" \
+          INPUT_ROS_DISTRO="${{ matrix.ros_distro }}" \
+          INPUT_DEB_VERSION="${{ github.event.inputs.deb_version }}" \
+          INPUT_DEB_ARCH="${{ matrix.arch }}" \
+          RELEASE_TAG_OVERRIDE="${{ github.ref_name }}" \
+          scripts/resolve_release_meta.sh | tee /tmp/release_meta.txt
+
+          while IFS='=' read -r key value; do
+            echo "${key}=${value}" >> "$GITHUB_OUTPUT"
+          done < /tmp/release_meta.txt
+
+      - name: Install system tools
+        shell: bash
+        run: |
+          set -eo pipefail
+          apt-get update
+          apt-get install -y \
+            python3-rosdep \
+            python3-colcon-core \
+            python3-colcon-common-extensions \
+            python3-vcstool \
+            python3-pip \
+            fakeroot \
+            dpkg-dev \
+            rsync \
+            ccache \
+            build-essential \
+            cmake \
+            ros-${{ steps.meta.outputs.ros_distro }}-ament-cmake \
+            ros-${{ steps.meta.outputs.ros_distro }}-ament-cmake-core \
+            ros-${{ steps.meta.outputs.ros_distro }}-ament-package
+
+          rosdep init || true
+          rosdep update
+
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          python3 -c "import ament_package; print('ament_package ready:', ament_package.__file__)"
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-${{ runner.os }}-${{ matrix.arch }}-${{ steps.meta.outputs.ros_distro }}-${{ steps.meta.outputs.deb_version }}
+          restore-keys: |
+            ccache-${{ runner.os }}-${{ matrix.arch }}-${{ steps.meta.outputs.ros_distro }}-
+            ccache-${{ runner.os }}-${{ matrix.arch }}-
+
+      - name: Install package dependencies via rosdep
+        shell: bash
+        run: |
+          set -eo pipefail
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          # Limit paths to core + basic examples; advance examples / plane_segmentation
+          # submodules pull extra keys and can fail unrelated packages.
+          rosdep install --from-paths \
+            core \
+            mpc \
+            robotics \
+            "basic examples" \
+            submodules/ocs2_robotic_assets \
+            --ignore-src -y
+
+      - name: Fast preflight diagnostics
+        shell: bash
+        run: |
+          set -eo pipefail
+          set +u
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          set -u
+          echo "Python: $(python3 --version)"
+          echo "CMake: $(cmake --version | sed -n '1p')"
+          echo "Colcon: $(python3 -c 'import colcon_core; print(colcon_core.__version__)')"
+          echo "ccache: $(ccache --version | sed -n '1p')"
+          python3 -c "import ament_package; print('ament_package:', ament_package.__file__)"
+
+      - name: Build and package deb
+        shell: bash
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          echo "Expected colcon closure:"
+          colcon list --names-only --packages-up-to ${REQUIRED_OCS2_PACKAGES}
+          scripts/build_release_deb.sh \
+            --ros-distro "${{ steps.meta.outputs.ros_distro }}" \
+            --deb-version "${{ steps.meta.outputs.deb_version }}" \
+            --release-tag "${{ steps.meta.outputs.release_tag }}" \
+            --deb-package-name "${DEB_PACKAGE_NAME}" \
+            --deb-file-prefix "${DEB_FILE_PREFIX}" \
+            --deb-arch "${{ matrix.arch }}" \
+            --install-prefix "${INSTALL_PREFIX}" \
+            --required-packages "${REQUIRED_OCS2_PACKAGES}" \
+            --skip-deps
+
+      - name: Upload workflow artifact (fallback for workflow_dispatch)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ros-jazzy-ocs2-${{ steps.meta.outputs.deb_version }}-${{ matrix.arch }}
+          path: ${{ steps.meta.outputs.deb_file }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish_deb:
+    name: publish debs
+    runs-on: ubuntu-24.04
+    needs: build_deb
+    outputs:
+      release_tag: ${{ steps.meta.outputs.release_tag }}
+      ros_distro: ${{ steps.meta.outputs.ros_distro }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve publish metadata
+        id: meta
+        shell: bash
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+          INPUT_RELEASE_TAG="${{ github.event.inputs.release_tag }}" \
+          INPUT_ROS_DISTRO="${DEFAULT_ROS_DISTRO}" \
+          INPUT_DEB_VERSION="${{ github.event.inputs.deb_version }}" \
+          INPUT_DEB_ARCH="amd64" \
+          RELEASE_TAG_OVERRIDE="${{ github.ref_name }}" \
+          scripts/resolve_release_meta.sh | tee /tmp/release_meta.txt
+
+          while IFS='=' read -r key value; do
+            echo "${key}=${value}" >> "$GITHUB_OUTPUT"
+          done < /tmp/release_meta.txt
+
+      - name: Download built deb artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ros-jazzy-ocs2-${{ steps.meta.outputs.deb_version }}-*
+          merge-multiple: true
+
+      - name: List release assets
+        shell: bash
+        run: |
+          set -eo pipefail
+          ls -lh *.deb
+
+      - name: Publish debs to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.release_tag }}
+          name: ${{ steps.meta.outputs.release_tag }}
+          draft: false
+          prerelease: false
+          # Re-run on the same tag: replace .deb assets instead of failing on duplicates.
+          overwrite_files: true
+          files: "*.deb"
+
+  verify_deb:
+    name: verify published debs
+    needs: publish_deb
+    uses: ./.github/workflows/verify-deb.yml
+    permissions:
+      contents: read
+    with:
+      release_tag: ${{ needs.publish_deb.outputs.release_tag }}
+      ros_distro: ${{ needs.publish_deb.outputs.ros_distro }}

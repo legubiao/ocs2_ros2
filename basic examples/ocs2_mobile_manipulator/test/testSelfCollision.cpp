@@ -75,7 +75,7 @@ public:
     const vector_t jointPositon = (vector_t(9) << 1.0, 1.0, 0.5, 2.5, -1.0, 1.5, 0.0, 1.0, 0.0).finished();
     const std::vector<std::pair<size_t, size_t>> collisionPairs = {{1, 4}, {1, 6}, {1, 9}};
 
-    const std::string libraryFolder = ocs2::mobile_manipulator::getPath() + "/auto_generated";
+    const std::string libraryFolder = ocs2::mobile_manipulator::getCodegenPath();
     const scalar_t minDistance = 0.1;
 
     PinocchioInterface pinocchioInterface;

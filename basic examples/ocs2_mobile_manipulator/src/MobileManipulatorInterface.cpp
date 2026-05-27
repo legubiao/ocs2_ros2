@@ -55,6 +55,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mobile_manipulator/constraint/BodyRelativeConstraint.h"
 
 #include "ocs2_mobile_manipulator/constraint/MobileManipulatorSelfCollisionConstraint.h"
+#include "ocs2_mobile_manipulator/constraint/EnvironmentCollisionConstraint.h"
 #include "ocs2_mobile_manipulator/cost/QuadraticInputCost.h"
 #include "ocs2_mobile_manipulator/dynamics/DefaultManipulatorDynamics.h"
 #include "ocs2_mobile_manipulator/dynamics/FloatingArmManipulatorDynamics.h"
@@ -171,6 +172,13 @@ namespace ocs2::mobile_manipulator
         ddpSettings_ = ddp::loadSettings(taskFile, "ddp");
         mpcSettings_ = mpc::loadSettings(taskFile, "mpc");
 
+        // SQP settings (optional, will use defaults if not present)
+        try {
+            sqpSettings_ = sqp::loadSettings(taskFile, "sqp");
+        } catch (const std::exception& e) {
+            std::cerr << " #### SQP settings not found in task file, using defaults.\n";
+        }
+
         // Reference Manager
         referenceManagerPtr_ = std::make_shared<ReferenceManager>();
 
@@ -211,6 +219,16 @@ namespace ocs2::mobile_manipulator
                 "bodyRelative", getBodyRelativeConstraint(*pinocchioInterfacePtr_, taskFile,
                                                           "bodyRelative", usePreComputation,
                                                           libraryFolder, recompileLibraries));
+        }
+
+        // environment collision avoidance constraint
+        envCollisionEnabled_ = false;
+        loadData::loadPtreeValue(pt, envCollisionEnabled_, "environmentCollision.activate", false);
+        if (envCollisionEnabled_)
+        {
+            problem_.stateSoftConstraintPtr->add(
+                "environmentCollision", getEnvironmentCollisionConstraint(*pinocchioInterfacePtr_, taskFile,
+                                                                          "environmentCollision"));
         }
 
         // Dynamics
@@ -461,27 +479,27 @@ namespace ocs2::mobile_manipulator
         std::cerr << " #### activationDistance: " << activationDistance << " (penalty only active when distance < this value)\n";
         std::cerr << " #### =============================================================================\n";
 
-        PinocchioGeometryInterface geometryInterface(pinocchioInterface, urdfFile, collisionLinkPairs,
-                                                     collisionObjectPairs);
-
+        // Create geometry interface (also stored for environment collision to reuse)
         pinocchioGeometryInterfacePtr_ = std::make_unique<PinocchioGeometryInterface>(
             pinocchioInterface, urdfFile, collisionLinkPairs, collisionObjectPairs);
 
-        const size_t numCollisionPairs = geometryInterface.getNumCollisionPairs();
+        const size_t numCollisionPairs = pinocchioGeometryInterfacePtr_->getNumCollisionPairs();
         std::cerr << "SelfCollision: Testing for " << numCollisionPairs << " collision pairs\n";
 
         std::unique_ptr<StateConstraint> constraint;
         if (usePreComputation)
         {
+            PinocchioGeometryInterface geometryInterfaceCopy(*pinocchioGeometryInterfacePtr_);
             constraint = std::make_unique<MobileManipulatorSelfCollisionConstraint>(
                 MobileManipulatorPinocchioMapping(manipulatorModelInfo_),
-                std::move(geometryInterface), minimumDistance);
+                std::move(geometryInterfaceCopy), minimumDistance);
         }
         else
         {
+            PinocchioGeometryInterface geometryInterfaceCopy(*pinocchioGeometryInterfacePtr_);
             constraint = std::make_unique<SelfCollisionConstraintCppAd>(
                 pinocchioInterface, MobileManipulatorPinocchioMapping(manipulatorModelInfo_),
-                std::move(geometryInterface), minimumDistance,
+                std::move(geometryInterfaceCopy), minimumDistance,
                 "self_collision", libraryFolder, recompileLibraries, false);
         }
 
@@ -704,5 +722,165 @@ namespace ocs2::mobile_manipulator
             return std::make_unique<PinocchioGeometryInterface>(*pinocchioGeometryInterfacePtr_);
         }
         return nullptr;
+    }
+
+    std::unique_ptr<StateCost> MobileManipulatorInterface::getEnvironmentCollisionConstraint(
+        const PinocchioInterface& pinocchioInterface,
+        const std::string& taskFile,
+        const std::string& prefix)
+    {
+        std::vector<std::string> collisionLinks;
+        scalar_t mu = 1e-2;
+        scalar_t delta = 1e-3;
+        scalar_t minimumDistance = 0.0;
+        scalar_t activationDistance = -1.0;
+
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_info(taskFile, pt);
+        std::cerr << "\n #### EnvironmentCollision Settings: ";
+        std::cerr << "\n #### =============================================================================\n";
+        loadData::loadPtreeValue(pt, mu, prefix + ".mu", true);
+        loadData::loadPtreeValue(pt, delta, prefix + ".delta", true);
+        loadData::loadPtreeValue(pt, minimumDistance, prefix + ".minimumDistance", true);
+        loadData::loadPtreeValue(pt, activationDistance, prefix + ".activationDistance", false);
+        loadData::loadStdVector<std::string>(taskFile, prefix + ".collisionLinks", collisionLinks, true);
+
+        // If activationDistance not specified, default to 5 * minimumDistance
+        if (activationDistance < 0.0) {
+            activationDistance = 5.0 * minimumDistance;
+        }
+
+        // Store distances for later use
+        envCollisionMinimumDistance_ = minimumDistance;
+        envCollisionActivationDistance_ = activationDistance;
+
+        std::cerr << " #### minimumDistance: " << minimumDistance << " (minimum allowed distance)\n";
+        std::cerr << " #### activationDistance: " << activationDistance << " (penalty only active when distance < this value)\n";
+        std::cerr << " #### collisionLinks: [";
+        for (size_t i = 0; i < collisionLinks.size(); ++i) {
+            std::cerr << collisionLinks[i];
+            if (i < collisionLinks.size() - 1) std::cerr << ", ";
+        }
+        std::cerr << "]\n";
+        std::cerr << " #### =============================================================================\n";
+
+        // Environment collision requires self-collision to be enabled (for robot geometry model)
+        if (!pinocchioGeometryInterfacePtr_) {
+            throw std::runtime_error(
+                "[EnvironmentCollision] Environment collision requires selfCollision to be enabled first!");
+        }
+        
+        // Create environment geometry interface (reuses geometry model from self-collision)
+        envGeomInterfacePtr_ = std::make_shared<EnvironmentGeometryInterface>(
+            *pinocchioGeometryInterfacePtr_, pinocchioInterface, collisionLinks);
+
+        // Load initial obstacles from config
+        loadInitialObstacles(taskFile, prefix);
+
+        // Create the constraint
+        auto constraint = std::make_unique<MobileManipulatorEnvironmentCollisionConstraint>(
+            MobileManipulatorPinocchioMapping(manipulatorModelInfo_),
+            envGeomInterfacePtr_,
+            minimumDistance);
+
+        // Use ThresholdRelaxedBarrierPenalty with activation distance
+        const scalar_t activationThreshold = activationDistance - minimumDistance;
+        auto penalty = std::make_unique<ThresholdRelaxedBarrierPenalty>(
+            ThresholdRelaxedBarrierPenalty::Config{mu, delta, activationThreshold});
+
+        return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penalty));
+    }
+
+
+    void MobileManipulatorInterface::loadInitialObstacles(const std::string& taskFile, const std::string& prefix)
+    {
+        if (!envGeomInterfacePtr_) {
+            return;
+        }
+
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_info(taskFile, pt);
+
+        // Try to get the obstacles subtree
+        const std::string obstaclesKey = prefix + ".obstacles";
+        auto obstaclesOpt = pt.get_child_optional(obstaclesKey);
+        if (!obstaclesOpt) {
+            std::cerr << " #### No initial obstacles configured.\n";
+            return;
+        }
+
+        std::cerr << " #### Loading initial obstacles:\n";
+        int obstacleCount = 0;
+
+        for (const auto& obstaclePair : obstaclesOpt.get()) {
+            const std::string& obstacleName = obstaclePair.first;
+            const auto& obstacleNode = obstaclePair.second;
+
+            // Get obstacle type
+            std::string type = obstacleNode.get<std::string>("type", "");
+            if (type.empty()) {
+                std::cerr << " ####   Warning: obstacle '" << obstacleName << "' has no type, skipping.\n";
+                continue;
+            }
+
+            // Get position (required)
+            vector_t position = vector_t::Zero(3);
+            auto posOpt = obstacleNode.get_child_optional("position");
+            if (posOpt) {
+                int idx = 0;
+                for (const auto& val : posOpt.get()) {
+                    if (idx < 3) position(idx++) = std::stod(val.second.data());
+                }
+            }
+
+            // Get orientation (optional, default identity)
+            Eigen::Quaterniond orientation = Eigen::Quaterniond::Identity();
+            auto orientOpt = obstacleNode.get_child_optional("orientation");
+            if (orientOpt) {
+                std::vector<double> quat;
+                for (const auto& val : orientOpt.get()) {
+                    quat.push_back(std::stod(val.second.data()));
+                }
+                if (quat.size() == 4) {
+                    orientation = Eigen::Quaterniond(quat[0], quat[1], quat[2], quat[3]);  // w, x, y, z
+                }
+            }
+
+            // Get per-obstacle minimumDistance (optional, 0 uses default)
+            double obsMinDist = obstacleNode.get<double>("minimumDistance", 0.0);
+
+            if (type == "box") {
+                vector_t halfExtents = vector_t::Zero(3);
+                auto sizeOpt = obstacleNode.get_child_optional("halfExtents");
+                if (sizeOpt) {
+                    int idx = 0;
+                    for (const auto& val : sizeOpt.get()) {
+                        if (idx < 3) halfExtents(idx++) = std::stod(val.second.data());
+                    }
+                }
+                envGeomInterfacePtr_->addBox(obstacleName, halfExtents, position, orientation, obsMinDist);
+                std::cerr << " ####   - Box '" << obstacleName << "': halfExtents=(" << halfExtents.transpose() 
+                          << "), pos=(" << position.transpose() << "), minDist=" << obsMinDist << "\n";
+            }
+            else if (type == "sphere") {
+                double radius = obstacleNode.get<double>("radius", 0.1);
+                envGeomInterfacePtr_->addSphere(obstacleName, radius, position, obsMinDist);
+                std::cerr << " ####   - Sphere '" << obstacleName << "': radius=" << radius 
+                          << ", pos=(" << position.transpose() << "), minDist=" << obsMinDist << "\n";
+            }
+            else if (type == "cylinder") {
+                double radius = obstacleNode.get<double>("radius", 0.1);
+                double height = obstacleNode.get<double>("height", 0.2);
+                envGeomInterfacePtr_->addCylinder(obstacleName, radius, height, position, orientation, obsMinDist);
+                std::cerr << " ####   - Cylinder '" << obstacleName << "': radius=" << radius 
+                          << ", height=" << height << ", pos=(" << position.transpose() << "), minDist=" << obsMinDist << "\n";
+            }
+            else {
+                std::cerr << " ####   Warning: unknown obstacle type '" << type << "' for '" << obstacleName << "'\n";
+                continue;
+            }
+            obstacleCount++;
+        }
+        std::cerr << " #### Loaded " << obstacleCount << " initial obstacles.\n";
     }
 } // namespace ocs2::mobile_manipulator
