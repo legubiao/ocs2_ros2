@@ -7,7 +7,6 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(urdf REQUIRED)
 find_package(kdl_parser REQUIRED)
@@ -38,7 +37,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         ${ocs2_ros_interfaces_TARGETS}
         ${ocs2_ballbot_TARGETS}
         ${ocs2_robotic_assets_TARGETS}
-        ament_index_cpp::ament_index_cpp
 )
 
 add_executable(ballbot_ddp src/BallbotDdpMpcNode.cpp)
@@ -92,7 +90,7 @@ install(DIRECTORY launch rviz
 
 ament_export_dependencies(
         tf2 urdf kdl_parser robot_state_publisher
-        ocs2_ros_interfaces ocs2_ballbot ocs2_robotic_assets ament_index_cpp
+        ocs2_ros_interfaces ocs2_ballbot ocs2_robotic_assets
 )
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 

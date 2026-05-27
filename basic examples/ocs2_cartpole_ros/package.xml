@@ -19,8 +19,6 @@
     <depend>ocs2_cartpole</depend>
     <depend>robot_state_publisher</depend>
     <depend>ocs2_robotic_assets</depend>
-    <depend>ament_index_cpp</depend>
-
     <test_depend>ament_lint_auto</test_depend>
     <test_depend>ament_lint_common</test_depend>
 

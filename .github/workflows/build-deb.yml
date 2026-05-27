@@ -12,10 +12,14 @@ on:
         default: ""
         type: string
       ros_distro:
-        description: "ROS 2 distro (container build currently supports jazzy)"
+        description: "ROS 2 distro to build (empty = jazzy + lyrical)"
         required: false
-        default: jazzy
-        type: string
+        default: ""
+        type: choice
+        options:
+          - ""
+          - jazzy
+          - lyrical
       deb_version:
         description: "Override deb version (default: tag without leading v)"
         required: false
@@ -30,10 +34,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DEFAULT_ROS_DISTRO: jazzy
-  DEB_PACKAGE_NAME: ros-jazzy-ocs2
-  DEB_FILE_PREFIX: ros-jazzy-ocs2
-  INSTALL_PREFIX: /opt/ros/jazzy
   # Colcon --packages-up-to roots: all basic example *_ros packages (see build_release_deb.sh).
   REQUIRED_OCS2_PACKAGES: >-
     ocs2_ballbot_ros
@@ -44,26 +44,41 @@ env:
     ocs2_quadrotor_ros
 
 jobs:
+  select_matrix:
+    name: select build matrix
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.set_matrix.outputs.matrix }}
+    steps:
+      - name: Compute matrix from input
+        id: set_matrix
+        shell: bash
+        run: |
+          set -eo pipefail
+          selected="${{ github.event.inputs.ros_distro }}"
+          if [[ "${{ github.event_name }}" != "workflow_dispatch" || -z "${selected}" ]]; then
+            matrix='{"include":[{"ros_distro":"jazzy","arch":"amd64","runner":"ubuntu-24.04","image":"ros:jazzy-ros-base-noble"},{"ros_distro":"jazzy","arch":"arm64","runner":"ubuntu-24.04-arm","image":"ros:jazzy-ros-base-noble"},{"ros_distro":"lyrical","arch":"amd64","runner":"ubuntu-24.04","image":"ros:lyrical-ros-base-resolute"},{"ros_distro":"lyrical","arch":"arm64","runner":"ubuntu-24.04-arm","image":"ros:lyrical-ros-base-resolute"}]}'
+          elif [[ "${selected}" == "jazzy" ]]; then
+            matrix='{"include":[{"ros_distro":"jazzy","arch":"amd64","runner":"ubuntu-24.04","image":"ros:jazzy-ros-base-noble"},{"ros_distro":"jazzy","arch":"arm64","runner":"ubuntu-24.04-arm","image":"ros:jazzy-ros-base-noble"}]}'
+          elif [[ "${selected}" == "lyrical" ]]; then
+            matrix='{"include":[{"ros_distro":"lyrical","arch":"amd64","runner":"ubuntu-24.04","image":"ros:lyrical-ros-base-resolute"},{"ros_distro":"lyrical","arch":"arm64","runner":"ubuntu-24.04-arm","image":"ros:lyrical-ros-base-resolute"}]}'
+          else
+            echo "Unsupported ros_distro input: ${selected}" >&2
+            exit 1
+          fi
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
   build_deb:
-    name: build deb (${{ matrix.arch }})
+    name: build deb (${{ matrix.ros_distro }}, ${{ matrix.arch }})
+    needs: select_matrix
     runs-on: ${{ matrix.runner }}
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-24.04
-            ros_distro: jazzy
-            image: ros:jazzy-ros-base-noble
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-            ros_distro: jazzy
-            image: ros:jazzy-ros-base-noble
+      matrix: ${{ fromJson(needs.select_matrix.outputs.matrix) }}
     container:
       image: ${{ matrix.image }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -73,15 +88,12 @@ jobs:
       - name: Resolve build metadata
         id: meta
         shell: bash
+        env:
+          DEB_PACKAGE_NAME: ros-${{ matrix.ros_distro }}-ocs2
+          DEB_FILE_PREFIX: ros-${{ matrix.ros_distro }}-ocs2
         run: |
           set -eo pipefail
           chmod +x scripts/*.sh
-          requested_ros_distro="${{ github.event.inputs.ros_distro }}"
-          if [[ -n "${requested_ros_distro}" && "${requested_ros_distro}" != "${{ matrix.ros_distro }}" ]]; then
-            echo "This containerized deb workflow currently supports only ROS 2 ${{ matrix.ros_distro }}." >&2
-            echo "Requested: ${requested_ros_distro}" >&2
-            exit 1
-          fi
           INPUT_RELEASE_TAG="${{ github.event.inputs.release_tag }}" \
           INPUT_ROS_DISTRO="${{ matrix.ros_distro }}" \
           INPUT_DEB_VERSION="${{ github.event.inputs.deb_version }}" \
@@ -99,6 +111,7 @@ jobs:
           set -eo pipefail
           apt-get update
           apt-get install -y \
+            pybind11-dev \
             python3-rosdep \
             python3-colcon-core \
             python3-colcon-common-extensions \
@@ -110,30 +123,29 @@ jobs:
             ccache \
             build-essential \
             cmake \
-            ros-${{ steps.meta.outputs.ros_distro }}-ament-cmake \
-            ros-${{ steps.meta.outputs.ros_distro }}-ament-cmake-core \
-            ros-${{ steps.meta.outputs.ros_distro }}-ament-package
+            ros-${{ matrix.ros_distro }}-ament-cmake \
+            ros-${{ matrix.ros_distro }}-ament-cmake-core \
+            ros-${{ matrix.ros_distro }}-ament-package
 
           rosdep init || true
           rosdep update
 
-          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          source "/opt/ros/${{ matrix.ros_distro }}/setup.bash"
           python3 -c "import ament_package; print('ament_package ready:', ament_package.__file__)"
 
       - name: Restore ccache
         uses: actions/cache@v4
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ccache-${{ runner.os }}-${{ matrix.arch }}-${{ steps.meta.outputs.ros_distro }}-${{ steps.meta.outputs.deb_version }}
+          key: ccache-${{ matrix.ros_distro }}-${{ matrix.arch }}-${{ steps.meta.outputs.deb_version }}
           restore-keys: |
-            ccache-${{ runner.os }}-${{ matrix.arch }}-${{ steps.meta.outputs.ros_distro }}-
-            ccache-${{ runner.os }}-${{ matrix.arch }}-
+            ccache-${{ matrix.ros_distro }}-${{ matrix.arch }}-
 
       - name: Install package dependencies via rosdep
         shell: bash
         run: |
           set -eo pipefail
-          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          source "/opt/ros/${{ matrix.ros_distro }}/setup.bash"
           # Limit paths to core + basic examples; advance examples / plane_segmentation
           # submodules pull extra keys and can fail unrelated packages.
           rosdep install --from-paths \
@@ -149,8 +161,9 @@ jobs:
         run: |
           set -eo pipefail
           set +u
-          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          source "/opt/ros/${{ matrix.ros_distro }}/setup.bash"
           set -u
+          echo "ROS distro: ${{ matrix.ros_distro }}"
           echo "Python: $(python3 --version)"
           echo "CMake: $(cmake --version | sed -n '1p')"
           echo "Colcon: $(python3 -c 'import colcon_core; print(colcon_core.__version__)')"
@@ -162,24 +175,24 @@ jobs:
         run: |
           set -eo pipefail
           chmod +x scripts/*.sh
-          source "/opt/ros/${{ steps.meta.outputs.ros_distro }}/setup.bash"
+          source "/opt/ros/${{ matrix.ros_distro }}/setup.bash"
           echo "Expected colcon closure:"
           colcon list --names-only --packages-up-to ${REQUIRED_OCS2_PACKAGES}
           scripts/build_release_deb.sh \
-            --ros-distro "${{ steps.meta.outputs.ros_distro }}" \
+            --ros-distro "${{ matrix.ros_distro }}" \
             --deb-version "${{ steps.meta.outputs.deb_version }}" \
             --release-tag "${{ steps.meta.outputs.release_tag }}" \
-            --deb-package-name "${DEB_PACKAGE_NAME}" \
-            --deb-file-prefix "${DEB_FILE_PREFIX}" \
+            --deb-package-name "ros-${{ matrix.ros_distro }}-ocs2" \
+            --deb-file-prefix "ros-${{ matrix.ros_distro }}-ocs2" \
             --deb-arch "${{ matrix.arch }}" \
-            --install-prefix "${INSTALL_PREFIX}" \
+            --install-prefix "/opt/ros/${{ matrix.ros_distro }}" \
             --required-packages "${REQUIRED_OCS2_PACKAGES}" \
             --skip-deps
 
       - name: Upload workflow artifact (fallback for workflow_dispatch)
         uses: actions/upload-artifact@v4
         with:
-          name: ros-jazzy-ocs2-${{ steps.meta.outputs.deb_version }}-${{ matrix.arch }}
+          name: ros-${{ matrix.ros_distro }}-ocs2-${{ steps.meta.outputs.deb_version }}-${{ matrix.arch }}
           path: ${{ steps.meta.outputs.deb_file }}
           if-no-files-found: error
           retention-days: 7
@@ -190,7 +203,6 @@ jobs:
     needs: build_deb
     outputs:
       release_tag: ${{ steps.meta.outputs.release_tag }}
-      ros_distro: ${{ steps.meta.outputs.ros_distro }}
 
     steps:
       - name: Checkout repository
@@ -203,7 +215,7 @@ jobs:
           set -eo pipefail
           chmod +x scripts/*.sh
           INPUT_RELEASE_TAG="${{ github.event.inputs.release_tag }}" \
-          INPUT_ROS_DISTRO="${DEFAULT_ROS_DISTRO}" \
+          INPUT_ROS_DISTRO="jazzy" \
           INPUT_DEB_VERSION="${{ github.event.inputs.deb_version }}" \
           INPUT_DEB_ARCH="amd64" \
           RELEASE_TAG_OVERRIDE="${{ github.ref_name }}" \
@@ -216,7 +228,7 @@ jobs:
       - name: Download built deb artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: ros-jazzy-ocs2-${{ steps.meta.outputs.deb_version }}-*
+          pattern: ros-*-ocs2-${{ steps.meta.outputs.deb_version }}-*
           merge-multiple: true
 
       - name: List release assets
@@ -244,4 +256,4 @@ jobs:
       contents: read
     with:
       release_tag: ${{ needs.publish_deb.outputs.release_tag }}
-      ros_distro: ${{ needs.publish_deb.outputs.ros_distro }}
+      ros_distro: ""

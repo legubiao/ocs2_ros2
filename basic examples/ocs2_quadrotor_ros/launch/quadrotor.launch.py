@@ -1,58 +1,66 @@
 import os
+import sys
 
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.substitutions import LaunchConfiguration
-from launch.actions import DeclareLaunchArgument
-from launch.actions import IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import ThisLaunchFileDir
+from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir
 from launch_ros.actions import Node
+
+_UTILS_DIR = os.path.join(
+    get_package_share_directory('ocs2_ros_interfaces'), 'launch')
+if _UTILS_DIR not in sys.path:
+    sys.path.insert(0, _UTILS_DIR)
+
+from ocs2_launch_utils import ocs2_codegen_dir, ocs2_task_file  # noqa: E402
+
+_OCS2_PKG = 'ocs2_quadrotor'
+_DEFAULT_CONFIG = 'mpc'
 
 
 def generate_launch_description():
-    # Default to xterm because it is the most portable choice across desktop
-    # Linux, WSL, and container environments (e.g. distrobox), where
-    # gnome-terminal is typically unavailable. Override via OCS2_TERMINAL_PREFIX,
-    # e.g. `export OCS2_TERMINAL_PREFIX="gnome-terminal --"`.
     prefix = os.environ.get("OCS2_TERMINAL_PREFIX", "xterm -e")
+    node_params = [
+        {'taskFile': LaunchConfiguration('taskFile')},
+        {'libFolder': LaunchConfiguration('libFolder')},
+    ]
 
     return LaunchDescription([
+        DeclareLaunchArgument('rviz', default_value='true'),
+        DeclareLaunchArgument('task_config', default_value=_DEFAULT_CONFIG),
         DeclareLaunchArgument(
-            name='rviz',
-            default_value='true'
+            'taskFile',
+            default_value=ocs2_task_file(_OCS2_PKG, _DEFAULT_CONFIG),
         ),
         DeclareLaunchArgument(
-            name='task_name',
-            default_value='mpc'
+            'libFolder', default_value=ocs2_codegen_dir(_OCS2_PKG),
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [ThisLaunchFileDir(), '/visualize.launch.py']),
-            launch_arguments={
-                'use_joint_state_publisher': 'false'
-            }.items()
+            launch_arguments={'use_joint_state_publisher': 'false'}.items(),
         ),
         Node(
             package='ocs2_quadrotor_ros',
             executable='quadrotor_mpc',
             name='quadrotor_mpc',
-            arguments=[LaunchConfiguration('task_name')],
-            output='screen'
+            parameters=node_params,
+            output='screen',
         ),
         Node(
             package='ocs2_quadrotor_ros',
             executable='quadrotor_dummy_test',
             name='quadrotor_dummy_test',
-            arguments=[LaunchConfiguration('task_name')],
-            prefix= prefix,
-            output='screen'
+            prefix=prefix,
+            parameters=node_params,
+            output='screen',
         ),
         Node(
             package='ocs2_quadrotor_ros',
             executable='quadrotor_target',
             name='quadrotor_target',
-            arguments=[LaunchConfiguration('task_name')],
-            prefix= prefix,
-            output='screen'
-        )
+            prefix=prefix,
+            output='screen',
+        ),
     ])

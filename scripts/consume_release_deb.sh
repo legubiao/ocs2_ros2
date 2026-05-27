@@ -17,7 +17,7 @@ EOF
 
 DEB_FILE=""
 ROS_DISTRO=""
-INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ros/jazzy}"
+INSTALL_PREFIX=""
 RELEASE_TAG=""
 REPO="${GITHUB_REPOSITORY:-}"
 DOWNLOAD_FROM_RELEASE=0
@@ -43,6 +43,8 @@ if [[ -z "${DEB_FILE}" || -z "${ROS_DISTRO}" ]]; then
   exit 1
 fi
 
+INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ros/${ROS_DISTRO}}"
+
 if [[ "${DOWNLOAD_FROM_RELEASE}" -eq 1 ]]; then
   if [[ -z "${RELEASE_TAG}" || -z "${REPO}" ]]; then
     echo "--download-from-release requires --release-tag and --repo."
@@ -52,7 +54,11 @@ if [[ "${DOWNLOAD_FROM_RELEASE}" -eq 1 ]]; then
 fi
 
 if [[ "${SKIP_INSTALL}" -eq 0 ]]; then
-  sudo dpkg -i "./${DEB_FILE}" || sudo apt-get -f install -y
+  if [[ "$(id -u)" -eq 0 ]]; then
+    dpkg -i "./${DEB_FILE}" || apt-get -f install -y
+  else
+    sudo dpkg -i "./${DEB_FILE}" || sudo apt-get -f install -y
+  fi
 fi
 
 set +u

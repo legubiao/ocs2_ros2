@@ -2,14 +2,15 @@
 set -euo pipefail
 
 DEFAULT_ROS_DISTRO="${DEFAULT_ROS_DISTRO:-jazzy}"
-DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ros-jazzy-ocs2}"
-DEB_FILE_PREFIX="${DEB_FILE_PREFIX:-${DEB_PACKAGE_NAME}}"
 DEB_ARCH="${DEB_ARCH:-}"
 
 ros_distro="${INPUT_ROS_DISTRO:-${1:-}}"
 if [[ -z "${ros_distro}" ]]; then
   ros_distro="${DEFAULT_ROS_DISTRO}"
 fi
+
+DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ros-${ros_distro}-ocs2}"
+DEB_FILE_PREFIX="${DEB_FILE_PREFIX:-${DEB_PACKAGE_NAME}}"
 
 release_tag="${INPUT_RELEASE_TAG:-}"
 if [[ -z "${release_tag}" ]]; then

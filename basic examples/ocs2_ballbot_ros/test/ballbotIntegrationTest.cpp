@@ -35,16 +35,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_ros_interfaces/mpc/MPC_ROS_Interface.h>
 #include <ocs2_ros_interfaces/mrt/MRT_ROS_Dummy_Loop.h>
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
-
 #include "rclcpp/rclcpp.hpp"
 
 using namespace ocs2;
 
 TEST(BallbotIntegrationTest, createDummyMRT) {
     const std::string taskFile =
-            ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
-            "/config/mpc/task.info";
+            ocs2::ballbot::getPath() + "/config/mpc/task.info";
     const std::string libFolder =
             ocs2::ballbot::getCodegenPath();
     ballbot::BallbotInterface ballbotInterface(taskFile, libFolder);
@@ -65,8 +62,7 @@ TEST(BallbotIntegrationTest, createDummyMRT) {
 
 TEST(BallbotIntegrationTest, createMPC) {
     const std::string taskFile =
-            ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
-            "/config/mpc/task.info";
+            ocs2::ballbot::getPath() + "/config/mpc/task.info";
     const std::string libFolder =
             ocs2::ballbot::getCodegenPath();
     ballbot::BallbotInterface ballbotInterface(taskFile, libFolder);

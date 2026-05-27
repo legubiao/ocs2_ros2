@@ -16,13 +16,13 @@ EOF
 ROS_DISTRO=""
 DEB_VERSION=""
 RELEASE_TAG=""
-DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ros-jazzy-ocs2}"
-DEB_FILE_PREFIX="${DEB_FILE_PREFIX:-ros-jazzy-ocs2}"
+DEB_PACKAGE_NAME=""
+DEB_FILE_PREFIX=""
 # Space-separated colcon --packages-up-to roots (all basic example * _ros packages).
 DEFAULT_REQUIRED_PACKAGES="ocs2_ballbot_ros ocs2_cartpole_ros ocs2_double_integrator_ros ocs2_legged_robot_ros ocs2_mobile_manipulator_ros ocs2_quadrotor_ros"
 REQUIRED_PACKAGES="${REQUIRED_OCS2_PACKAGES:-${DEFAULT_REQUIRED_PACKAGES}}"
 DEB_ARCH="${DEB_ARCH:-}"
-INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ros/jazzy}"
+INSTALL_PREFIX=""
 SKIP_DEPS=0
 SKIP_COLCON=0
 
@@ -48,6 +48,10 @@ if [[ -z "${ROS_DISTRO}" || -z "${DEB_VERSION}" || -z "${RELEASE_TAG}" ]]; then
   usage
   exit 1
 fi
+
+DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME:-ros-${ROS_DISTRO}-ocs2}"
+DEB_FILE_PREFIX="${DEB_FILE_PREFIX:-${DEB_PACKAGE_NAME}}"
+INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/ros/${ROS_DISTRO}}"
 
 if [[ -z "${REQUIRED_PACKAGES// }" ]]; then
   echo "Required package roots are empty. Pass --required-packages or set REQUIRED_OCS2_PACKAGES."
@@ -252,7 +256,15 @@ DEB_DEPENDS=(
 printf -v DEB_DEPENDS_LINE "%s, " "${DEB_DEPENDS[@]}"
 DEB_DEPENDS_LINE="${DEB_DEPENDS_LINE%, }"
 
-cat > "${DEBIAN_DIR}/control" <<EOF
+deb_provides=""
+if [[ "${ROS_DISTRO}" == "jazzy" ]]; then
+  deb_provides="Provides: ocs2-ros2-jazzy-mobile-manipulator, ros-jazzy-ocs2-ros2-mobile-manipulator"
+fi
+
+# Do not emit a blank line when deb_provides is empty: dpkg treats that as a second
+# package stanza and fails with "several package info entries found".
+{
+  cat <<EOF
 Package: ${DEB_PACKAGE_NAME}
 Version: ${DEB_VERSION}
 Section: libs
@@ -260,12 +272,17 @@ Priority: optional
 Architecture: ${DEB_ARCH}
 Maintainer: ocs2_ros2 CI <noreply@github.com>
 Depends: ${DEB_DEPENDS_LINE}
-Provides: ocs2-ros2-jazzy-mobile-manipulator, ros-jazzy-ocs2-ros2-mobile-manipulator
+EOF
+  if [[ -n "${deb_provides}" ]]; then
+    printf '%s\n' "${deb_provides}"
+  fi
+  cat <<EOF
+Installed-Size: ${INSTALLED_SIZE_KB}
 Description: Prebuilt OCS2 ROS2 bundle (core + all basic examples)
  Built from ${GITHUB_REPOSITORY:-local/ocs2_ros2} at tag/ref ${RELEASE_TAG}.
  Installed under ${INSTALL_PREFIX}.
-Installed-Size: ${INSTALLED_SIZE_KB}
 EOF
+} > "${DEBIAN_DIR}/control"
 
 dpkg-deb --build "${STAGE_ROOT}" "${DEB_FILE}"
 echo "Built deb: ${DEB_FILE}"

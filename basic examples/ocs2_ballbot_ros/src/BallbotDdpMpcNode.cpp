@@ -28,37 +28,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
 #include <ocs2_ballbot/BallbotInterface.h>
-#include <ocs2_ballbot/package_path.h>
 #include <ocs2_ddp/GaussNewtonDDP_MPC.h>
 #include <ocs2_ros_interfaces/mpc/MPC_ROS_Interface.h>
 #include <ocs2_ros_interfaces/synchronized_module/RosReferenceManager.h>
-
-#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char **argv) {
     const std::string robotName = "ballbot";
 
-    // task file
-    std::vector<std::string> programArgs =
-            rclcpp::remove_ros_arguments(argc, argv);
-
-    if (programArgs.size() <= 1) {
-        throw std::runtime_error("No task file specified. Aborting.");
-    }
-    std::string taskFileFolderName = std::string(programArgs[1]);
-
-    // Initialize ros node
     rclcpp::init(argc, argv);
-    rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(robotName + "_mpc");
+    rclcpp::Node::SharedPtr node = rclcpp::Node::make_shared(
+        robotName + "_mpc",
+        rclcpp::NodeOptions()
+            .allow_undeclared_parameters(true)
+            .automatically_declare_parameters_from_overrides(true));
 
-    // Robot interface
-    const std::string taskFile =
-            ament_index_cpp::get_package_share_directory("ocs2_ballbot") +
-            "/config/" + taskFileFolderName + "/task.info";
-    const std::string libFolder =
-            ocs2::ballbot::getCodegenPath();
+    const std::string taskFile = node->get_parameter("taskFile").as_string();
+    const std::string libFolder = node->get_parameter("libFolder").as_string();
     ocs2::ballbot::BallbotInterface ballbotInterface(taskFile, libFolder);
 
     // ROS ReferenceManager

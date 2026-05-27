@@ -7,17 +7,13 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
 find_package(ocs2_double_integrator REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)
 
 add_library(${PROJECT_NAME}
-        src/DoubleIntegratorMpcNode.cpp
-        src/DummyDoubleIntegratorNode.cpp
         src/DoubleIntegratorDummyVisualization.cpp
-        src/DoubleIntegratorTargetPoseCommand.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -35,16 +31,12 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         ${ocs2_double_integrator_TARGETS}
         ${ocs2_robotic_assets_TARGETS}
         ${ocs2_robotic_tools_TARGETS}
-        ament_index_cpp::ament_index_cpp
 )
 
 add_executable(double_integrator_mpc src/DoubleIntegratorMpcNode.cpp)
 target_link_libraries(double_integrator_mpc ${PROJECT_NAME})
 
-add_executable(double_integrator_dummy_test
-        src/DummyDoubleIntegratorNode.cpp
-        src/DoubleIntegratorDummyVisualization.cpp
-)
+add_executable(double_integrator_dummy_test src/DummyDoubleIntegratorNode.cpp)
 target_link_libraries(double_integrator_dummy_test ${PROJECT_NAME})
 
 add_executable(double_integrator_target src/DoubleIntegratorTargetPoseCommand.cpp)

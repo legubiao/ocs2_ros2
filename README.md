@@ -66,7 +66,69 @@ Tested system and ROS2 version:
 > sudo apt remove robotpkg-*
 > ```
 
-### 2.3 Clone Repositories
+### 2.3 Install from deb (try basic examples without building)
+
+Prebuilt `.deb` packages bundle the OCS2 core stack and **all basic examples** listed in [Section 3](#3-basic-examples). This is the fastest way to run the demos if you do not need to modify the source code.
+
+| ROS 2 distro | Ubuntu | Debian package | Install prefix |
+|--------------|--------|----------------|----------------|
+| Jazzy | 24.04 (Noble) | `ros-jazzy-ocs2` | `/opt/ros/jazzy` |
+| Lyrical | 26.04 (Resolute) | `ros-lyrical-ocs2` | `/opt/ros/lyrical` |
+
+**Prerequisites**
+
+1. Install the matching ROS 2 base from [docs.ros.org](https://docs.ros.org/) (e.g. `ros-jazzy-ros-base` or `ros-lyrical-ros-base`).
+2. Install `xterm` (used by several example launch files to open MPC / dummy nodes in separate terminals):
+   ```bash
+   sudo apt install xterm
+   ```
+
+**Download and install**
+
+Pick the asset that matches your distro and CPU architecture (`amd64` or `arm64`) from the [GitHub Releases](https://github.com/legubiao/ocs2_ros2/releases) page.
+
+Example for **ROS 2 Jazzy** on amd64 (replace `VERSION` with the release tag, e.g. `1.0.0`):
+
+```bash
+wget https://github.com/legubiao/ocs2_ros2/releases/download/vVERSION/ros-jazzy-ocs2_VERSION_amd64.deb
+sudo dpkg -i ros-jazzy-ocs2_VERSION_amd64.deb
+sudo apt-get install -f   # if apt reports missing dependencies
+```
+
+Example for **ROS 2 Lyrical** on amd64:
+
+```bash
+wget https://github.com/legubiao/ocs2_ros2/releases/download/vVERSION/ros-lyrical-ocs2_VERSION_amd64.deb
+sudo dpkg -i ros-lyrical-ocs2_VERSION_amd64.deb
+sudo apt-get install -f
+```
+
+**Use the installed packages**
+
+```bash
+# Jazzy:
+source /opt/ros/jazzy/setup.bash
+
+# Lyrical:
+# source /opt/ros/lyrical/setup.bash
+```
+
+Then follow the **run** steps in [Section 3](#3-basic-examples) (skip the **build** steps). For example:
+
+```bash
+ros2 launch ocs2_double_integrator_ros double_integrator.launch.py
+```
+
+To confirm the install:
+
+```bash
+ros2 pkg list | grep ocs2_
+dpkg -L ros-jazzy-ocs2    # or ros-lyrical-ocs2
+```
+
+> **Note:** The deb installs into the same prefix as your system ROS packages. You only need to `source /opt/ros/<distro>/setup.bash` once per shell. Advanced examples under `advance examples/` are **not** included in the deb; build those from source if needed ([Section 2.4](#24-clone-repositories)).
+
+### 2.4 Clone Repositories
 
 * Create a new workspace or clone the project to your workspace
 
@@ -94,6 +156,8 @@ rosdep install --from-paths src --ignore-src -r -y
 ## 3. Basic Examples
 
 This section contains basic examples for the OCS2 library.
+
+If you installed the prebuilt deb ([Section 2.3](#23-install-from-deb-try-basic-examples-without-building)), **skip the build steps** in each example: `source /opt/ros/<distro>/setup.bash` and run the `ros2 launch` command directly. To build from source instead, use [Section 2.4](#24-clone-repositories) and the build commands below.
 
 ### 3.1 [Double Integrator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#double-integrator)
 

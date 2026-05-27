@@ -10,9 +10,9 @@ on:
         required: true
         type: string
       ros_distro:
-        description: "ROS 2 distro"
+        description: "ROS 2 distro (empty = verify jazzy and lyrical)"
         required: false
-        default: jazzy
+        default: ""
         type: string
   workflow_dispatch:
     inputs:
@@ -21,10 +21,14 @@ on:
         required: true
         type: string
       ros_distro:
-        description: "ROS 2 distro"
+        description: "ROS 2 distro (empty = verify jazzy and lyrical)"
         required: false
-        default: jazzy
-        type: string
+        default: ""
+        type: choice
+        options:
+          - ""
+          - jazzy
+          - lyrical
 
 permissions:
   contents: read
@@ -35,25 +39,40 @@ concurrency:
   group: verify-deb-${{ inputs.release_tag || github.ref_name }}
   cancel-in-progress: true
 
-env:
-  DEFAULT_ROS_DISTRO: jazzy
-  DEB_PACKAGE_NAME: ros-jazzy-ocs2
-  DEB_FILE_PREFIX: ros-jazzy-ocs2
-  INSTALL_PREFIX: /opt/ros/jazzy
-
 jobs:
+  select_matrix:
+    name: select verify matrix
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.set_matrix.outputs.matrix }}
+    steps:
+      - name: Compute matrix from input
+        id: set_matrix
+        shell: bash
+        run: |
+          set -eo pipefail
+          selected="${{ inputs.ros_distro }}"
+          if [[ -z "${selected}" ]]; then
+            matrix='{"include":[{"ros_distro":"jazzy","arch":"amd64","runner":"ubuntu-24.04","image":"ros:jazzy-ros-base-noble"},{"ros_distro":"jazzy","arch":"arm64","runner":"ubuntu-24.04-arm","image":"ros:jazzy-ros-base-noble"},{"ros_distro":"lyrical","arch":"amd64","runner":"ubuntu-24.04","image":"ros:lyrical-ros-base-resolute"},{"ros_distro":"lyrical","arch":"arm64","runner":"ubuntu-24.04-arm","image":"ros:lyrical-ros-base-resolute"}]}'
+          elif [[ "${selected}" == "jazzy" ]]; then
+            matrix='{"include":[{"ros_distro":"jazzy","arch":"amd64","runner":"ubuntu-24.04","image":"ros:jazzy-ros-base-noble"},{"ros_distro":"jazzy","arch":"arm64","runner":"ubuntu-24.04-arm","image":"ros:jazzy-ros-base-noble"}]}'
+          elif [[ "${selected}" == "lyrical" ]]; then
+            matrix='{"include":[{"ros_distro":"lyrical","arch":"amd64","runner":"ubuntu-24.04","image":"ros:lyrical-ros-base-resolute"},{"ros_distro":"lyrical","arch":"arm64","runner":"ubuntu-24.04-arm","image":"ros:lyrical-ros-base-resolute"}]}'
+          else
+            echo "Unsupported ros_distro input: ${selected}" >&2
+            exit 1
+          fi
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
   verify_deb:
-    name: verify deb (${{ matrix.arch }})
+    name: verify deb (${{ matrix.ros_distro }}, ${{ matrix.arch }})
+    needs: select_matrix
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-24.04
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-
+      matrix: ${{ fromJson(needs.select_matrix.outputs.matrix) }}
+    container:
+      image: ${{ matrix.image }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -61,6 +80,8 @@ jobs:
       - name: Resolve metadata
         id: meta
         shell: bash
+        env:
+          DEB_FILE_PREFIX: ros-${{ matrix.ros_distro }}-ocs2
         run: |
           set -eo pipefail
           chmod +x scripts/*.sh
@@ -70,11 +91,7 @@ jobs:
             release_tag="v${release_tag}"
           fi
 
-          ros_distro="${{ inputs.ros_distro }}"
-          if [[ -z "${ros_distro}" ]]; then
-            ros_distro="${DEFAULT_ROS_DISTRO}"
-          fi
-
+          ros_distro="${{ matrix.ros_distro }}"
           deb_version="${release_tag#v}"
           deb_version="${deb_version#V}"
           deb_version="${deb_version//\//-}"
@@ -86,50 +103,41 @@ jobs:
           deb_file="${DEB_FILE_PREFIX}_${deb_version}_${deb_arch}.deb"
 
           echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
-          echo "ros_distro=${ros_distro}"   >> "$GITHUB_OUTPUT"
+          echo "ros_distro=${ros_distro}" >> "$GITHUB_OUTPUT"
           echo "deb_version=${deb_version}" >> "$GITHUB_OUTPUT"
-          echo "deb_arch=${deb_arch}"       >> "$GITHUB_OUTPUT"
-          echo "deb_file=${deb_file}"       >> "$GITHUB_OUTPUT"
+          echo "deb_arch=${deb_arch}" >> "$GITHUB_OUTPUT"
+          echo "deb_file=${deb_file}" >> "$GITHUB_OUTPUT"
+          echo "install_prefix=/opt/ros/${ros_distro}" >> "$GITHUB_OUTPUT"
 
           echo "Tag: ${release_tag}, distro: ${ros_distro}, arch: ${deb_arch}, deb: ${deb_file}"
 
-      - name: Install ROS and base tools
+      # Match build-deb: Jazzy on Noble, Lyrical on Resolute. Noble apt has no
+      # ros-lyrical-* packages (Tier 1 Lyrical is Ubuntu 26.04 only).
+      - name: Install verify tools
         shell: bash
         run: |
           set -eo pipefail
-          sudo apt-get update
-          sudo apt-get install -y curl ca-certificates python3 cmake build-essential
-
-          ubuntu_codename=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-${VERSION_CODENAME}}")
-          ros_apt_url="$(python3 - "${ubuntu_codename}" <<'PY'
-          import json
-          import sys
-          import urllib.request
-
-          codename = sys.argv[1]
-          req = urllib.request.Request(
-              "https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest",
-              headers={"User-Agent": "ocs2_ros2-verify-deb"},
-          )
-          with urllib.request.urlopen(req) as response:
-              release = json.load(response)
-
-          expected = f"ros2-apt-source_{release['tag_name']}.{codename}_all.deb"
-          for asset in release.get("assets", []):
-              if asset.get("name") == expected:
-                  print(asset["browser_download_url"])
-                  break
-          else:
-              available = "\n".join(asset.get("name", "") for asset in release.get("assets", []))
-              raise SystemExit(f"Unable to find ROS apt source asset {expected}. Available assets:\n{available}")
-          PY
-          )"
-          curl --fail --location --retry 3 --retry-delay 2 -o /tmp/ros2-apt-source.deb "${ros_apt_url}"
-          sudo dpkg -i /tmp/ros2-apt-source.deb
-          rm -f /tmp/ros2-apt-source.deb
-
-          sudo apt-get update
-          sudo apt-get install -y "ros-${{ steps.meta.outputs.ros_distro }}-ros-base"
+          apt-get update
+          apt-get install -y curl ca-certificates cmake build-essential git
+          if ! command -v gh >/dev/null 2>&1; then
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+              | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+              > /etc/apt/sources.list.d/github-cli.list
+            apt-get update
+            apt-get install -y gh
+          fi
+          gh --version
+          if [[ ! -f /opt/ros/${{ matrix.ros_distro }}/setup.bash ]]; then
+            echo "Expected ROS under /opt/ros/${{ matrix.ros_distro }} (image ${{ matrix.image }})" >&2
+            ls -la "/opt/ros" || true
+            exit 1
+          fi
+          # shellcheck disable=SC1091
+          source "/opt/ros/${{ matrix.ros_distro }}/setup.bash"
+          test "${ROS_DISTRO}" = "${{ matrix.ros_distro }}"
+          ros2 pkg list | head -5
 
       - name: Download deb from release
         env:
@@ -174,4 +182,4 @@ jobs:
           scripts/consume_release_deb.sh \
             --deb-file "${{ steps.meta.outputs.deb_file }}" \
             --ros-distro "${{ steps.meta.outputs.ros_distro }}" \
-            --install-prefix "${INSTALL_PREFIX}"
+            --install-prefix "${{ steps.meta.outputs.install_prefix }}"

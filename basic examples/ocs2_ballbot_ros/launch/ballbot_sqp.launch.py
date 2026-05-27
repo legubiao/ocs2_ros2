@@ -1,58 +1,43 @@
 import os
+import sys
 
 from launch import LaunchDescription
-from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import ThisLaunchFileDir
 from launch_ros.actions import Node
+
+_LAUNCH_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(_LAUNCH_DIR, 'include'))
+import ballbot_example as be  # noqa: E402
 
 
 def generate_launch_description():
-    # Default to xterm because it is the most portable choice across desktop
-    # Linux, WSL, and container environments (e.g. distrobox), where
-    # gnome-terminal is typically unavailable. Override via OCS2_TERMINAL_PREFIX,
-    # e.g. `export OCS2_TERMINAL_PREFIX="gnome-terminal --"`.
     prefix = os.environ.get("OCS2_TERMINAL_PREFIX", "xterm -e")
+    params = be.node_parameters()
 
     return LaunchDescription([
-        DeclareLaunchArgument(
-            name='rviz',
-            default_value='true'
-        ),
-        DeclareLaunchArgument(
-            name='task_name',
-            default_value='mpc'
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                [ThisLaunchFileDir(), '/visualize.launch.py']),
-            launch_arguments={
-                'use_joint_state_publisher': 'false'
-            }.items()
-        ),
+        DeclareLaunchArgument('rviz', default_value='true'),
+        *be.declare_path_arguments(),
+        be.visualize_launch(),
         Node(
             package='ocs2_ballbot_ros',
             executable='ballbot_sqp',
             name='ballbot_sqp',
-            arguments=[LaunchConfiguration('task_name')],
-            output='screen'
+            parameters=params,
+            output='screen',
         ),
         Node(
             package='ocs2_ballbot_ros',
             executable='ballbot_dummy_test',
             name='ballbot_dummy_test',
             prefix=prefix,
-            arguments=[LaunchConfiguration('task_name')],
-            output='screen'
+            parameters=params,
+            output='screen',
         ),
         Node(
             package='ocs2_ballbot_ros',
             executable='ballbot_target',
             name='ballbot_target',
             prefix=prefix,
-            arguments=[LaunchConfiguration('task_name')],
-            output='screen'
-        )
+            output='screen',
+        ),
     ])

@@ -7,7 +7,6 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
@@ -32,16 +31,12 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         ${tf2_ros_TARGETS}
         ${ocs2_ros_interfaces_TARGETS}
         ${ocs2_quadrotor_TARGETS}
-        ament_index_cpp::ament_index_cpp
 )
 
 add_executable(quadrotor_mpc src/QuadrotorMpcNode.cpp)
 target_link_libraries(quadrotor_mpc ${PROJECT_NAME})
 
-add_executable(quadrotor_dummy_test
-        src/DummyQuadrotorNode.cpp
-        src/QuadrotorDummyVisualization.cpp
-)
+add_executable(quadrotor_dummy_test src/DummyQuadrotorNode.cpp)
 target_link_libraries(quadrotor_dummy_test ${PROJECT_NAME})
 
 add_executable(quadrotor_target src/QuadrotorTargetPoseCommand.cpp)
@@ -73,7 +68,7 @@ install(
         DESTINATION share/${PROJECT_NAME}/
 )
 
-ament_export_dependencies(rclcpp tf2_ros ocs2_ros_interfaces ocs2_quadrotor ament_index_cpp)
+ament_export_dependencies(rclcpp tf2_ros ocs2_ros_interfaces ocs2_quadrotor)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 if(BUILD_TESTING)

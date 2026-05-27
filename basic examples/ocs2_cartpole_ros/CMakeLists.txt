@@ -7,15 +7,12 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
 find_package(ocs2_cartpole REQUIRED)
 find_package(ocs2_robotic_assets REQUIRED)
 
 add_library(${PROJECT_NAME}
-        src/CartpoleMpcNode.cpp
-        src/DummyCartpoleNode.cpp
         src/CartpoleDummyVisualization.cpp
 )
 
@@ -34,16 +31,12 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         ${ocs2_ros_interfaces_TARGETS}
         ${ocs2_cartpole_TARGETS}
         ${ocs2_robotic_assets_TARGETS}
-        ament_index_cpp::ament_index_cpp
 )
 
 add_executable(cartpole_mpc src/CartpoleMpcNode.cpp)
 target_link_libraries(cartpole_mpc ${PROJECT_NAME})
 
-add_executable(cartpole_dummy_test
-        src/DummyCartpoleNode.cpp
-        src/CartpoleDummyVisualization.cpp
-)
+add_executable(cartpole_dummy_test src/DummyCartpoleNode.cpp)
 target_link_libraries(cartpole_dummy_test ${PROJECT_NAME})
 
 install(

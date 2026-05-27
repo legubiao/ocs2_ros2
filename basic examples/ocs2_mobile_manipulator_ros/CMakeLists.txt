@@ -15,7 +15,8 @@ find_package(ocs2_self_collision_visualization REQUIRED)
 find_package(ocs2_mobile_manipulator REQUIRED)
 
 add_library(${PROJECT_NAME}
-        src/MobileManipulatorMpcNode.cpp
+        src/MobileManipulatorDummyVisualization.cpp
+        src/EnvironmentCollisionVisualization.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -43,11 +44,7 @@ target_link_libraries(mobile_manipulator_mpc_node ${PROJECT_NAME})
 add_executable(mobile_manipulator_sqp_mpc_node src/MobileManipulatorSqpMpcNode.cpp)
 target_link_libraries(mobile_manipulator_sqp_mpc_node ${PROJECT_NAME})
 
-add_executable(mobile_manipulator_dummy_mrt_node
-        src/MobileManipulatorDummyMRT.cpp
-        src/MobileManipulatorDummyVisualization.cpp
-        src/EnvironmentCollisionVisualization.cpp
-)
+add_executable(mobile_manipulator_dummy_mrt_node src/MobileManipulatorDummyMRT.cpp)
 target_link_libraries(mobile_manipulator_dummy_mrt_node ${PROJECT_NAME})
 
 add_executable(mobile_manipulator_target src/MobileManipulatorTarget.cpp)
