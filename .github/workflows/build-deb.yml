@@ -81,7 +81,7 @@ jobs:
       image: ${{ matrix.image }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -134,7 +134,7 @@ jobs:
           python3 -c "import ament_package; print('ament_package ready:', ament_package.__file__)"
 
       - name: Restore ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.CCACHE_DIR }}
           key: ccache-${{ matrix.ros_distro }}-${{ matrix.arch }}-${{ steps.meta.outputs.deb_version }}
@@ -190,7 +190,7 @@ jobs:
             --skip-deps
 
       - name: Upload workflow artifact (fallback for workflow_dispatch)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ros-${{ matrix.ros_distro }}-ocs2-${{ steps.meta.outputs.deb_version }}-${{ matrix.arch }}
           path: ${{ steps.meta.outputs.deb_file }}
@@ -203,10 +203,11 @@ jobs:
     needs: build_deb
     outputs:
       release_tag: ${{ steps.meta.outputs.release_tag }}
+      deb_version: ${{ steps.meta.outputs.deb_version }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Resolve publish metadata
         id: meta
@@ -226,7 +227,7 @@ jobs:
           done < /tmp/release_meta.txt
 
       - name: Download built deb artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: ros-*-ocs2-${{ steps.meta.outputs.deb_version }}-*
           merge-multiple: true
@@ -238,7 +239,7 @@ jobs:
           ls -lh *.deb
 
       - name: Publish debs to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.meta.outputs.release_tag }}
           name: ${{ steps.meta.outputs.release_tag }}
@@ -256,4 +257,5 @@ jobs:
       contents: read
     with:
       release_tag: ${{ needs.publish_deb.outputs.release_tag }}
+      deb_version: ${{ needs.publish_deb.outputs.deb_version }}
       ros_distro: ""

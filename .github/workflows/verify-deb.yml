@@ -14,6 +14,11 @@ on:
         required: false
         default: ""
         type: string
+      deb_version:
+        description: "Override deb version (default: tag without leading v; must match build-deb)"
+        required: false
+        default: ""
+        type: string
   workflow_dispatch:
     inputs:
       release_tag:
@@ -29,6 +34,11 @@ on:
           - ""
           - jazzy
           - lyrical
+      deb_version:
+        description: "Override deb version (default: tag without leading v; must match build-deb)"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -75,7 +85,7 @@ jobs:
       image: ${{ matrix.image }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Resolve metadata
         id: meta
@@ -85,34 +95,21 @@ jobs:
         run: |
           set -eo pipefail
           chmod +x scripts/*.sh
+          INPUT_RELEASE_TAG="${{ inputs.release_tag }}" \
+          INPUT_ROS_DISTRO="${{ matrix.ros_distro }}" \
+          INPUT_DEB_VERSION="${{ inputs.deb_version }}" \
+          INPUT_DEB_ARCH="${{ matrix.arch }}" \
+          scripts/resolve_release_meta.sh | tee /tmp/release_meta.txt
 
-          release_tag="${{ inputs.release_tag }}"
-          if [[ "${release_tag}" != [vV]* ]]; then
-            release_tag="v${release_tag}"
-          fi
+          while IFS='=' read -r key value; do
+            echo "${key}=${value}" >> "$GITHUB_OUTPUT"
+          done < /tmp/release_meta.txt
+          echo "install_prefix=/opt/ros/${{ matrix.ros_distro }}" >> "$GITHUB_OUTPUT"
 
-          ros_distro="${{ matrix.ros_distro }}"
-          deb_version="${release_tag#v}"
-          deb_version="${deb_version#V}"
-          deb_version="${deb_version//\//-}"
-          if [[ -z "${deb_version}" ]]; then
-            echo "Unable to derive a deb version from release tag: ${release_tag}" >&2
-            exit 1
-          fi
-          deb_arch="${{ matrix.arch }}"
-          deb_file="${DEB_FILE_PREFIX}_${deb_version}_${deb_arch}.deb"
-
-          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
-          echo "ros_distro=${ros_distro}" >> "$GITHUB_OUTPUT"
-          echo "deb_version=${deb_version}" >> "$GITHUB_OUTPUT"
-          echo "deb_arch=${deb_arch}" >> "$GITHUB_OUTPUT"
-          echo "deb_file=${deb_file}" >> "$GITHUB_OUTPUT"
-          echo "install_prefix=/opt/ros/${ros_distro}" >> "$GITHUB_OUTPUT"
-
-          echo "Tag: ${release_tag}, distro: ${ros_distro}, arch: ${deb_arch}, deb: ${deb_file}"
+          echo "Tag: $(grep '^release_tag=' /tmp/release_meta.txt | cut -d= -f2-), distro: $(grep '^ros_distro=' /tmp/release_meta.txt | cut -d= -f2-), arch: $(grep '^deb_arch=' /tmp/release_meta.txt | cut -d= -f2-), deb: $(grep '^deb_file=' /tmp/release_meta.txt | cut -d= -f2-)"
 
       # Match build-deb: Jazzy on Noble, Lyrical on Resolute. Noble apt has no
-      # ros-lyrical-* packages (Tier 1 Lyrical is Ubuntu 26.04 only).
+      # ros-lyrical packages (Tier 1 Lyrical is Ubuntu 26.04 only).
       - name: Install verify tools
         shell: bash
         run: |
@@ -137,7 +134,10 @@ jobs:
           # shellcheck disable=SC1091
           source "/opt/ros/${{ matrix.ros_distro }}/setup.bash"
           test "${ROS_DISTRO}" = "${{ matrix.ros_distro }}"
-          ros2 pkg list | head -5
+          # Smoke-test ros2cli without piping to head: head closes the pipe early and
+          # ros2 pkg list raises BrokenPipeError (exit 120), which fails pipefail.
+          ros2 pkg prefix ament_cmake >/dev/null
+          echo "ROS environment ok: ${ROS_DISTRO}"
 
       - name: Download deb from release
         env:

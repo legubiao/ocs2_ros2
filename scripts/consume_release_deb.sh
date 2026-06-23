@@ -54,10 +54,14 @@ if [[ "${DOWNLOAD_FROM_RELEASE}" -eq 1 ]]; then
 fi
 
 if [[ "${SKIP_INSTALL}" -eq 0 ]]; then
+  # Use apt (not bare dpkg -i) so Depends from the .deb control file are pulled
+  # from the ROS apt repo (pinocchio, interactive-markers, xacro, xterm, ...).
   if [[ "$(id -u)" -eq 0 ]]; then
-    dpkg -i "./${DEB_FILE}" || apt-get -f install -y
+    apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "./${DEB_FILE}"
   else
-    sudo dpkg -i "./${DEB_FILE}" || sudo apt-get -f install -y
+    sudo apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "./${DEB_FILE}"
   fi
 fi
 
@@ -101,20 +105,27 @@ cmake_minimum_required(VERSION 3.16)
 project(ocs2_downstream_check CXX)
 
 # Suppress legacy FindBoost deprecation warning from ocs2_core transitive deps.
-cmake_policy(SET CMP0167 NEW)
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
 
 find_package(ocs2_mobile_manipulator REQUIRED)
 find_package(ocs2_mobile_manipulator_ros REQUIRED)
 find_package(ocs2_ros_interfaces REQUIRED)
 
 add_executable(dummy main.cpp)
-target_sources(dummy PRIVATE main.cpp)
+# ocs2_mobile_manipulator_ros installs nodes only (no ament_export_targets); linking
+# its :: imported target fails. Link the exported libraries to validate .so wiring.
+target_link_libraries(dummy PRIVATE
+  ocs2_mobile_manipulator::ocs2_mobile_manipulator
+  ocs2_ros_interfaces::ocs2_ros_interfaces
+)
 EOF
 
 cat > downstream_check/main.cpp <<'EOF'
 int main() { return 0; }
 EOF
 
-cmake -Wno-dev -S downstream_check -B downstream_check/build
+cmake -S downstream_check -B downstream_check/build
 cmake --build downstream_check/build -j2
 echo "Downstream CMake verification passed."
