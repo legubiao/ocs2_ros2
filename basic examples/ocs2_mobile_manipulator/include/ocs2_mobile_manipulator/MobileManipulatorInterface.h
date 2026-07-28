@@ -47,6 +47,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2::mobile_manipulator
 {
     /**
+     * Optional in-memory overrides for model frames after reading task.info.
+     * Empty string means keep the value loaded from task.info.
+     * Convention in this stack: eeFrame = left tip, eeFrame1 = right tip.
+     */
+    struct FrameOverrides
+    {
+        std::string baseFrame;
+        std::string eeFrame;
+        std::string eeFrame1;
+    };
+
+    /**
     * Mobile Manipulator Robot Interface class
     */
     class MobileManipulatorInterface final : public RobotInterface
@@ -61,9 +73,12 @@ namespace ocs2::mobile_manipulator
          * @param [in] taskFile: The absolute path to the configuration file for the MPC.
          * @param [in] libraryFolder: The absolute path to the directory to generate CppAD library into.
          * @param [in] urdfFile: The absolute path to the URDF file for the robot.
+         * @param [in] frameOverrides: Optional frame name overrides applied in memory before
+         *        createManipulatorModelInfo (no temporary task file).
          */
         MobileManipulatorInterface(const std::string& taskFile, const std::string& libraryFolder,
-                                   const std::string& urdfFile);
+                                   const std::string& urdfFile,
+                                   const FrameOverrides& frameOverrides = FrameOverrides{});
 
         const vector_t& getInitialState() { return initialState_; }
 
