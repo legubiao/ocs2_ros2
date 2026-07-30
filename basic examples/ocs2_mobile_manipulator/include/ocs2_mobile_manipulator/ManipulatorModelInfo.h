@@ -44,6 +44,7 @@ namespace ocs2::mobile_manipulator
         WheelBasedMobileManipulator = 1, // adds actuatable XY-Yaw joints to the model parsed from URDF
         FloatingArmManipulator = 2, // adds dummy XYZ-RPY joints to the model parsed from URDF
         FullyActuatedFloatingArmManipulator = 3, // adds actuatable XYZ-RPY joints to the model parsed from URDF
+        OmniWheelBasedMobileManipulator = 4, // holonomic base: body-frame vx, vy, omega (+ same XY-Yaw joints as wheel-based)
     };
 
     /**
@@ -91,6 +92,11 @@ namespace ocs2::mobile_manipulator
         case ManipulatorModelType::WheelBasedMobileManipulator:
             {
                 manipulatorModelTypeString = "wheelBasedMobileManipulator";
+                break;
+            }
+        case ManipulatorModelType::OmniWheelBasedMobileManipulator:
+            {
+                manipulatorModelTypeString = "omniWheelBasedMobileManipulator";
                 break;
             }
         default:

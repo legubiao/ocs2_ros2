@@ -29,6 +29,7 @@ add_library(${PROJECT_NAME}
         src/constraint/EnvironmentCollisionConstraint.cpp
         src/collision/EnvironmentGeometryInterface.cpp
         src/dynamics/WheelBasedMobileManipulatorDynamics.cpp
+        src/dynamics/OmniWheelBasedMobileManipulatorDynamics.cpp
         src/dynamics/DefaultManipulatorDynamics.cpp
         src/dynamics/FloatingArmManipulatorDynamics.cpp
         src/dynamics/FullyActuatedFloatingArmManipulatorDynamics.cpp

@@ -63,6 +63,11 @@ namespace ocs2
                     // for wheel-based, we assume 2D base position
                     return Eigen::Matrix<SCALAR, 3, 1>(state(0), state(1), 0.0);
                 }
+            case ManipulatorModelType::OmniWheelBasedMobileManipulator:
+                {
+                    // for omni-wheel, we assume 2D base position (same layout as wheel-based)
+                    return Eigen::Matrix<SCALAR, 3, 1>(state(0), state(1), 0.0);
+                }
             default:
                 throw std::invalid_argument("Invalid manipulator model type provided.");
             }
@@ -96,6 +101,12 @@ namespace ocs2
             case ManipulatorModelType::WheelBasedMobileManipulator:
                 {
                     // for wheel-based, we assume only yaw
+                    return Eigen::Quaternion<SCALAR>(
+                        Eigen::AngleAxis<SCALAR>(state(2), Eigen::Matrix<SCALAR, 3, 1>::UnitZ()));
+                }
+            case ManipulatorModelType::OmniWheelBasedMobileManipulator:
+                {
+                    // for omni-wheel, we assume only yaw (same layout as wheel-based)
                     return Eigen::Quaternion<SCALAR>(
                         Eigen::AngleAxis<SCALAR>(state(2), Eigen::Matrix<SCALAR, 3, 1>::UnitZ()));
                 }

@@ -79,6 +79,16 @@ namespace ocs2::mobile_manipulator
                 // return pinocchio interface
                 return getPinocchioInterfaceFromUrdfFile(robotUrdfPath, jointComposite);
             }
+        case ManipulatorModelType::OmniWheelBasedMobileManipulator:
+            {
+                // add XY-yaw joint for the holonomic wheel-base (same as differential-drive)
+                pinocchio::JointModelComposite jointComposite(3);
+                jointComposite.addJoint(pinocchio::JointModelPX());
+                jointComposite.addJoint(pinocchio::JointModelPY());
+                jointComposite.addJoint(pinocchio::JointModelRZ());
+                // return pinocchio interface
+                return getPinocchioInterfaceFromUrdfFile(robotUrdfPath, jointComposite);
+            }
         default:
             throw std::invalid_argument("Invalid manipulator model type provided.");
         }
@@ -163,6 +173,16 @@ namespace ocs2::mobile_manipulator
                 // return pinocchio interface
                 return getPinocchioInterfaceFromUrdfModel(newModel, jointComposite);
             }
+        case ManipulatorModelType::OmniWheelBasedMobileManipulator:
+            {
+                // add XY-yaw joint for the holonomic wheel-base (same as differential-drive)
+                pinocchio::JointModelComposite jointComposite(3);
+                jointComposite.addJoint(pinocchio::JointModelPX());
+                jointComposite.addJoint(pinocchio::JointModelPY());
+                jointComposite.addJoint(pinocchio::JointModelRZ());
+                // return pinocchio interface
+                return getPinocchioInterfaceFromUrdfModel(newModel, jointComposite);
+            }
         default:
             throw std::invalid_argument("Invalid manipulator model type provided.");
         }
@@ -209,6 +229,13 @@ namespace ocs2::mobile_manipulator
                 // for wheel-based, the input dimension is (v, omega, dq_j) while state dimension is (x, y, psi, q_j).
                 info.inputDim = info.stateDim - 1;
                 info.armDim = info.inputDim - 2;
+                break;
+            }
+        case ManipulatorModelType::OmniWheelBasedMobileManipulator:
+            {
+                // for omni-wheel, the input is (vx, vy, omega, dq_j) while state is (x, y, psi, q_j).
+                info.inputDim = info.stateDim;
+                info.armDim = info.inputDim - 3;
                 break;
             }
         default:
