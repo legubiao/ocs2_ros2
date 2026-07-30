@@ -73,7 +73,11 @@ if [[ -z "${DEB_ARCH}" ]]; then
   exit 1
 fi
 
-DEB_FILE="${DEB_FILE_PREFIX}_${DEB_VERSION}_${DEB_ARCH}.deb"
+# Keep control Version with '~' (Debian ordering); filename uses '.' so it
+# matches GitHub Release asset names (which rewrite '~' -> '.').
+# Escape '~' in the pattern: unescaped tilde is not matched by ${var//~/}.
+DEB_FILE_VERSION="${DEB_VERSION//\~/.}"
+DEB_FILE="${DEB_FILE_PREFIX}_${DEB_FILE_VERSION}_${DEB_ARCH}.deb"
 STAGE_ROOT="${PWD}/deb_stage"
 INSTALL_ROOT="${STAGE_ROOT}${INSTALL_PREFIX}"
 DEBIAN_DIR="${STAGE_ROOT}/DEBIAN"

@@ -6,7 +6,7 @@ on:
   workflow_call:
     inputs:
       release_tag:
-        description: "Release tag to verify (e.g. v1.0.0)"
+        description: "Release tag to verify (e.g. v1.0.0 or pre-release)"
         required: true
         type: string
       ros_distro:
@@ -15,14 +15,14 @@ on:
         default: ""
         type: string
       deb_version:
-        description: "Override deb version (default: tag without leading v; must match build-deb)"
+        description: "Override deb version (required for pre-release; otherwise tag without leading v)"
         required: false
         default: ""
         type: string
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release tag to verify (e.g. v1.0.0)"
+        description: "Release tag to verify (e.g. v1.0.0 or pre-release)"
         required: true
         type: string
       ros_distro:
@@ -35,7 +35,7 @@ on:
           - jazzy
           - lyrical
       deb_version:
-        description: "Override deb version (default: tag without leading v; must match build-deb)"
+        description: "Override deb version (required for pre-release; otherwise tag without leading v)"
         required: false
         default: ""
         type: string
@@ -99,6 +99,7 @@ jobs:
           INPUT_ROS_DISTRO="${{ matrix.ros_distro }}" \
           INPUT_DEB_VERSION="${{ inputs.deb_version }}" \
           INPUT_DEB_ARCH="${{ matrix.arch }}" \
+          PRE_RELEASE_TAG="pre-release" \
           scripts/resolve_release_meta.sh | tee /tmp/release_meta.txt
 
           while IFS='=' read -r key value; do
