@@ -87,6 +87,19 @@ Prebuilt `.deb` packages bundle the OCS2 core stack and **all basic examples** l
 
 Pick the asset that matches your distro and CPU architecture (`amd64` or `arm64`) from the [GitHub Releases](https://github.com/legubiao/ocs2_ros2/releases) page.
 
+| Trigger | GitHub Release | Notes |
+|---------|----------------|-------|
+| PR merged into `ros2` | rolling **`pre-release`** | Overwrites assets each merge; deb Version is `latest.patch+N~main.<sha>` |
+| Push `v*` tag / manual dispatch | formal `vX.Y.Z` | Stable installs |
+
+Example for **pre-release** (Jazzy amd64):
+
+```bash
+gh release download pre-release --repo legubiao/ocs2_ros2 --pattern 'ros-jazzy-ocs2_*_amd64.deb'
+sudo dpkg -i ros-jazzy-ocs2_*_amd64.deb
+sudo apt-get install -f
+```
+
 Example for **ROS 2 Jazzy** on amd64 (replace `VERSION` with the release tag, e.g. `1.0.0`):
 
 ```bash
