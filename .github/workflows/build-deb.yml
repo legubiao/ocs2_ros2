@@ -55,9 +55,10 @@ env:
   PRE_RELEASE_TAG: pre-release
 
 jobs:
+  # Note: do not gate on github.event.repository.fork — this repo is itself a fork.
   select_matrix:
     name: select build matrix
-    if: github.event.repository.fork == false && (github.event_name != 'pull_request' || github.event.pull_request.merged == true)
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set_matrix.outputs.matrix }}
@@ -139,7 +140,7 @@ jobs:
 
   build_deb:
     name: build deb (${{ matrix.ros_distro }}, ${{ matrix.arch }})
-    if: github.event.repository.fork == false && (github.event_name != 'pull_request' || github.event.pull_request.merged == true)
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     needs: select_matrix
     runs-on: ${{ matrix.runner }}
     env:
@@ -272,7 +273,7 @@ jobs:
 
   publish_deb:
     name: publish debs
-    if: github.event.repository.fork == false && (github.event_name != 'pull_request' || github.event.pull_request.merged == true)
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-24.04
     needs:
       - select_matrix
@@ -367,7 +368,7 @@ jobs:
 
   verify_deb:
     name: verify published debs
-    if: github.event.repository.fork == false && (github.event_name != 'pull_request' || github.event.pull_request.merged == true)
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     needs: publish_deb
     uses: ./.github/workflows/verify-deb.yml
     permissions:
