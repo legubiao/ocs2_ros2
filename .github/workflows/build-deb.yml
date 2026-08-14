@@ -1,9 +1,19 @@
 name: Build and Publish Deb
 
+# Release policy (aligned with arms_ros2_control):
+# - push v* tag / workflow_dispatch -> formal GitHub Release
+# - pull_request merged into ros2   -> single rolling pre-release (tag: pre-release)
+#   deb Version: patch bump on latest formal; reset when pre-release X.Y drifts
+
 on:
   push:
     tags:
       - "v*"
+  pull_request:
+    types:
+      - closed
+    branches:
+      - ros2
   workflow_dispatch:
     inputs:
       release_tag:
@@ -30,7 +40,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.release_tag || github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.ref_type == 'tag' && github.ref_name || (github.event_name == 'pull_request' && 'pre-release' || github.ref) }}-${{ github.event.inputs.release_tag || '' }}
   cancel-in-progress: true
 
 env:
@@ -42,14 +52,74 @@ env:
     ocs2_legged_robot_ros
     ocs2_mobile_manipulator_ros
     ocs2_quadrotor_ros
+  PRE_RELEASE_TAG: pre-release
 
 jobs:
+  # Note: do not gate on github.event.repository.fork — this repo is itself a fork.
   select_matrix:
     name: select build matrix
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set_matrix.outputs.matrix }}
+      release_tag: ${{ steps.shared_meta.outputs.release_tag }}
+      deb_version: ${{ steps.shared_meta.outputs.deb_version }}
+      is_prerelease: ${{ steps.shared_meta.outputs.is_prerelease }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+          submodules: recursive
+
+      - name: Resolve shared release metadata
+        id: shared_meta
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRE_RELEASE_TAG: ${{ env.PRE_RELEASE_TAG }}
+          MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          set -eo pipefail
+          chmod +x scripts/*.sh
+
+          is_prerelease="false"
+          input_release_tag="${{ github.event.inputs.release_tag }}"
+          input_deb_version="${{ github.event.inputs.deb_version }}"
+          release_tag_override="${{ github.ref_name }}"
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            if [[ -z "${MERGE_COMMIT_SHA}" ]]; then
+              echo "Merge commit SHA is missing for merged pull request." >&2
+              exit 1
+            fi
+            short_sha="$(printf '%s' "${MERGE_COMMIT_SHA}" | cut -c1-7)"
+            input_release_tag="${PRE_RELEASE_TAG}"
+            input_deb_version="$(
+              RELEASE_REPO="${GITHUB_REPOSITORY}" \
+              SHORT_SHA="${short_sha}" \
+              FALLBACK_PACKAGE_XML="core/ocs2_core/package.xml" \
+              PRE_RELEASE_TAG="${PRE_RELEASE_TAG}" \
+              GH_TOKEN="${GH_TOKEN:-}" \
+              python3 .github/scripts/resolve_prerelease_deb_version.py
+            )"
+            is_prerelease="true"
+            release_tag_override="${PRE_RELEASE_TAG}"
+          fi
+
+          INPUT_RELEASE_TAG="${input_release_tag}" \
+          INPUT_ROS_DISTRO="jazzy" \
+          INPUT_DEB_VERSION="${input_deb_version}" \
+          INPUT_DEB_ARCH="amd64" \
+          RELEASE_TAG_OVERRIDE="${release_tag_override}" \
+          IS_PRERELEASE="${is_prerelease}" \
+          PRE_RELEASE_TAG="${PRE_RELEASE_TAG}" \
+          scripts/resolve_release_meta.sh | tee /tmp/release_meta.txt
+
+          while IFS='=' read -r key value; do
+            echo "${key}=${value}" >> "$GITHUB_OUTPUT"
+          done < /tmp/release_meta.txt
+
       - name: Compute matrix from input
         id: set_matrix
         shell: bash
@@ -70,6 +140,7 @@ jobs:
 
   build_deb:
     name: build deb (${{ matrix.ros_distro }}, ${{ matrix.arch }})
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     needs: select_matrix
     runs-on: ${{ matrix.runner }}
     env:
@@ -83,6 +154,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
           submodules: recursive
 
       - name: Resolve build metadata
@@ -91,14 +163,16 @@ jobs:
         env:
           DEB_PACKAGE_NAME: ros-${{ matrix.ros_distro }}-ocs2
           DEB_FILE_PREFIX: ros-${{ matrix.ros_distro }}-ocs2
+          PRE_RELEASE_TAG: ${{ env.PRE_RELEASE_TAG }}
         run: |
           set -eo pipefail
           chmod +x scripts/*.sh
-          INPUT_RELEASE_TAG="${{ github.event.inputs.release_tag }}" \
+          INPUT_RELEASE_TAG="${{ needs.select_matrix.outputs.release_tag }}" \
           INPUT_ROS_DISTRO="${{ matrix.ros_distro }}" \
-          INPUT_DEB_VERSION="${{ github.event.inputs.deb_version }}" \
+          INPUT_DEB_VERSION="${{ needs.select_matrix.outputs.deb_version }}" \
           INPUT_DEB_ARCH="${{ matrix.arch }}" \
-          RELEASE_TAG_OVERRIDE="${{ github.ref_name }}" \
+          IS_PRERELEASE="${{ needs.select_matrix.outputs.is_prerelease }}" \
+          PRE_RELEASE_TAG="${PRE_RELEASE_TAG}" \
           scripts/resolve_release_meta.sh | tee /tmp/release_meta.txt
 
           while IFS='=' read -r key value; do
@@ -192,34 +266,43 @@ jobs:
       - name: Upload workflow artifact (fallback for workflow_dispatch)
         uses: actions/upload-artifact@v5
         with:
-          name: ros-${{ matrix.ros_distro }}-ocs2-${{ steps.meta.outputs.deb_version }}-${{ matrix.arch }}
+          name: ros-${{ matrix.ros_distro }}-ocs2-${{ steps.meta.outputs.deb_file_version }}-${{ matrix.arch }}
           path: ${{ steps.meta.outputs.deb_file }}
           if-no-files-found: error
           retention-days: 7
 
   publish_deb:
     name: publish debs
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-24.04
-    needs: build_deb
+    needs:
+      - select_matrix
+      - build_deb
     outputs:
       release_tag: ${{ steps.meta.outputs.release_tag }}
       deb_version: ${{ steps.meta.outputs.deb_version }}
+      is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Resolve publish metadata
         id: meta
         shell: bash
+        env:
+          PRE_RELEASE_TAG: ${{ env.PRE_RELEASE_TAG }}
         run: |
           set -eo pipefail
           chmod +x scripts/*.sh
-          INPUT_RELEASE_TAG="${{ github.event.inputs.release_tag }}" \
+          INPUT_RELEASE_TAG="${{ needs.select_matrix.outputs.release_tag }}" \
           INPUT_ROS_DISTRO="jazzy" \
-          INPUT_DEB_VERSION="${{ github.event.inputs.deb_version }}" \
+          INPUT_DEB_VERSION="${{ needs.select_matrix.outputs.deb_version }}" \
           INPUT_DEB_ARCH="amd64" \
-          RELEASE_TAG_OVERRIDE="${{ github.ref_name }}" \
+          IS_PRERELEASE="${{ needs.select_matrix.outputs.is_prerelease }}" \
+          PRE_RELEASE_TAG="${PRE_RELEASE_TAG}" \
           scripts/resolve_release_meta.sh | tee /tmp/release_meta.txt
 
           while IFS='=' read -r key value; do
@@ -229,7 +312,7 @@ jobs:
       - name: Download built deb artifacts
         uses: actions/download-artifact@v5
         with:
-          pattern: ros-*-ocs2-${{ steps.meta.outputs.deb_version }}-*
+          pattern: ros-*-ocs2-${{ steps.meta.outputs.deb_file_version }}-*
           merge-multiple: true
 
       - name: List release assets
@@ -239,18 +322,53 @@ jobs:
           ls -lh *.deb
 
       - name: Publish debs to GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ steps.meta.outputs.release_tag }}
-          name: ${{ steps.meta.outputs.release_tag }}
-          draft: false
-          prerelease: false
-          # Re-run on the same tag: replace .deb assets instead of failing on duplicates.
-          overwrite_files: true
-          files: "*.deb"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.release_tag }}
+          IS_PRERELEASE: ${{ steps.meta.outputs.is_prerelease }}
+          PRE_RELEASE_TAG: ${{ env.PRE_RELEASE_TAG }}
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+            echo "Cleaning up legacy pre-releases..."
+            gh release list --repo "${GITHUB_REPOSITORY}" --limit 100 \
+              --json tagName,isPrerelease \
+              --jq ".[] | select(.isPrerelease and .tagName != \"${PRE_RELEASE_TAG}\") | .tagName" \
+            | while read -r old_tag; do
+                [[ -z "$old_tag" ]] && continue
+                echo "Deleting legacy pre-release: ${old_tag}"
+                gh release delete "$old_tag" --repo "${GITHUB_REPOSITORY}" --yes --cleanup-tag || true
+              done
+
+            gh release delete "${TAG}" --repo "${GITHUB_REPOSITORY}" --yes --cleanup-tag 2>/dev/null || true
+
+            gh release create "${TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --target "${{ github.event.pull_request.merge_commit_sha || github.sha }}" \
+              --title "Pre-release (ros2)" \
+              --notes "Rolling pre-release built from merged PR #${{ github.event.pull_request.number }} @ ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+
+          Packages: ros-jazzy-ocs2 / ros-lyrical-ocs2 (amd64 + arm64).
+          Deb version: ${{ steps.meta.outputs.deb_version }}
+          Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+              --prerelease \
+              ./*.deb
+          else
+            if ! gh release view "$TAG" --repo "${GITHUB_REPOSITORY}" > /dev/null 2>&1; then
+              gh release create "$TAG" \
+                --repo "${GITHUB_REPOSITORY}" \
+                --title "$TAG" \
+                --notes "Automated release: ros-jazzy-ocs2 / ros-lyrical-ocs2 (amd64 + arm64)."
+            fi
+
+            gh release upload "$TAG" ./*.deb --repo "${GITHUB_REPOSITORY}" --clobber
+          fi
 
   verify_deb:
     name: verify published debs
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     needs: publish_deb
     uses: ./.github/workflows/verify-deb.yml
     permissions:

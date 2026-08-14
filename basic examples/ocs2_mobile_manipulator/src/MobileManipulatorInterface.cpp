@@ -72,7 +72,8 @@ namespace ocs2::mobile_manipulator
 {
     MobileManipulatorInterface::MobileManipulatorInterface(const std::string& taskFile,
                                                            const std::string& libraryFolder,
-                                                           const std::string& urdfFile)
+                                                           const std::string& urdfFile,
+                                                           const FrameOverrides& frameOverrides)
     {
         // check that task file exists
         boost::filesystem::path taskFilePath(taskFile);
@@ -117,6 +118,20 @@ namespace ocs2::mobile_manipulator
         loadData::loadPtreeValue<std::string>(pt, eeFrame, "model_information.eeFrame", false);
         loadData::loadPtreeValue<std::string>(pt, eeFrame1, "model_information.eeFrame1", false);
 
+        // Optional in-memory overrides (e.g. ROS controller params); empty = keep info value.
+        if (!frameOverrides.baseFrame.empty())
+        {
+            baseFrame = frameOverrides.baseFrame;
+        }
+        if (!frameOverrides.eeFrame.empty())
+        {
+            eeFrame = frameOverrides.eeFrame;
+        }
+        if (!frameOverrides.eeFrame1.empty())
+        {
+            eeFrame1 = frameOverrides.eeFrame1;
+        }
+
         std::cerr << "\n #### Model Information:";
         std::cerr << "\n #### =============================================================================\n";
         std::cerr << "\n #### model_information.manipulatorModelType: " << static_cast<int>(modelType);
@@ -127,7 +142,8 @@ namespace ocs2::mobile_manipulator
         }
         std::cerr << "\n #### Note: All mimic joints will be automatically detected and removed";
         std::cerr << "\n #### model_information.baseFrame: \"" << baseFrame << "\"";
-        std::cerr << "\n #### model_information.eeFrame: \"" << eeFrame << "\"" << std::endl;
+        std::cerr << "\n #### model_information.eeFrame (left): \"" << eeFrame << "\"";
+        std::cerr << "\n #### model_information.eeFrame1 (right): \"" << eeFrame1 << "\"" << std::endl;
         std::cerr << " #### =============================================================================" <<
             std::endl;
 
