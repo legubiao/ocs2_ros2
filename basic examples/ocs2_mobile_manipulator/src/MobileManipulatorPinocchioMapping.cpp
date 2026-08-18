@@ -84,6 +84,18 @@ namespace ocs2::mobile_manipulator
                 vPinocchio << cos(theta) * v, sin(theta) * v, input(1), input.tail(modelInfo_.armDim);
                 break;
             }
+        case ManipulatorModelType::OmniWheelBasedMobileManipulator:
+            {
+                const auto theta = state(2);
+                const auto vx = input(0); // forward velocity in base frame
+                const auto vy = input(1); // lateral velocity in base frame
+                const auto c = cos(theta);
+                const auto s = sin(theta);
+                // rotate body-frame (vx, vy) into world frame; input(2) is yaw rate
+                vPinocchio << c * vx - s * vy, s * vx + c * vy, input(2),
+                    input.tail(modelInfo_.armDim);
+                break;
+            }
         default:
             {
                 throw std::runtime_error("The chosen manipulator model type is not supported!");
@@ -127,6 +139,23 @@ namespace ocs2::mobile_manipulator
         SCALAR(0), SCALAR(1.0);
                 // clang-format on
                 dfdu.template leftCols<2>() = Jv.template leftCols<3>() * dvdu_base;
+                dfdu.template rightCols(modelInfo_.armDim) = Jv.template rightCols(modelInfo_.armDim);
+                return {Jq, dfdu};
+            }
+        case ManipulatorModelType::OmniWheelBasedMobileManipulator:
+            {
+                // map pinocchio base velocity jacobian through dv/du for (vx, vy, omega)
+                matrix_t dfdu(Jv.rows(), modelInfo_.inputDim);
+                Eigen::Matrix<SCALAR, 3, 3> dvdu_base;
+                const SCALAR theta = state(2);
+                const SCALAR c = cos(theta);
+                const SCALAR s = sin(theta);
+                // clang-format off
+                dvdu_base << c, -s, SCALAR(0),
+                             s,  c, SCALAR(0),
+                             SCALAR(0), SCALAR(0), SCALAR(1.0);
+                // clang-format on
+                dfdu.template leftCols<3>() = Jv.template leftCols<3>() * dvdu_base;
                 dfdu.template rightCols(modelInfo_.armDim) = Jv.template rightCols(modelInfo_.armDim);
                 return {Jq, dfdu};
             }

@@ -61,6 +61,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mobile_manipulator/dynamics/FloatingArmManipulatorDynamics.h"
 #include "ocs2_mobile_manipulator/dynamics/FullyActuatedFloatingArmManipulatorDynamics.h"
 #include "ocs2_mobile_manipulator/dynamics/WheelBasedMobileManipulatorDynamics.h"
+#include "ocs2_mobile_manipulator/dynamics/OmniWheelBasedMobileManipulatorDynamics.h"
 
 // Boost
 #include <boost/filesystem/operations.hpp>
@@ -274,6 +275,13 @@ namespace ocs2::mobile_manipulator
         case ManipulatorModelType::WheelBasedMobileManipulator:
             {
                 problem_.dynamicsPtr = std::make_unique<WheelBasedMobileManipulatorDynamics>(
+                    manipulatorModelInfo_, "dynamics", libraryFolder,
+                    recompileLibraries, true);
+                break;
+            }
+        case ManipulatorModelType::OmniWheelBasedMobileManipulator:
+            {
+                problem_.dynamicsPtr = std::make_unique<OmniWheelBasedMobileManipulatorDynamics>(
                     manipulatorModelInfo_, "dynamics", libraryFolder,
                     recompileLibraries, true);
                 break;
