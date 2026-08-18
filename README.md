@@ -4,6 +4,13 @@
 
 OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), it was refactored to be compatible with ROS2 and modern cmake.
 
+### What's New (2026.08)
+
+**Omni-Wheel Mobile Manipulator Support**
+- Add `OmniWheelBasedMobileManipulator` kinematics for planar holonomic bases (omni-wheel / mecanum).
+- Mobile manipulator MPC previously covered differential-drive bases; this model adds body-frame `(vx, vy, omega)` inputs so the planner can command true omnidirectional motion.
+- Wired through factory dimensions, Pinocchio mapping, and the mobile manipulator interface (`modelType: omniWheelBasedMobileManipulator` in the task `.info` file).
+
 ### What's New (2026.05)
 
 **ROS 2 Lyrical Support**
@@ -19,7 +26,7 @@ OCS2_ROS2 is developed based on [OCS2](https://github.com/leggedrobotics/ocs2), 
 
 **Environment Collision for Mobile Manipulator**
 - Add basic geometry environment collision support.
-- Please check Franka demo for more details.
+- See the Franka demo for more details.
 
 ### Tested Platform
 
@@ -61,7 +68,7 @@ Tested system and ROS2 version:
 * Eigen (v3.4)
 * Boost C++ (v1.74)
 
-> **Note:** Latest version used pinocchio from ros source to simplified install steps. If you install pinocchio from robot-pkgs, you can uninstall it by
+> **Note:** The latest version uses Pinocchio from the ROS distribution to simplify installation. If you previously installed Pinocchio from `robotpkg`, uninstall it with:
 > ```bash
 > sudo apt remove robotpkg-*
 > ```
@@ -254,6 +261,8 @@ https://github.com/user-attachments/assets/aed3173f-a6e6-4499-ae8c-d101bedc5222
 
 ### 3.5 [Mobile Manipulator](https://leggedrobotics.github.io/ocs2/robotic_examples.html#mobile-manipulator)
 
+Supported base model types include fixed-base / floating-arm manipulators, differential-drive (`wheelBasedMobileManipulator`), and omni-wheel / mecanum (`omniWheelBasedMobileManipulator`). Set `modelType` in the task `.info` file accordingly.
+
 <details>
 <summary>🦾 Click to expand Mobile Manipulator example</summary>
 
@@ -344,6 +353,6 @@ https://github.com/user-attachments/assets/d29551b7-2ac7-428d-9605-f782193bcaf2
 
 ## 5. Related Projects
 
-* [quadruped ros2 control](https://github.com/legubiao/quadruped_ros2_control)： Quadruped controller based on OCS2 ROS2
-* [arms ro2 control](https://github.com/fiveages-sim/arms_ros2_control): Mobile manipulator controller based on OCS2 ROS2
-* [robot_descriptions](https://github.com/fiveages-sim/robot_descriptions): More robot configs for OCS2 ROS2
+* [quadruped_ros2_control](https://github.com/legubiao/quadruped_ros2_control): Quadruped controller based on OCS2 ROS2
+* [arms_ros2_control](https://github.com/fiveages-sim/arms_ros2_control): Mobile manipulator controller based on OCS2 ROS2
+* [robot_descriptions](https://github.com/fiveages-sim/robot_descriptions): Additional robot configs for OCS2 ROS2
