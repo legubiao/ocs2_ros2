@@ -29,10 +29,35 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_mpc/MPC_MRT_Interface.h"
 
+#include <algorithm>
+#include <atomic>
+#include <memory>
+
 #include <ocs2_core/control/FeedforwardController.h>
 #include <ocs2_core/control/LinearController.h>
 
 namespace ocs2 {
+    namespace {
+        constexpr size_t kMaxVisualizationTrajectoryPoints = 32;
+
+        std::shared_ptr<const vector_array_t> downsampleStateTrajectory(const vector_array_t& in) {
+            auto out = std::make_shared<vector_array_t>();
+            if (in.empty()) {
+                return out;
+            }
+            const size_t n = in.size();
+            const size_t step = std::max<size_t>(1, (n + kMaxVisualizationTrajectoryPoints - 1) / kMaxVisualizationTrajectoryPoints);
+            out->reserve((n + step - 1) / step + 1);
+            for (size_t i = 0; i < n; i += step) {
+                out->push_back(in[i]);
+            }
+            if ((n - 1) % step != 0) {
+                out->push_back(in.back());
+            }
+            return out;
+        }
+    }  // namespace
+
     MPC_MRT_Interface::MPC_MRT_Interface(MPC_BASE &mpc) : mpc_(mpc) {
         mpcTimer_.reset();
     }
@@ -46,8 +71,12 @@ namespace ocs2 {
 
 
     void MPC_MRT_Interface::setCurrentObservation(const SystemObservation &currentObservation) {
-        std::lock_guard<std::mutex> lock(observationMutex_);
+        // RT must not block behind advanceMpc()'s copy (priority inversion on a shared core).
+        if (!observationMutex_.try_lock()) {
+            return;
+        }
         currentObservation_ = currentObservation;
+        observationMutex_.unlock();
     }
 
 
@@ -118,7 +147,16 @@ namespace ocs2 {
         auto performanceIndicesPtr = std::make_unique<PerformanceIndex>();
         *performanceIndicesPtr = mpc_.getSolverPtr()->getPerformanceIndeces();
 
+        std::atomic_store_explicit(&visualizationStateTrajectory_,
+                                   downsampleStateTrajectory(primalSolutionPtr->stateTrajectory_),
+                                   std::memory_order_release);
+
         this->moveToBuffer(std::move(commandPtr), std::move(primalSolutionPtr), std::move(performanceIndicesPtr));
+    }
+
+
+    std::shared_ptr<const vector_array_t> MPC_MRT_Interface::getVisualizationStateTrajectory() const {
+        return std::atomic_load_explicit(&visualizationStateTrajectory_, std::memory_order_acquire);
     }
 
 
