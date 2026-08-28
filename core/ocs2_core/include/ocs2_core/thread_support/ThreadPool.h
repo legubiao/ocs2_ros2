@@ -44,6 +44,13 @@ namespace ocs2 {
 class ThreadPool {
  public:
   /**
+   * CPU affinity applied to workers created by the next ThreadPool constructor.
+   * Used to keep DDP helpers off the RT control core without changing DDP_Settings.
+   * Empty list (default) leaves affinity unchanged.
+   */
+  static void setLaunchWorkerCpuAffinity(std::vector<int> cpus);
+
+  /**
    * Constructor
    *
    * @param [in] nThreads: Number of threads to launch in the pool

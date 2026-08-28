@@ -30,8 +30,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <pthread.h>
+#include <sched.h>
+
 #include <iostream>
 #include <thread>
+#include <vector>
 
 namespace ocs2 {
 
@@ -71,6 +74,34 @@ inline void setThreadPriority(int priority, std::thread& thread) {
  */
 inline void setThisThreadPriority(int priority) {
   setThreadPriority(priority, pthread_self());
+}
+
+/**
+ * Pin a thread to the given CPUs. Empty list is a no-op.
+ */
+inline void setThreadCpuAffinity(pthread_t thread, const std::vector<int>& cpus) {
+  if (cpus.empty()) {
+    return;
+  }
+  cpu_set_t set;
+  CPU_ZERO(&set);
+  bool any = false;
+  for (const int cpu : cpus) {
+    if (cpu >= 0 && cpu < CPU_SETSIZE) {
+      CPU_SET(cpu, &set);
+      any = true;
+    }
+  }
+  if (!any) {
+    return;
+  }
+  if (pthread_setaffinity_np(thread, sizeof(set), &set) != 0) {
+    std::cerr << "WARNING: Failed to set thread CPU affinity\n";
+  }
+}
+
+inline void setThreadCpuAffinity(std::thread& thread, const std::vector<int>& cpus) {
+  setThreadCpuAffinity(thread.native_handle(), cpus);
 }
 
 }  // namespace ocs2

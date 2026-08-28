@@ -30,12 +30,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/thread_support/SetThreadPriority.h>
 #include <ocs2_core/thread_support/ThreadPool.h>
 
+#include <mutex>
+#include <vector>
+
 namespace ocs2 {
+    namespace {
+        std::mutex launchAffinityMutex;
+        std::vector<int> launchWorkerCpuAffinity;
+    }  // namespace
+
+    void ThreadPool::setLaunchWorkerCpuAffinity(std::vector<int> cpus) {
+        std::lock_guard<std::mutex> lock(launchAffinityMutex);
+        launchWorkerCpuAffinity = std::move(cpus);
+    }
+
     ThreadPool::ThreadPool(size_t nThreads, int priority) {
+        std::vector<int> cpus;
+        {
+            std::lock_guard<std::mutex> lock(launchAffinityMutex);
+            cpus = launchWorkerCpuAffinity;
+        }
         workerThreads_.reserve(nThreads);
         for (size_t i = 0; i < nThreads; i++) {
             workerThreads_.emplace_back(&ThreadPool::worker, this, i);
             setThreadPriority(priority, workerThreads_.back());
+            setThreadCpuAffinity(workerThreads_.back(), cpus);
         }
     }
 

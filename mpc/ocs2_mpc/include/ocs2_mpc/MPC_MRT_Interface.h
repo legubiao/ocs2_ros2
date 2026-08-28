@@ -31,6 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <condition_variable>
 #include <csignal>
+#include <memory>
 
 #include <ocs2_core/misc/Benchmark.h>
 #include <ocs2_core/model_data/Multiplier.h>
@@ -68,6 +69,12 @@ namespace ocs2 {
          * control law that was up-to-date at the last updatePolicy() call.
          */
         void advanceMpc();
+
+        /**
+         * Downsampled state trajectory prepared on the MPC thread during copyToBuffer().
+         * RT may atomic-load this pointer without copying the trajectory vectors.
+         */
+        std::shared_ptr<const vector_array_t> getVisualizationStateTrajectory() const;
 
         /**
          * @brief Retrieves the gain matrix from solver capable of optimizing over LinearController type.
@@ -125,5 +132,6 @@ namespace ocs2 {
         // MPC inputs
         SystemObservation currentObservation_;
         std::mutex observationMutex_;
+        mutable std::shared_ptr<const vector_array_t> visualizationStateTrajectory_;
     };
 } // namespace ocs2
