@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ocs2_mobile_manipulator/FactoryFunctions.h>
 #include <ocs2_mobile_manipulator/collision/EnvironmentGeometryInterface.h>
+#include <ocs2_mobile_manipulator/constraint/Joint67CouplingConstraint.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_self_collision/PinocchioGeometryInterface.h>
 
@@ -146,6 +147,20 @@ namespace ocs2::mobile_manipulator
             return envCollisionEnabled_;
         }
 
+        /**
+         * @brief 6/7 轴耦合约束是否启用
+         */
+        bool isJoint67CouplingEnabled() const {
+            return !joint67CouplingArms_.empty();
+        }
+
+        /**
+         * @brief 对给定状态做 6/7 轴耦合检测。
+         * @return 每个已配置手臂（左/右）的 CouplingStatus（角度/裕量单位为度）。
+         */
+        std::vector<Joint67CouplingConstraint::CouplingStatus> checkJoint67Coupling(
+            const vector_t& state) const;
+
         bool dual_arm_ = false;
 
     private:
@@ -170,6 +185,7 @@ namespace ocs2::mobile_manipulator
                                                              bool recompileLibraries);
         std::unique_ptr<StateInputCost> getJointLimitSoftConstraint(const PinocchioInterface& pinocchioInterface,
                                                                     const std::string& taskFile);
+        std::unique_ptr<StateCost> getJoint67CouplingConstraint(const std::string& taskFile);
         std::unique_ptr<StateCost> getEnvironmentCollisionConstraint(const PinocchioInterface& pinocchioInterface,
                                                                      const std::string& taskFile,
                                                                      const std::string& prefix);
@@ -211,6 +227,9 @@ namespace ocs2::mobile_manipulator
 
         // 环境碰撞约束是否启用
         bool envCollisionEnabled_ = false;
+
+        // 6/7 轴耦合检测（度域系数 + 绝对状态下标；由 joint67Coupling 配置解析而来）
+        std::vector<Joint67CouplingConstraint::ArmCoupling> joint67CouplingArms_;
 
         vector_t initialState_;
     };

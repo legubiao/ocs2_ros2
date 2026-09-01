@@ -28,6 +28,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <pinocchio/fwd.hpp>  // forward declarations must be included first.
@@ -53,6 +54,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mobile_manipulator/MobileManipulatorPreComputation.h"
 #include "ocs2_mobile_manipulator/constraint/EndEffectorConstraint.h"
 #include "ocs2_mobile_manipulator/constraint/BodyRelativeConstraint.h"
+#include "ocs2_mobile_manipulator/constraint/Joint67CouplingConstraint.h"
 
 #include "ocs2_mobile_manipulator/constraint/MobileManipulatorSelfCollisionConstraint.h"
 #include "ocs2_mobile_manipulator/constraint/EnvironmentCollisionConstraint.h"
@@ -236,6 +238,20 @@ namespace ocs2::mobile_manipulator
                 "bodyRelative", getBodyRelativeConstraint(*pinocchioInterfacePtr_, taskFile,
                                                           "bodyRelative", usePreComputation,
                                                           libraryFolder, recompileLibraries));
+        }
+
+        // 6/7-axis coupling constraint (Marvin CCS coupled wrist range).
+        // Parse the arms regardless of activation so runtime detection (checkJoint67Coupling)
+        // works even when the soft constraint itself is disabled.
+        bool activateJoint67Coupling = false;
+        loadData::loadPtreeValue(pt, activateJoint67Coupling, "joint67Coupling.activate", false);
+        if (pt.get_child_optional("joint67Coupling"))
+        {
+            auto couplingCost = getJoint67CouplingConstraint(taskFile);
+            if (activateJoint67Coupling)
+            {
+                problem_.stateSoftConstraintPtr->add("joint67Coupling", std::move(couplingCost));
+            }
         }
 
         // environment collision avoidance constraint
@@ -642,6 +658,130 @@ namespace ocs2::mobile_manipulator
         boxConstraints->initializeOffset(0.0, vector_t::Zero(manipulatorModelInfo_.stateDim),
                                          vector_t::Zero(manipulatorModelInfo_.stateDim));
         return boxConstraints;
+    }
+
+    std::unique_ptr<StateCost> MobileManipulatorInterface::getJoint67CouplingConstraint(
+        const std::string& taskFile)
+    {
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_info(taskFile, pt);
+
+        const std::string prefix = "joint67Coupling";
+        const size_t baseStateDim = manipulatorModelInfo_.stateDim - manipulatorModelInfo_.armDim;
+
+        // 6/7-axis coupling is a fixed property of the CCS wrist: it always acts on the
+        // 6th/7th joint of each 7-DOF arm, with fixed BD coefficients (from MvKDCfg).
+        constexpr scalar_t kMu = 1e-3;
+        constexpr scalar_t kDelta = 1e-3;
+        constexpr scalar_t kDeadbandDeg = 1.0;
+        const Joint67CouplingConstraint::Parabola kPp{0.018004, -2.3205, 108.0};   // J6>=0, J7 upper
+        const Joint67CouplingConstraint::Parabola kNp{0.018004, -2.3205, 108.0};   // J6<0,  J7 upper
+        const Joint67CouplingConstraint::Parabola kNn{-0.018004, 2.3205, -108.0};  // J6<0,  J7 lower
+        const Joint67CouplingConstraint::Parabola kPn{-0.018004, 2.3205, -108.0};  // J6>=0, J7 lower
+
+        const size_t armDim = static_cast<size_t>(manipulatorModelInfo_.armDim);
+
+        auto makeArm = [&](size_t j6StateIndex, size_t j7StateIndex)
+        {
+            Joint67CouplingConstraint::ArmCoupling arm;
+            arm.j6StateIndex = j6StateIndex;
+            arm.j7StateIndex = j7StateIndex;
+            arm.deadbandDeg = kDeadbandDeg;
+            arm.pp = kPp;
+            arm.np = kNp;
+            arm.nn = kNn;
+            arm.pn = kPn;
+            return arm;
+        };
+
+        // Optional per-arm J6/J7 index override (only needed for non-standard layouts,
+        // e.g. wheel humanoid with waist/head joints before the arms).
+        auto loadArm = [&](const std::string& side, size_t defaultJ6, size_t defaultJ7)
+            -> std::optional<Joint67CouplingConstraint::ArmCoupling>
+        {
+            const std::string armPrefix = prefix + "." + side;
+            if (!pt.get_child_optional(armPrefix))
+            {
+                return std::nullopt;
+            }
+            size_t j6Index = defaultJ6;
+            size_t j7Index = defaultJ7;
+            loadData::loadPtreeValue(pt, j6Index, armPrefix + ".j6Index", false);
+            loadData::loadPtreeValue(pt, j7Index, armPrefix + ".j7Index", false);
+            if (j6Index >= armDim || j7Index >= armDim)
+            {
+                throw std::runtime_error(
+                    "[MobileManipulatorInterface] joint67Coupling." + side +
+                    " j6Index/j7Index is outside armDim");
+            }
+            auto arm = makeArm(baseStateDim + j6Index, baseStateDim + j7Index);
+            std::cerr << " ####   " << side << ": J6/J7 state indices "
+                      << arm.j6StateIndex << "/" << arm.j7StateIndex << '\n';
+            return arm;
+        };
+
+        std::vector<Joint67CouplingConstraint::ArmCoupling> arms;
+        if (auto left = loadArm("left", 5, 6))
+        {
+            arms.push_back(*left);
+        }
+        if (auto right = loadArm("right", 12, 13))
+        {
+            arms.push_back(*right);
+        }
+        // Default: coupling always applies to the 6/7 axes of each 7-DOF arm.
+        if (arms.empty())
+        {
+            if (armDim >= 7)
+            {
+                arms.push_back(makeArm(baseStateDim + 5, baseStateDim + 6));
+            }
+            if (armDim >= 14)
+            {
+                arms.push_back(makeArm(baseStateDim + 12, baseStateDim + 13));
+            }
+        }
+        std::cerr << " #### Joint67Coupling: mu=" << kMu << " delta=" << kDelta
+                  << " deadbandDeg=" << kDeadbandDeg << " arms=" << arms.size() << '\n';
+        std::cerr << " #### =============================================================================\n";
+
+        if (arms.empty())
+        {
+            throw std::runtime_error(
+                "[MobileManipulatorInterface] joint67Coupling enabled but armDim too small "
+                "for a 6/7-axis coupling layout");
+        }
+
+        // Keep a degree-domain copy for runtime checkJoint67Coupling().
+        joint67CouplingArms_ = arms;
+
+        auto constraint = std::make_unique<Joint67CouplingConstraint>(
+            std::move(arms), manipulatorModelInfo_.stateDim);
+
+        std::vector<std::unique_ptr<PenaltyBase>> penaltyArray(constraint->getNumConstraints(0.0));
+        std::generate_n(penaltyArray.begin(), penaltyArray.size(), [&]
+        {
+            return std::make_unique<RelaxedBarrierPenalty>(
+                RelaxedBarrierPenalty::Config{kMu, kDelta});
+        });
+
+        return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
+    }
+
+    std::vector<Joint67CouplingConstraint::CouplingStatus> MobileManipulatorInterface::checkJoint67Coupling(
+        const vector_t& state) const
+    {
+        constexpr scalar_t kRadToDeg = 180.0 / 3.14159265358979323846;
+        std::vector<Joint67CouplingConstraint::CouplingStatus> statuses;
+        statuses.reserve(joint67CouplingArms_.size());
+        for (const auto& arm : joint67CouplingArms_)
+        {
+            const scalar_t j6Deg = state(static_cast<Eigen::Index>(arm.j6StateIndex)) * kRadToDeg;
+            const scalar_t j7Deg = state(static_cast<Eigen::Index>(arm.j7StateIndex)) * kRadToDeg;
+            statuses.push_back(Joint67CouplingConstraint::checkCouplingDeg(
+                j6Deg, j7Deg, arm.pp, arm.np, arm.nn, arm.pn, arm.deadbandDeg));
+        }
+        return statuses;
     }
 
     std::unique_ptr<StateCost> MobileManipulatorInterface::getBodyRelativeConstraint(
