@@ -671,9 +671,15 @@ namespace ocs2::mobile_manipulator
 
         // 6/7-axis coupling is a fixed property of the CCS wrist: it always acts on the
         // 6th/7th joint of each 7-DOF arm, with fixed BD coefficients (from MvKDCfg).
-        constexpr scalar_t kMu = 1e-3;
-        constexpr scalar_t kDelta = 1e-3;
+        // Barrier weight is configurable in the task .info file (joint67Coupling.mu).
+        constexpr scalar_t kDefaultMu = 1e-3;
+        constexpr scalar_t kDefaultDelta = 1e-3;
         constexpr scalar_t kDeadbandDeg = 1.0;
+
+        scalar_t mu = kDefaultMu;
+        scalar_t delta = kDefaultDelta;
+        loadData::loadPtreeValue(pt, mu, prefix + ".mu", true);
+        loadData::loadPtreeValue(pt, delta, prefix + ".delta", true);
         const Joint67CouplingConstraint::Parabola kPp{0.018004, -2.3205, 108.0};   // J6>=0, J7 upper
         const Joint67CouplingConstraint::Parabola kNp{0.018004, -2.3205, 108.0};   // J6<0,  J7 upper
         const Joint67CouplingConstraint::Parabola kNn{-0.018004, 2.3205, -108.0};  // J6<0,  J7 lower
@@ -741,7 +747,8 @@ namespace ocs2::mobile_manipulator
                 arms.push_back(makeArm(baseStateDim + 12, baseStateDim + 13));
             }
         }
-        std::cerr << " #### Joint67Coupling: mu=" << kMu << " delta=" << kDelta
+        std::cerr << " #### Joint67Coupling: mu=" << mu
+                  << " delta=" << delta
                   << " deadbandDeg=" << kDeadbandDeg << " arms=" << arms.size() << '\n';
         std::cerr << " #### =============================================================================\n";
 
@@ -762,7 +769,7 @@ namespace ocs2::mobile_manipulator
         std::generate_n(penaltyArray.begin(), penaltyArray.size(), [&]
         {
             return std::make_unique<RelaxedBarrierPenalty>(
-                RelaxedBarrierPenalty::Config{kMu, kDelta});
+                RelaxedBarrierPenalty::Config{mu, delta});
         });
 
         return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
