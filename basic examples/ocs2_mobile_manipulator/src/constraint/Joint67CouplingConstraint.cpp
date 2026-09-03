@@ -1,12 +1,14 @@
 /******************************************************************************
- * Marvin CCS 6/7-axis coupling constraint implementation.
+ * Smooth Marvin CCS 6/7-axis coupling constraint implementation.
  ******************************************************************************/
 
 #include "ocs2_mobile_manipulator/constraint/Joint67CouplingConstraint.h"
 
+#include <algorithm>
+#include <array>
 #include <cmath>
-#include <limits>
 #include <stdexcept>
+#include <utility>
 
 namespace ocs2::mobile_manipulator
 {
@@ -14,69 +16,137 @@ namespace ocs2::mobile_manipulator
     {
         constexpr scalar_t kDegToRad = 3.14159265358979323846 / 180.0;
 
-        /** Convert a degree-domain parabola (j7 = a0*j6^2 + a1*j6 + a2) to radians. */
-        Joint67CouplingConstraint::Parabola toRadians(const Joint67CouplingConstraint::Parabola& p)
+        Joint67CouplingConstraint::Config convertAnglesToRadians(
+            Joint67CouplingConstraint::Config config)
         {
-            // q7_rad = (a0 / k) * q6_rad^2 + a1 * q6_rad + (a2 * k), with k = pi/180.
-            Joint67CouplingConstraint::Parabola r;
-            r.a0 = p.a0 / kDegToRad;
-            r.a1 = p.a1;
-            r.a2 = p.a2 * kDegToRad;
-            return r;
+            config.j6LimitDeg *= kDegToRad;
+            config.j7LimitDeg *= kDegToRad;
+            config.diagonalLimitDeg *= kDegToRad;
+            config.smoothTauDeg *= kDegToRad;
+            config.safetyMarginDeg *= kDegToRad;
+            return config;
         }
 
-        scalar_t evaluate(const Joint67CouplingConstraint::Parabola& p, scalar_t q6)
+        bool isFinite(scalar_t value)
         {
-            return p.a0 * q6 * q6 + p.a1 * q6 + p.a2;
+            return std::isfinite(value);
         }
     }  // namespace
 
-    Joint67CouplingConstraint::CouplingStatus Joint67CouplingConstraint::checkCouplingDeg(
-        scalar_t j6Deg, scalar_t j7Deg,
-        const Parabola& pp, const Parabola& np,
-        const Parabola& nn, const Parabola& pn,
-        scalar_t deadbandDeg)
+    void Joint67CouplingConstraint::validateConfig(const Config& config)
     {
-        CouplingStatus status;
-        if (std::abs(j6Deg) <= deadbandDeg)
+        if (!isFinite(config.j6LimitDeg) || config.j6LimitDeg <= 0.0 ||
+            !isFinite(config.j7LimitDeg) || config.j7LimitDeg <= 0.0 ||
+            !isFinite(config.diagonalLimitDeg) || config.diagonalLimitDeg <= 0.0 ||
+            !isFinite(config.diagonalSlope) || config.diagonalSlope <= 0.0 ||
+            !isFinite(config.smoothTauDeg) || config.smoothTauDeg <= 0.0 ||
+            !isFinite(config.safetyMarginDeg) || config.safetyMarginDeg < 0.0)
         {
-            // Inside the deadband there is no interference limit.
-            status.withinRange = true;
-            status.upperLimitDeg = std::numeric_limits<scalar_t>::infinity();
-            status.lowerLimitDeg = -std::numeric_limits<scalar_t>::infinity();
-            status.upperMarginDeg = std::numeric_limits<scalar_t>::infinity();
-            status.lowerMarginDeg = std::numeric_limits<scalar_t>::infinity();
-            return status;
+            throw std::invalid_argument(
+                "[Joint67CouplingConstraint] invalid boundary configuration");
+        }
+    }
+
+    Joint67CouplingConstraint::Evaluation Joint67CouplingConstraint::evaluate(
+        scalar_t q6, scalar_t q7, const Config& config)
+    {
+        const scalar_t slope = config.diagonalSlope;
+        const scalar_t diagonalNormal = std::sqrt(slope * slope + 1.0);
+
+        // Each g_i is the signed Euclidean distance to one polygon half-space:
+        // g_i <= 0 is inside. SmoothMax(g_i) >= max(g_i), therefore requiring
+        // -SmoothMax(g_i)-margin >= 0 is a conservative rounded envelope.
+        const std::array<scalar_t, 8> g{
+            q6 - config.j6LimitDeg,
+            -q6 - config.j6LimitDeg,
+            q7 - config.j7LimitDeg,
+            -q7 - config.j7LimitDeg,
+            (slope * q6 + q7 - config.diagonalLimitDeg) / diagonalNormal,
+            (slope * q6 - q7 - config.diagonalLimitDeg) / diagonalNormal,
+            (-slope * q6 + q7 - config.diagonalLimitDeg) / diagonalNormal,
+            (-slope * q6 - q7 - config.diagonalLimitDeg) / diagonalNormal,
+        };
+        const std::array<scalar_t, 8> dgJ6{
+            1.0, -1.0, 0.0, 0.0,
+            slope / diagonalNormal, slope / diagonalNormal,
+            -slope / diagonalNormal, -slope / diagonalNormal,
+        };
+        const std::array<scalar_t, 8> dgJ7{
+            0.0, 0.0, 1.0, -1.0,
+            1.0 / diagonalNormal, -1.0 / diagonalNormal,
+            1.0 / diagonalNormal, -1.0 / diagonalNormal,
+        };
+
+        const scalar_t gMax = *std::max_element(g.begin(), g.end());
+        scalar_t exponentialSum = 0.0;
+        std::array<scalar_t, 8> exponentials{};
+        for (size_t i = 0; i < g.size(); ++i)
+        {
+            exponentials[i] = std::exp((g[i] - gMax) / config.smoothTauDeg);
+            exponentialSum += exponentials[i];
         }
 
-        const Parabola& upper = (j6Deg >= 0.0) ? pp : np;
-        const Parabola& lower = (j6Deg >= 0.0) ? pn : nn;
-        status.upperLimitDeg = evaluate(upper, j6Deg);
-        status.lowerLimitDeg = evaluate(lower, j6Deg);
+        const scalar_t smoothMax =
+            gMax + config.smoothTauDeg * std::log(exponentialSum);
+        Evaluation result;
+        result.value = -smoothMax - config.safetyMarginDeg;
+        for (size_t i = 0; i < g.size(); ++i)
+        {
+            const scalar_t weight = exponentials[i] / exponentialSum;
+            result.derivativeJ6 -= weight * dgJ6[i];
+            result.derivativeJ7 -= weight * dgJ7[i];
+        }
+        return result;
+    }
+
+    Joint67CouplingConstraint::CouplingStatus Joint67CouplingConstraint::checkCouplingDeg(
+        scalar_t j6Deg, scalar_t j7Deg, const Config& config)
+    {
+        validateConfig(config);
+
+        CouplingStatus status;
+        status.joint6MarginDeg = config.j6LimitDeg - std::abs(j6Deg);
+        const scalar_t j7HalfRange = std::min(
+            config.j7LimitDeg,
+            config.diagonalLimitDeg - config.diagonalSlope * std::abs(j6Deg));
+        status.upperLimitDeg = j7HalfRange;
+        status.lowerLimitDeg = -j7HalfRange;
         status.upperMarginDeg = status.upperLimitDeg - j7Deg;
         status.lowerMarginDeg = j7Deg - status.lowerLimitDeg;
-        status.withinRange = (status.upperMarginDeg >= 0.0) && (status.lowerMarginDeg >= 0.0);
+        status.withinRawRange = status.joint6MarginDeg >= 0.0 &&
+                                status.upperMarginDeg >= 0.0 &&
+                                status.lowerMarginDeg >= 0.0;
+        status.smoothMarginDeg = evaluate(j6Deg, j7Deg, config).value;
+        status.withinRange = status.smoothMarginDeg >= 0.0;
         return status;
     }
 
-    Joint67CouplingConstraint::Joint67CouplingConstraint(std::vector<ArmCoupling> arms, size_t stateDim)
-        : StateConstraint(ConstraintOrder::Quadratic)
+    Joint67CouplingConstraint::Joint67CouplingConstraint(
+        std::vector<ArmCoupling> arms, Config config, size_t stateDim)
+        : StateConstraint(ConstraintOrder::Linear)
+        , arms_(std::move(arms))
+        , configRad_(convertAnglesToRadians(config))
         , stateDim_(stateDim)
     {
-        arms_.reserve(arms.size());
-        for (auto& arm : arms)
+        validateConfig(config);
+        if (arms_.empty())
         {
-            if (arm.j6StateIndex >= stateDim || arm.j7StateIndex >= stateDim)
+            throw std::invalid_argument(
+                "[Joint67CouplingConstraint] at least one arm is required");
+        }
+        for (const auto& arm : arms_)
+        {
+            if (arm.j6StateIndex >= stateDim || arm.j7StateIndex >= stateDim ||
+                arm.j6StateIndex == arm.j7StateIndex)
             {
                 throw std::invalid_argument(
-                    "[Joint67CouplingConstraint] J6/J7 state index is outside state dimension");
+                    "[Joint67CouplingConstraint] invalid J6/J7 state index");
             }
-            arm.pp = toRadians(arm.pp);
-            arm.np = toRadians(arm.np);
-            arm.nn = toRadians(arm.nn);
-            arm.pn = toRadians(arm.pn);
-            arm.deadbandDeg = arm.deadbandDeg * kDegToRad;  // store as radians
-            arms_.push_back(arm);
+        }
+        if (evaluate(0.0, 0.0, configRad_).value <= 0.0)
+        {
+            throw std::invalid_argument(
+                "[Joint67CouplingConstraint] smoothing and margin leave no feasible center");
         }
     }
 
@@ -90,7 +160,7 @@ namespace ocs2::mobile_manipulator
 
     size_t Joint67CouplingConstraint::getNumConstraints(scalar_t /*time*/) const
     {
-        return arms_.size() * 2;
+        return arms_.size();
     }
 
     vector_t Joint67CouplingConstraint::getValue(
@@ -99,26 +169,13 @@ namespace ocs2::mobile_manipulator
     {
         validateStateSize(state);
 
-        vector_t value(static_cast<Eigen::Index>(arms_.size() * 2));
-        Eigen::Index row = 0;
-        for (const auto& arm : arms_)
+        vector_t value(static_cast<Eigen::Index>(arms_.size()));
+        for (size_t i = 0; i < arms_.size(); ++i)
         {
-            const scalar_t q6 = state(static_cast<Eigen::Index>(arm.j6StateIndex));
-            const scalar_t q7 = state(static_cast<Eigen::Index>(arm.j7StateIndex));
-
-            if (std::abs(q6) <= arm.deadbandDeg)
-            {
-                // Within the deadband the robot applies no interference limit.
-                // A constant positive residual => penalty zero, gradient zero.
-                value(row++) = 1.0;
-                value(row++) = 1.0;
-                continue;
-            }
-
-            const Parabola& upper = (q6 >= 0.0) ? arm.pp : arm.np;
-            const Parabola& lower = (q6 >= 0.0) ? arm.pn : arm.nn;
-            value(row++) = evaluate(upper, q6) - q7;  // >= 0 inside
-            value(row++) = q7 - evaluate(lower, q6);  // >= 0 inside
+            const auto& arm = arms_[i];
+            value(static_cast<Eigen::Index>(i)) = evaluate(
+                state(static_cast<Eigen::Index>(arm.j6StateIndex)),
+                state(static_cast<Eigen::Index>(arm.j7StateIndex)), configRad_).value;
         }
         return value;
     }
@@ -129,92 +186,22 @@ namespace ocs2::mobile_manipulator
     {
         validateStateSize(state);
 
-        const Eigen::Index nv = static_cast<Eigen::Index>(arms_.size() * 2);
-        VectorFunctionLinearApproximation approx;
-        approx.setZero(nv, state.size(), 0);
+        const Eigen::Index constraintCount = static_cast<Eigen::Index>(arms_.size());
+        VectorFunctionLinearApproximation approximation;
+        approximation.setZero(constraintCount, state.size(), 0);
 
-        Eigen::Index row = 0;
-        for (const auto& arm : arms_)
+        for (size_t i = 0; i < arms_.size(); ++i)
         {
+            const auto& arm = arms_[i];
+            const Eigen::Index row = static_cast<Eigen::Index>(i);
             const Eigen::Index j6 = static_cast<Eigen::Index>(arm.j6StateIndex);
             const Eigen::Index j7 = static_cast<Eigen::Index>(arm.j7StateIndex);
-            const scalar_t q6 = state(j6);
-
-            if (std::abs(q6) <= arm.deadbandDeg)
-            {
-                approx.f(row) = 1.0;
-                approx.f(row + 1) = 1.0;
-                row += 2;
-                continue;
-            }
-
-            const Parabola& upper = (q6 >= 0.0) ? arm.pp : arm.np;
-            const Parabola& lower = (q6 >= 0.0) ? arm.pn : arm.nn;
-
-            const scalar_t dUpper = 2.0 * upper.a0 * q6 + upper.a1;
-            const scalar_t dLower = 2.0 * lower.a0 * q6 + lower.a1;
-
-            // h_upper = upper(q6) - q7
-            approx.f(row) = evaluate(upper, q6) - state(j7);
-            approx.dfdx(row, j6) = dUpper;
-            approx.dfdx(row, j7) = -1.0;
-
-            // h_lower = q7 - lower(q6)
-            approx.f(row + 1) = state(j7) - evaluate(lower, q6);
-            approx.dfdx(row + 1, j6) = -dLower;
-            approx.dfdx(row + 1, j7) = 1.0;
-
-            row += 2;
+            const Evaluation result = evaluate(state(j6), state(j7), configRad_);
+            approximation.f(row) = result.value;
+            approximation.dfdx(row, j6) = result.derivativeJ6;
+            approximation.dfdx(row, j7) = result.derivativeJ7;
         }
-        return approx;
-    }
-
-    VectorFunctionQuadraticApproximation Joint67CouplingConstraint::getQuadraticApproximation(
-        scalar_t /*time*/, const vector_t& state,
-        const PreComputation& /*preComputation*/) const
-    {
-        validateStateSize(state);
-
-        const Eigen::Index nv = static_cast<Eigen::Index>(arms_.size() * 2);
-        VectorFunctionQuadraticApproximation approx;
-        approx.setZero(nv, state.size(), 0);
-
-        Eigen::Index row = 0;
-        for (const auto& arm : arms_)
-        {
-            const Eigen::Index j6 = static_cast<Eigen::Index>(arm.j6StateIndex);
-            const Eigen::Index j7 = static_cast<Eigen::Index>(arm.j7StateIndex);
-            const scalar_t q6 = state(j6);
-
-            if (std::abs(q6) <= arm.deadbandDeg)
-            {
-                approx.f(row) = 1.0;
-                approx.f(row + 1) = 1.0;
-                row += 2;
-                continue;
-            }
-
-            const Parabola& upper = (q6 >= 0.0) ? arm.pp : arm.np;
-            const Parabola& lower = (q6 >= 0.0) ? arm.pn : arm.nn;
-
-            const scalar_t dUpper = 2.0 * upper.a0 * q6 + upper.a1;
-            const scalar_t dLower = 2.0 * lower.a0 * q6 + lower.a1;
-
-            // h_upper = upper(q6) - q7
-            approx.f(row) = evaluate(upper, q6) - state(j7);
-            approx.dfdx(row, j6) = dUpper;
-            approx.dfdx(row, j7) = -1.0;
-            approx.dfdxx[static_cast<size_t>(row)](j6, j6) = 2.0 * upper.a0;
-
-            // h_lower = q7 - lower(q6)
-            approx.f(row + 1) = state(j7) - evaluate(lower, q6);
-            approx.dfdx(row + 1, j6) = -dLower;
-            approx.dfdx(row + 1, j7) = 1.0;
-            approx.dfdxx[static_cast<size_t>(row + 1)](j6, j6) = -2.0 * lower.a0;
-
-            row += 2;
-        }
-        return approx;
+        return approximation;
     }
 
 }  // namespace ocs2::mobile_manipulator

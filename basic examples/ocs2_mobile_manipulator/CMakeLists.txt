@@ -90,6 +90,7 @@ if(BUILD_TESTING)
             test/testSelfCollision.cpp
             test/testEndEffectorConstraint.cpp
             test/testDummyMobileManipulator.cpp
+            test/testJoint67CouplingConstraint.cpp
     )
     target_include_directories(${PROJECT_NAME}_test PRIVATE test/include)
     target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME} ${ocs2_robotic_assets_TARGETS})

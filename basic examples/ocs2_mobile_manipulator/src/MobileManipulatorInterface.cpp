@@ -30,6 +30,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <optional>
 #include <string>
+#include <algorithm>
+#include <cmath>
+#include <stdexcept>
 
 #include <pinocchio/fwd.hpp>  // forward declarations must be included first.
 
@@ -245,6 +248,7 @@ namespace ocs2::mobile_manipulator
         // works even when the soft constraint itself is disabled.
         bool activateJoint67Coupling = false;
         loadData::loadPtreeValue(pt, activateJoint67Coupling, "joint67Coupling.activate", false);
+        joint67CouplingEnabled_ = activateJoint67Coupling;
         if (pt.get_child_optional("joint67Coupling"))
         {
             auto couplingCost = getJoint67CouplingConstraint(taskFile);
@@ -669,21 +673,30 @@ namespace ocs2::mobile_manipulator
         const std::string prefix = "joint67Coupling";
         const size_t baseStateDim = manipulatorModelInfo_.stateDim - manipulatorModelInfo_.armDim;
 
-        // 6/7-axis coupling is a fixed property of the CCS wrist: it always acts on the
-        // 6th/7th joint of each 7-DOF arm, with fixed BD coefficients (from MvKDCfg).
-        // Barrier weight is configurable in the task .info file (joint67Coupling.mu).
-        constexpr scalar_t kDefaultMu = 1e-3;
-        constexpr scalar_t kDefaultDelta = 1e-3;
-        constexpr scalar_t kDeadbandDeg = 1.0;
-
-        scalar_t mu = kDefaultMu;
-        scalar_t delta = kDefaultDelta;
-        loadData::loadPtreeValue(pt, mu, prefix + ".mu", true);
-        loadData::loadPtreeValue(pt, delta, prefix + ".delta", true);
-        const Joint67CouplingConstraint::Parabola kPp{0.018004, -2.3205, 108.0};   // J6>=0, J7 upper
-        const Joint67CouplingConstraint::Parabola kNp{0.018004, -2.3205, 108.0};   // J6<0,  J7 upper
-        const Joint67CouplingConstraint::Parabola kNn{-0.018004, 2.3205, -108.0};  // J6<0,  J7 lower
-        const Joint67CouplingConstraint::Parabola kPn{-0.018004, 2.3205, -108.0};  // J6>=0, J7 lower
+        // The raw CCS boundary is the manufacturer's octagon. Log-sum-exp rounds
+        // all eight joins inward, while safetyMarginDeg supplies an additional
+        // global clearance. J6/J7 defaults also respect the current M6 URDF.
+        Joint67CouplingConstraint::Config config;
+        scalar_t penaltyWeight = 50.0;
+        scalar_t penaltyActivationDeg = 3.0;
+        loadData::loadPtreeValue(pt, config.j6LimitDeg, prefix + ".j6LimitDeg", true);
+        loadData::loadPtreeValue(pt, config.j7LimitDeg, prefix + ".j7LimitDeg", true);
+        loadData::loadPtreeValue(pt, config.diagonalLimitDeg,
+                                 prefix + ".diagonalLimitDeg", true);
+        loadData::loadPtreeValue(pt, config.diagonalSlope,
+                                 prefix + ".slope", true);
+        loadData::loadPtreeValue(pt, config.smoothTauDeg, prefix + ".smoothTauDeg", true);
+        loadData::loadPtreeValue(pt, config.safetyMarginDeg,
+                                 prefix + ".safetyMarginDeg", true);
+        loadData::loadPtreeValue(pt, penaltyWeight, prefix + ".penaltyWeight", true);
+        loadData::loadPtreeValue(pt, penaltyActivationDeg,
+                                 prefix + ".penaltyActivationDeg", true);
+        if (!std::isfinite(penaltyWeight) || penaltyWeight <= 0.0 ||
+            !std::isfinite(penaltyActivationDeg) || penaltyActivationDeg < 0.0)
+        {
+            throw std::invalid_argument(
+                "[MobileManipulatorInterface] invalid joint67Coupling penalty configuration");
+        }
 
         const size_t armDim = static_cast<size_t>(manipulatorModelInfo_.armDim);
 
@@ -692,11 +705,6 @@ namespace ocs2::mobile_manipulator
             Joint67CouplingConstraint::ArmCoupling arm;
             arm.j6StateIndex = j6StateIndex;
             arm.j7StateIndex = j7StateIndex;
-            arm.deadbandDeg = kDeadbandDeg;
-            arm.pp = kPp;
-            arm.np = kNp;
-            arm.nn = kNn;
-            arm.pn = kPn;
             return arm;
         };
 
@@ -747,9 +755,15 @@ namespace ocs2::mobile_manipulator
                 arms.push_back(makeArm(baseStateDim + 12, baseStateDim + 13));
             }
         }
-        std::cerr << " #### Joint67Coupling: mu=" << mu
-                  << " delta=" << delta
-                  << " deadbandDeg=" << kDeadbandDeg << " arms=" << arms.size() << '\n';
+        std::cerr << " #### Joint67Coupling: J6=" << config.j6LimitDeg
+                  << "deg J7=" << config.j7LimitDeg
+                  << "deg diagonal=" << config.diagonalSlope << "*|J6|+|J7|<="
+                  << config.diagonalLimitDeg << "deg"
+                  << " smoothTau=" << config.smoothTauDeg << "deg"
+                  << " safetyMargin=" << config.safetyMarginDeg << "deg"
+                  << " penaltyWeight=" << penaltyWeight
+                  << " penaltyActivation=" << penaltyActivationDeg << "deg"
+                  << " arms=" << arms.size() << '\n';
         std::cerr << " #### =============================================================================\n";
 
         if (arms.empty())
@@ -759,26 +773,28 @@ namespace ocs2::mobile_manipulator
                 "for a 6/7-axis coupling layout");
         }
 
-        // Keep a degree-domain copy for runtime checkJoint67Coupling().
+        // Keep the state indices and degree-domain config for runtime checks.
         joint67CouplingArms_ = arms;
+        joint67CouplingConfig_ = config;
 
         auto constraint = std::make_unique<Joint67CouplingConstraint>(
-            std::move(arms), manipulatorModelInfo_.stateDim);
+            std::move(arms), config, manipulatorModelInfo_.stateDim);
 
-        std::vector<std::unique_ptr<PenaltyBase>> penaltyArray(constraint->getNumConstraints(0.0));
-        std::generate_n(penaltyArray.begin(), penaltyArray.size(), [&]
-        {
-            return std::make_unique<RelaxedBarrierPenalty>(
-                RelaxedBarrierPenalty::Config{mu, delta});
-        });
-
-        return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
+        constexpr scalar_t kDegToRad = 3.14159265358979323846 / 180.0;
+        auto penalty = std::make_unique<SquaredHingePenalty>(SquaredHingePenalty::Config{
+            penaltyWeight, penaltyActivationDeg * kDegToRad});
+        return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penalty));
     }
 
     std::vector<Joint67CouplingConstraint::CouplingStatus> MobileManipulatorInterface::checkJoint67Coupling(
         const vector_t& state) const
     {
         constexpr scalar_t kRadToDeg = 180.0 / 3.14159265358979323846;
+        if (static_cast<size_t>(state.size()) != manipulatorModelInfo_.stateDim)
+        {
+            throw std::out_of_range(
+                "[MobileManipulatorInterface] checkJoint67Coupling state dimension mismatch");
+        }
         std::vector<Joint67CouplingConstraint::CouplingStatus> statuses;
         statuses.reserve(joint67CouplingArms_.size());
         for (const auto& arm : joint67CouplingArms_)
@@ -786,7 +802,7 @@ namespace ocs2::mobile_manipulator
             const scalar_t j6Deg = state(static_cast<Eigen::Index>(arm.j6StateIndex)) * kRadToDeg;
             const scalar_t j7Deg = state(static_cast<Eigen::Index>(arm.j7StateIndex)) * kRadToDeg;
             statuses.push_back(Joint67CouplingConstraint::checkCouplingDeg(
-                j6Deg, j7Deg, arm.pp, arm.np, arm.nn, arm.pn, arm.deadbandDeg));
+                j6Deg, j7Deg, joint67CouplingConfig_));
         }
         return statuses;
     }

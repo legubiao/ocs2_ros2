@@ -151,7 +151,7 @@ namespace ocs2::mobile_manipulator
          * @brief 6/7 轴耦合约束是否启用
          */
         bool isJoint67CouplingEnabled() const {
-            return !joint67CouplingArms_.empty();
+            return joint67CouplingEnabled_;
         }
 
         /**
@@ -228,8 +228,10 @@ namespace ocs2::mobile_manipulator
         // 环境碰撞约束是否启用
         bool envCollisionEnabled_ = false;
 
-        // 6/7 轴耦合检测（度域系数 + 绝对状态下标；由 joint67Coupling 配置解析而来）
+        // 6/7 轴耦合检测（度域边界参数 + 绝对状态下标）
         std::vector<Joint67CouplingConstraint::ArmCoupling> joint67CouplingArms_;
+        Joint67CouplingConstraint::Config joint67CouplingConfig_;
+        bool joint67CouplingEnabled_ = false;
 
         vector_t initialState_;
     };
