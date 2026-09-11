@@ -38,6 +38,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_type == 'tag' && github.ref_name || (github.event_name == 'pull_request' && 'pre-release' || github.ref) }}-${{ github.event.inputs.release_tag || '' }}
@@ -180,9 +181,12 @@ jobs:
           done < /tmp/release_meta.txt
 
       - name: Install system tools
+        timeout-minutes: 10
         shell: bash
         run: |
           set -eo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          bash .github/scripts/configure_ci_apt.sh
           apt-get update
           apt-get install -y \
             pybind11-dev \
@@ -216,9 +220,11 @@ jobs:
             ccache-${{ matrix.ros_distro }}-${{ matrix.arch }}-
 
       - name: Install package dependencies via rosdep
+        timeout-minutes: 15
         shell: bash
         run: |
           set -eo pipefail
+          export DEBIAN_FRONTEND=noninteractive
           source "/opt/ros/${{ matrix.ros_distro }}/setup.bash"
           # Limit paths to core + basic examples; advance examples / plane_segmentation
           # submodules pull extra keys and can fail unrelated packages.
