@@ -112,9 +112,12 @@ jobs:
       # Match build-deb: Jazzy on Noble, Lyrical on Resolute. Noble apt has no
       # ros-lyrical packages (Tier 1 Lyrical is Ubuntu 26.04 only).
       - name: Install verify tools
+        timeout-minutes: 8
         shell: bash
         run: |
           set -eo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          bash .github/scripts/configure_ci_apt.sh
           apt-get update
           apt-get install -y curl ca-certificates cmake build-essential git
           if ! command -v gh >/dev/null 2>&1; then
