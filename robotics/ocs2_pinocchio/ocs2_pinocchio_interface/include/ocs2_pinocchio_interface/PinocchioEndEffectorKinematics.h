@@ -124,6 +124,13 @@ namespace ocs2
         std::vector<VectorFunctionLinearApproximation> getPositionLinearApproximation(
             const vector_t& state) const override;
 
+        /** World-aligned spatial Jacobians with respect to the OCS2 state.
+         * Rows are [linear; angular]; angular rows map to world angular increments,
+         * not quaternion or Euler-angle derivatives. Requires the same precomputation
+         * as getPositionLinearApproximation(). Extracts each frame Jacobian once.
+         */
+        std::vector<matrix_t> getSpatialJacobian(const vector_t& state) const;
+
         /** Get the end effector velocity linear approximation
          * @note requires pinocchioInterface to be updated with:
          *       pinocchio::computeForwardKinematicsDerivatives(model, data, q, v, a)
