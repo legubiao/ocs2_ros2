@@ -137,6 +137,26 @@ namespace ocs2
         return positions;
     }
 
+    std::vector<matrix_t> PinocchioEndEffectorKinematics::getSpatialJacobian(const vector_t& state) const
+    {
+        if (pinocchioInterfacePtr_ == nullptr) {
+            throw std::runtime_error("[PinocchioEndEffectorKinematics] pinocchioInterfacePtr_ is not set.");
+        }
+        const auto& model = pinocchioInterfacePtr_->getModel();
+        // Keep scratch data local: callers may share the precomputation cache.
+        pinocchio::Data data = pinocchioInterfacePtr_->getData();
+        std::vector<matrix_t> jacobians;
+        jacobians.reserve(endEffectorFrameIds_.size());
+        matrix_t J = matrix_t::Zero(6, model.nv);
+        const matrix_t Jv = matrix_t::Zero(6, model.nv);
+        for (const auto frameId : endEffectorFrameIds_) {
+            J.setZero();
+            getFrameJacobian(model, data, frameId, pinocchio::LOCAL_WORLD_ALIGNED, J);
+            jacobians.emplace_back(mappingPtr_->getOcs2Jacobian(state, J, Jv).first);
+        }
+        return jacobians;
+    }
+
     std::vector<VectorFunctionLinearApproximation> PinocchioEndEffectorKinematics::getVelocityLinearApproximation(
         const vector_t& state,
         const vector_t& input) const
