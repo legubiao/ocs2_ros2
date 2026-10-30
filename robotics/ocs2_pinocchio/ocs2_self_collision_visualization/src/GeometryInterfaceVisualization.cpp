@@ -39,16 +39,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace ocs2 {
     GeometryInterfaceVisualization::GeometryInterfaceVisualization(
+        rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr topicsInterface,
+        rclcpp::Clock::SharedPtr clock,
         PinocchioInterface pinocchioInterface,
         PinocchioGeometryInterface geometryInterface,
         std::string pinocchioWorldFrame,
         scalar_t activationDistance)
-        : Node("GeometryInterfaceVisualization"),
+        : clock_(std::move(clock)),
           pinocchioInterface_(std::move(pinocchioInterface)),
           geometryInterface_(std::move(geometryInterface)),
-          markerPublisher_(
-              this->create_publisher<visualization_msgs::msg::MarkerArray>(
-                  "distance_markers", 1)),
+          markerPublisher_(rclcpp::create_publisher<visualization_msgs::msg::MarkerArray>(
+              topicsInterface, "distance_markers", rclcpp::QoS(1))),
           pinocchioWorldFrame_(std::move(pinocchioWorldFrame)),
           activationDistance_(activationDistance) {
     }
@@ -74,7 +75,7 @@ namespace ocs2 {
 
         visualization_msgs::msg::Marker markerTemplate;
         markerTemplate.header.frame_id = pinocchioWorldFrame_;
-        markerTemplate.header.stamp = rclcpp::Clock().now();
+        markerTemplate.header.stamp = clock_->now();
         markerTemplate.pose.orientation =
                 ros_msg_helpers::getOrientationMsg({1, 0, 0, 0});
 
@@ -94,7 +95,7 @@ namespace ocs2 {
                 for (size_t j = 0; j < numMarkersPerResult; ++j) {
                     visualization_msgs::msg::Marker deleteMarker;
                     deleteMarker.header.frame_id = pinocchioWorldFrame_;
-                    deleteMarker.header.stamp = rclcpp::Clock().now();
+                    deleteMarker.header.stamp = clock_->now();
                     deleteMarker.ns = ns;
                     deleteMarker.id = j;
                     deleteMarker.action = visualization_msgs::msg::Marker::DELETE;
