@@ -127,6 +127,7 @@ namespace ocs2::mobile_manipulator
                                                      collisionObjectPairs);
             // set geometry visualization markers with activation distance
             geometryVisualization_ = std::make_unique<GeometryInterfaceVisualization>(
+                node_->get_node_topics_interface(), node_->get_clock(),
                 std::move(pinocchioInterface), geomInterface, "world", activationDistance);
         }
         

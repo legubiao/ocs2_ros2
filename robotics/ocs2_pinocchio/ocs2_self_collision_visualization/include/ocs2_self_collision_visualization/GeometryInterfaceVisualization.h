@@ -37,22 +37,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rclcpp/rclcpp.hpp"
 
 namespace ocs2 {
-    class GeometryInterfaceVisualization : public rclcpp::Node {
+    /**
+     * Self-collision distance markers on an existing node (no extra rclcpp::Node).
+     * Relative topic distance_markers → /<ns>/distance_markers via that node's namespace.
+     */
+    class GeometryInterfaceVisualization {
     public:
         /**
-         * Constructor
+         * @param topicsInterface: Parent node's topics interface (controller / dummy node)
+         * @param clock: Parent node's clock (sim-time aware)
          * @param pinocchioInterface: Pinocchio interface for the robot
          * @param geometryInterface: Geometry interface for collision checking
          * @param pinocchioWorldFrame: World frame name for visualization
          * @param activationDistance: Only show markers when distance < activationDistance.
          *                            If <= 0, show all markers (default behavior).
          */
-        GeometryInterfaceVisualization(PinocchioInterface pinocchioInterface,
-                                       PinocchioGeometryInterface geometryInterface,
-                                       std::string pinocchioWorldFrame = "world",
-                                       scalar_t activationDistance = -1.0);
+        GeometryInterfaceVisualization(
+            rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr topicsInterface,
+            rclcpp::Clock::SharedPtr clock,
+            PinocchioInterface pinocchioInterface,
+            PinocchioGeometryInterface geometryInterface,
+            std::string pinocchioWorldFrame = "world",
+            scalar_t activationDistance = -1.0);
 
-        ~GeometryInterfaceVisualization() override = default;
+        ~GeometryInterfaceVisualization() = default;
 
         /**
          * Publish distance visualization markers
@@ -86,6 +94,7 @@ namespace ocs2 {
         bool isCollisionDetected(scalar_t threshold = 0.0) const { return lastMinDistance_ <= threshold; }
 
     private:
+        rclcpp::Clock::SharedPtr clock_;
         PinocchioInterface pinocchioInterface_;
         PinocchioGeometryInterface geometryInterface_;
 
