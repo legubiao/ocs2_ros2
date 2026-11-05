@@ -29,6 +29,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
+#include <optional>
+#include <string>
+
 // OCS2
 #include <ocs2_core/Types.h>
 #include <ocs2_core/initialization/Initializer.h>
@@ -48,15 +51,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ocs2::mobile_manipulator
 {
     /**
-     * Optional in-memory overrides for model frames after reading task.info.
+     * Optional in-memory overrides after reading task.info.
      * Empty string means keep the value loaded from task.info.
      * Convention in this stack: eeFrame = left tip, eeFrame1 = right tip.
+     * recompileLibraries: nullopt keeps model_settings.recompileLibraries from info.
      */
     struct FrameOverrides
     {
         std::string baseFrame;
         std::string eeFrame;
         std::string eeFrame1;
+        std::optional<bool> recompileLibraries;
     };
 
     /**

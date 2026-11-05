@@ -167,6 +167,12 @@ namespace ocs2::mobile_manipulator
         std::cerr << "\n #### =============================================================================\n";
         loadData::loadPtreeValue(pt, usePreComputation, "model_settings.usePreComputation", true);
         loadData::loadPtreeValue(pt, recompileLibraries, "model_settings.recompileLibraries", true);
+        if (frameOverrides.recompileLibraries.has_value())
+        {
+            recompileLibraries = *frameOverrides.recompileLibraries;
+            std::cerr << " #### model_settings.recompileLibraries override: "
+                      << (recompileLibraries ? "true" : "false") << "\n";
+        }
         std::cerr << " #### =============================================================================\n";
 
         // Default initial state
