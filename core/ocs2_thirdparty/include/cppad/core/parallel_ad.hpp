@@ -1,71 +1,100 @@
 # ifndef CPPAD_CORE_PARALLEL_AD_HPP
 # define CPPAD_CORE_PARALLEL_AD_HPP
-/* --------------------------------------------------------------------------
-CppAD: C++ Algorithmic Differentiation: Copyright (C) 2003-18 Bradley M. Bell
-
-CppAD is distributed under the terms of the
-             Eclipse Public License Version 2.0.
-
-This Source Code may also be made available under the following
-Secondary License when the conditions for such availability set forth
-in the Eclipse Public License, Version 2.0 are satisfied:
-      GNU General Public License, Version 2.0 or later.
----------------------------------------------------------------------------- */
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-FileCopyrightText: Bradley M. Bell <bradbell@seanet.com>
+// SPDX-FileContributor: 2003-24 Bradley M. Bell
+// ----------------------------------------------------------------------------
 /*
-$begin parallel_ad$$
-$spell
-    CppAD
-    num
-    std
-$$
+{xrst_begin parallel_ad}
+{xrst_spell
+   rosen
+   teardown
+}
 
-$section Enable AD Calculations During Parallel Mode$$
+Enable AD Calculations During Parallel Mode
+###########################################
 
-$head Syntax$$
-$codei%parallel_ad<%Base%>()%$$
+Syntax
+******
+``parallel_ad`` < *Base* >()
 
-$head Purpose$$
+Purpose
+*******
 The function
-$codei%parallel_ad<%Base%>()%$$
-must be called before any $codei%AD<%Base>%$$ objects are used
-in $cref/parallel/ta_in_parallel/$$ mode.
+``parallel_ad`` < *Base* >()
+must be called before any ``AD`` < *Base>* objects are used
+in :ref:`parallel<ta_in_parallel-name>` mode.
 In addition, if this routine is called after one is done using
 parallel mode, it will free extra memory used to keep track of
-the multiple $codei%AD<%Base%>%$$ tapes required for parallel execution.
+the multiple ``AD`` < *Base* > tapes required for parallel execution.
 
-$head Discussion$$
-By default, for each $codei%AD<%Base%>%$$ class there is only one
-tape that records $cref/AD of Base/glossary/AD of Base/$$ operations.
+Discussion
+**********
+By default, for each ``AD`` < *Base* > class there is only one
+tape that records :ref:`glossary@AD of Base` operations.
 This tape is a global variable and hence it cannot be used
 by multiple threads at the same time.
-The $cref/parallel_setup/ta_parallel_setup/$$ function informs CppAD of the
+The :ref:`parallel_setup<ta_parallel_setup-name>` function informs CppAD of the
 maximum number of threads that can be active in parallel mode.
 This routine does extra setup
-(and teardown) for the particular $icode Base$$ type.
+(and teardown) for the particular *Base* type.
 
-$head CheckSimpleVector$$
-This routine has the side effect of calling the routines
-$codei%
-    CheckSimpleVector< %Type%, CppAD::vector<%Type%> >()
-%$$
-where $icode Type$$ is $icode Base$$ and $codei%AD<%Base%>%$$.
+CheckSimpleVector
+*****************
+This routine has the side effect of calling ``CheckSimpleVector`` for
+some of the possible
+:ref:`CheckSimpleVector@Scalar` and :ref:`CheckSimpleVector@Vector` cases.
+The set of these cases may increase in the future and currently includes
+the following:
 
-$head Example$$
+.. csv-table::
+   :header: Scalar, Vector
+
+   ``bool``          , ``CppAD::vectorBool``
+   ``size_t``        , ``CppAD::vector<size_t>``
+   *Base*            , *vector* < *Base* >
+   ``AD`` < *Base* > , *vector* ``AD`` < *Base* >
+
+Where *vector* above is
+``CppAD::vector`` ,
+``std::vector`` , and
+the :ref:`cppad_testvector-name` .
+
+
+Example
+*******
 The files
-$cref team_openmp.cpp$$,
-$cref team_bthread.cpp$$, and
-$cref team_pthread.cpp$$,
+:ref:`team_openmp.cpp-name` ,
+:ref:`team_bthread.cpp-name` , and
+:ref:`team_pthread.cpp-name` ,
 contain examples and tests that implement this function.
 
-$head Restriction$$
+Restriction
+***********
 This routine cannot be called in parallel mode or while
-there is a tape recording $codei%AD<%Base%>%$$ operations.
+there is a tape recording ``AD`` < *Base* > operations.
 
-$end
+Other Initialization
+********************
+If the following routines have static memory and must be called once
+before being used in parallel mode:
+
+#. :ref:`CheckSimpleVector <CheckSimpleVector@Parallel Mode>`
+#. :ref:`thread_alloc, memory_leak <ta_parallel_setup-name>`
+#. :ref:`Rosen34 <Rosen34@Parallel Mode>`
+#. :ref:`Runge45 <Runge45@Parallel Mode>`
+#. :ref:`discrete <Discrete@Parallel Mode>`
+#. :ref:`atomic_one <atomic_one@afun@Parallel Mode>`
+
+
+{xrst_end parallel_ad}
 -----------------------------------------------------------------------------
 */
 
+# include <vector>
+# include <cppad/utility/vector.hpp>
 # include <cppad/local/std_set.hpp>
+# include <cppad/local/val_graph/enable_parallel.hpp>
 
 // BEGIN CppAD namespace
 namespace CppAD {
@@ -77,38 +106,59 @@ static variables that my be used.
 
 template <class Base>
 void parallel_ad(void)
-{   CPPAD_ASSERT_KNOWN(
-        ! thread_alloc::in_parallel() ,
-        "parallel_ad must be called before entering parallel execution mode."
-    );
-    CPPAD_ASSERT_KNOWN(
-        AD<Base>::tape_ptr() == CPPAD_NULL ,
-        "parallel_ad cannot be called while a tape recording is in progress"
-    );
+{  CPPAD_ASSERT_KNOWN(
+      ! thread_alloc::in_parallel() ,
+      "parallel_ad must be called before entering parallel execution mode."
+   );
+   CPPAD_ASSERT_KNOWN(
+      AD<Base>::tape_ptr() == nullptr ,
+      "parallel_ad cannot be called while a tape recording is in progress"
+   );
 
-    // ensure statics in following functions are initialized
-    elapsed_seconds();
-    ErrorHandler::Current();
-    local::NumArg(local::BeginOp);
-    local::NumRes(local::BeginOp);
-    local::one_element_std_set<size_t>();
-    local::two_element_std_set<size_t>();
+   // ensure statics in following functions are initialized
+   ErrorHandler::Current();                // error_handler.hpp
+   elapsed_seconds();                      // elapsed_seconds.hpp
+   local::num_arg_dyn(local::abs_dyn);     // op_code_dyn.hpp
+   local::op_name_dyn(local::abs_dyn);     // op_code_dyn.hpp
+   local::NumArg(local::BeginOp);          // op_code_var.hpp
+   local::NumRes(local::BeginOp);          // op_code_var.hpp
+   local::one_element_std_set<size_t>();   // std_set.hpp
+   local::two_element_std_set<size_t>();   // std_set.hpp
 
-    // the sparse_pack class has member functions with static data
-    local::sparse_pack sp;
-    sp.resize(1, 1);       // so can call add_element
-    sp.add_element(0, 0);  // has static data
-    sp.clear(0);           // has static data
-    sp.is_element(0, 0);   // has static data
-    local::sparse_pack::const_iterator itr(sp, 0); // has static data
-    ++itr;                                  // has static data
+   // the sparse_pack class has member functions with static data
+   local::sparse::pack_setvec sp;
+   sp.resize(1, 1);       // so can call add_element
+   sp.add_element(0, 0);  // has static data
+   sp.clear(0);           // has static data
+   sp.is_element(0, 0);   // has static data
+   local::sparse::pack_setvec::const_iterator itr(sp, 0); // has static data
+   ++itr;                                  // has static data
 
-    // statics that depend on the value of Base
-    AD<Base>::tape_id_ptr(0);
-    AD<Base>::tape_handle(0);
-    discrete<Base>::List();
-    CheckSimpleVector< Base, CppAD::vector<Base> >();
-    CheckSimpleVector< AD<Base>, CppAD::vector< AD<Base> > >();
+   // statics that depend on the value of Base
+   AD<Base>::tape_id_ptr(0);                  // tape_link.hpp
+   AD<Base>::tape_handle(0);                  // tape_link.hpp
+   local::val_graph::enable_parallel<Base>(); // val_graph/*_op.hpp
+   discrete<Base>::List();                    // discrete.hpp
+
+   // Some check_simple_vector.hpp cases
+   //
+   CheckSimpleVector< bool, CppAD::vectorBool >();
+   CheckSimpleVector< size_t, CppAD::vector<size_t> >();
+   CheckSimpleVector< Base, CppAD::vector<Base> >();
+   CheckSimpleVector< AD<Base>, CppAD::vector< AD<Base> > >();
+   //
+   CheckSimpleVector< Base, std::vector<Base> >();
+   CheckSimpleVector< AD<Base>, std::vector< AD<Base> > >();
+   //
+# if CPPAD_BOOSTVECTOR
+   CheckSimpleVector< Base, boost::numeric::ublas::vector<Base> >();
+   CheckSimpleVector< AD<Base>, boost::numeric::ublas::vector< AD<Base> > >();
+# endif
+   //
+# if CPPAD_EIGENVECTOR
+   CheckSimpleVector< Base, CppAD::eigen_vector<Base> >();
+   CheckSimpleVector< AD<Base>, CppAD::eigen_vector< AD<Base> > > ();
+# endif
 
 }
 

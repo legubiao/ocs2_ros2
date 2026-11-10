@@ -3,6 +3,7 @@
 /* --------------------------------------------------------------------------
  *  CppADCodeGen: C++ Algorithmic Differentiation with Source Code Generation:
  *    Copyright (C) 2012 Ciengis
+ *    Copyright (C) 2020 Joao Leal
  *
  *  CppADCodeGen is distributed under multiple licenses:
  *
@@ -23,8 +24,8 @@ void zeroOrderDependency(ADFun<Base>& fun,
                          const VectorBool& vx,
                          VectorBool& vy) {
     size_t m = fun.Range();
-    CPPADCG_ASSERT_KNOWN(vx.size() >= fun.Domain(), "Invalid vx size");
-    CPPADCG_ASSERT_KNOWN(vy.size() >= m, "Invalid vy size");
+    CPPADCG_ASSERT_KNOWN(vx.size() >= fun.Domain(), "Invalid vx size")
+    CPPADCG_ASSERT_KNOWN(vy.size() >= m, "Invalid vy size")
 
     using VectorSet = std::vector<std::set<size_t> >;
 
@@ -43,7 +44,7 @@ void zeroOrderDependency(ADFun<Base>& fun,
 template<class VectorSet>
 inline bool isIdentityPattern(const VectorSet& pattern,
                               size_t mRows) {
-    CPPADCG_ASSERT_UNKNOWN(pattern.size() >= mRows);
+    CPPADCG_ASSERT_UNKNOWN(pattern.size() >= mRows)
 
     for (size_t i = 0; i < mRows; i++) {
         if (pattern[i].size() != 1 || *pattern[i].begin() != i) {
@@ -57,7 +58,7 @@ template<class VectorSet>
 inline VectorSet transposePattern(const VectorSet& pattern,
                                   size_t mRows,
                                   size_t nCols) {
-    CPPADCG_ASSERT_UNKNOWN(pattern.size() >= mRows);
+    CPPADCG_ASSERT_UNKNOWN(pattern.size() >= mRows)
 
     VectorSet transpose(nCols);
     for (size_t i = 0; i < mRows; i++) {
@@ -81,7 +82,7 @@ template<class VectorSet, class VectorSet2>
 inline void addTransMatrixSparsity(const VectorSet& a,
                                    size_t mRows,
                                    VectorSet2& result) {
-    CPPADCG_ASSERT_UNKNOWN(a.size() >= mRows);
+    CPPADCG_ASSERT_UNKNOWN(a.size() >= mRows)
 
     for (size_t i = 0; i < mRows; i++) {
         for (size_t j : a[i]) {
@@ -116,8 +117,8 @@ template<class VectorSet, class VectorSet2>
 inline void addMatrixSparsity(const VectorSet& a,
                               size_t mRows,
                               VectorSet2& result) {
-    CPPADCG_ASSERT_UNKNOWN(result.size() >= mRows);
-    CPPADCG_ASSERT_UNKNOWN(a.size() <= mRows);
+    CPPADCG_ASSERT_UNKNOWN(result.size() >= mRows)
+    CPPADCG_ASSERT_UNKNOWN(a.size() <= mRows)
 
     for (size_t i = 0; i < mRows; i++) {
         if (result[i].empty()) {
@@ -138,7 +139,7 @@ inline void addMatrixSparsity(const VectorSet& a,
 template<class VectorSet, class VectorSet2>
 inline void addMatrixSparsity(const VectorSet& a,
                               VectorSet2& result) {
-    CPPADCG_ASSERT_UNKNOWN(result.size() == a.size());
+    CPPADCG_ASSERT_UNKNOWN(result.size() == a.size())
 
     addMatrixSparsity<VectorSet, VectorSet2>(a, a.size(), result);
 }
@@ -180,9 +181,9 @@ inline void multMatrixMatrixSparsity(const VectorSet& a,
                                      size_t m,
                                      size_t n,
                                      size_t q) {
-    CPPADCG_ASSERT_UNKNOWN(a.size() >= m);
-    CPPADCG_ASSERT_UNKNOWN(b.size() >= n);
-    CPPADCG_ASSERT_UNKNOWN(result.size() >= m);
+    CPPADCG_ASSERT_UNKNOWN(a.size() >= m)
+    CPPADCG_ASSERT_UNKNOWN(b.size() >= n)
+    CPPADCG_ASSERT_UNKNOWN(result.size() >= m)
 
     //check if b is identity
     if (n == q) {
@@ -196,7 +197,7 @@ inline void multMatrixMatrixSparsity(const VectorSet& a,
 
     for (size_t jj = 0; jj < q; jj++) { //loop columns of b
         const std::set<size_t>& colB = bt[jj];
-        if (colB.size() > 0) {
+        if (!colB.empty()) {
             for (size_t i = 0; i < m; i++) {
                 const std::set<size_t>& rowA = a[i];
                 for (size_t rowb : colB) {
@@ -230,9 +231,9 @@ inline void multMatrixTransMatrixSparsity(const VectorSet& a,
                                           size_t m,
                                           size_t n,
                                           size_t q) {
-    CPPADCG_ASSERT_UNKNOWN(a.size() >= m);
-    CPPADCG_ASSERT_UNKNOWN(b.size() >= m);
-    CPPADCG_ASSERT_UNKNOWN(result.size() >= n);
+    CPPADCG_ASSERT_UNKNOWN(a.size() >= m)
+    CPPADCG_ASSERT_UNKNOWN(b.size() >= m)
+    CPPADCG_ASSERT_UNKNOWN(result.size() >= n)
 
     //check if B is empty
     bool empty = true;
@@ -263,10 +264,10 @@ inline void multMatrixTransMatrixSparsity(const VectorSet& a,
 
     for (size_t jj = 0; jj < q; jj++) { //loop columns of b
         const std::set<size_t>& colB = bt[jj];
-        if (colB.size() > 0) {
+        if (!colB.empty()) {
             for (size_t i = 0; i < n; i++) {
                 const std::set<size_t>& rowAt = at[i];
-                if (rowAt.size() > 0) {
+                if (!rowAt.empty()) {
                     for (size_t rowb : colB) {
                         if (rowAt.find(rowb) != rowAt.end()) {
                             result[i].insert(jj);
@@ -299,8 +300,8 @@ inline void multMatrixMatrixSparsityTrans(const VectorSet& aT,
                                           size_t m,
                                           size_t n,
                                           size_t q) {
-    CPPADCG_ASSERT_UNKNOWN(aT.size() >= m);
-    CPPADCG_ASSERT_UNKNOWN(b.size() >= m);
+    CPPADCG_ASSERT_UNKNOWN(aT.size() >= m)
+    CPPADCG_ASSERT_UNKNOWN(b.size() >= m)
 
     //check if b is empty
     bool empty = true;
@@ -434,6 +435,29 @@ inline bool intersects(const std::set<size_t>& a,
     }
 
     return false;
+}
+
+template<class VectorSizet, class VectorSet>
+inline CppAD::sparse_rc<VectorSizet> toSparsityPattern(const VectorSet& inPattern,
+                                                       size_t m, size_t n) {
+
+    CppAD::sparse_rc<VectorSizet> pattern;
+
+    size_t nnz = 0;
+    for (const auto& p: inPattern) {
+        nnz += p.size();
+    }
+
+    pattern.resize(m, n, nnz);
+
+    size_t e = 0;
+    for (size_t i = 0; i < inPattern.size(); ++i) {
+        for (size_t j : inPattern[i]) {
+            pattern.set(e++, i, j);
+        }
+    }
+
+    return pattern;
 }
 
 /**
@@ -624,7 +648,7 @@ inline void print(const Base& v) {
 
 template<class Key, class Value>
 inline void print(const std::map<Key, Value>& m) {
-    for (const std::pair<Key, Value>& p : m) {
+    for (const auto& p : m) {
         std::cout << p.first << " : ";
         print(p.second);
         std::cout << std::endl;
@@ -667,6 +691,19 @@ inline void print(const std::vector<Base>& v) {
     }
     std::cout << "]";
     std::cout.flush();
+}
+
+template<class VectorSize, class VectorBase>
+inline void printTripletMatrix(const VectorSize &rows,
+                               const VectorSize &cols,
+                               const VectorBase &values) {
+    size_t n = values.size();
+    assert(rows.size() == n);
+    assert(cols.size() == n);
+
+    for (size_t i = 0; i < n; ++i) {
+        std::cout << "[ " << rows[i] << ", " << cols[i] << "] -> " << values[i] << std::endl;
+    }
 }
 
 /***************************************************************************
@@ -766,6 +803,16 @@ inline std::string implode(const std::vector<std::string>& text,
         }
         return out;
     }
+}
+
+inline std::string readStringFromFile(const std::string& path) {
+    std::ifstream iStream;
+    iStream.open(path);
+
+    std::stringstream strStream;
+    strStream << iStream.rdbuf();
+
+    return strStream.str();
 }
 
 } // END cg namespace

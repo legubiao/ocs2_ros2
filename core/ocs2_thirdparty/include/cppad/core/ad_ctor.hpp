@@ -1,74 +1,75 @@
 # ifndef CPPAD_CORE_AD_CTOR_HPP
 # define CPPAD_CORE_AD_CTOR_HPP
-/* --------------------------------------------------------------------------
-CppAD: C++ Algorithmic Differentiation: Copyright (C) 2003-18 Bradley M. Bell
-
-CppAD is distributed under the terms of the
-             Eclipse Public License Version 2.0.
-
-This Source Code may also be made available under the following
-Secondary License when the conditions for such availability set forth
-in the Eclipse Public License, Version 2.0 are satisfied:
-      GNU General Public License, Version 2.0 or later.
----------------------------------------------------------------------------- */
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-FileCopyrightText: Bradley M. Bell <bradbell@seanet.com>
+// SPDX-FileContributor: 2003-23 Bradley M. Bell
+// ----------------------------------------------------------------------------
 
 /*
 ------------------------------------------------------------------------------
 
-$begin ad_ctor$$
-$spell
-    cppad
-    ctor
-    initializes
-    Vec
-    const
-$$
+{xrst_begin ad_ctor}
+{xrst_spell
+   initializes
+}
 
+AD Constructors
+###############
 
-$section AD Constructors $$
+Syntax
+******
 
-$head Syntax$$
-$codei%AD<%Base%> %y%()
-%$$
-$codei%AD<%Base%> %y%(%x%)
-%$$
+| ``AD`` < *Base* > *ay* ()
+| ``AD`` < *Base* > *ay* ( *x* )
 
-$head Purpose$$
-creates a new $codei%AD<%Base%>%$$ object $icode y$$
-and initializes its value as equal to $icode x$$.
+Purpose
+*******
+creates a new ``AD`` < *Base* > object *ay*
+and initializes it as a
+equal to *x* .
 
-$head x$$
+x
+*
 
-$subhead implicit$$
-There is an implicit constructor where $icode x$$ has one of the following
-prototypes:
-$codei%
-    const %Base%&        %x%
-    const VecAD<%Base%>& %x%
-%$$
+implicit
+========
+There is an implicit constructor where *x* has prototype
 
-$subhead explicit$$
-There is an explicit constructor where $icode x$$ has prototype
-$codei%
-    const %Type%&        %x%
-%$$
+   ``const VecAD`` < *Base* >& *x*
+
+There also is an implicit constructor where *x* has prototype
+
+   ``const`` *Base* & *x*
+
+In this case, *ay* is a
+:ref:`constant parameter<glossary@Parameter@Constant>`
+
+explicit
+========
+There is an explicit constructor where *x* has prototype
+
+   ``const`` *Type* & *x*
+
 for any type that has an explicit constructor of the form
-$icode%Base%(%x%)%$$.
+*Base* ( *x* ) .
+In this case, *ay* is a
+:ref:`constant parameter<glossary@Parameter@Constant>`
 
-$head y$$
-The target $icode y$$ has prototype
-$codei%
-    AD<%Base%> %y%
-%$$
+ay
+**
+The target *ay* has prototype
 
-$head Example$$
-$children%
-    example/general/ad_ctor.cpp
-%$$
-The files $cref ad_ctor.cpp$$ contain examples and tests of these operations.
+   ``AD`` < *Base* > *ay*
+
+Example
+*******
+{xrst_toc_hidden
+   example/general/ad_ctor.cpp
+}
+The files :ref:`ad_ctor.cpp-name` contain examples and tests of these operations.
 It test returns true if it succeeds and false otherwise.
 
-$end
+{xrst_end ad_ctor}
 ------------------------------------------------------------------------------
 */
 
@@ -87,12 +88,12 @@ because they may be optimized better than the code below:
 template <class Base>
 AD<Base>::AD(const AD &x)
 {
-    value_    = x.value_;
-    tape_id_  = x.tape_id_;
-    taddr_    = x.taddr_;
-    ad_type_  = x.ad_type_;
+   value_    = x.value_;
+   tape_id_  = x.tape_id_;
+   taddr_    = x.taddr_;
+   ad_type_  = x.ad_type_;
 
-    return;
+   return;
 }
 \endcode
 */
@@ -130,8 +131,8 @@ AD<Base>::AD(const double &d)
 , tape_id_(0)
 , taddr_(0)
 , ad_type_(constant_enum)
-{   // check that this is a parameter
-    CPPAD_ASSERT_UNKNOWN( Parameter(*this) );
+{  // check that this is a parameter
+   CPPAD_ASSERT_UNKNOWN( Parameter(*this) );
 }
 // --------------------------------------------------------------------------
 # else
@@ -156,8 +157,8 @@ AD<Base>::AD(const Base &b)
 , tape_id_(0)
 , taddr_(0)
 , ad_type_(constant_enum)
-{   // check that this is a parameter
-    CPPAD_ASSERT_UNKNOWN( Parameter(*this) );
+{  // check that this is a parameter
+   CPPAD_ASSERT_UNKNOWN( Parameter(*this) );
 }
 # endif
 // --------------------------------------------------------------------------
@@ -170,7 +171,7 @@ Base type for this AD object.
 */
 template <class Base>
 AD<Base>::AD(const VecAD_reference<Base> &x)
-{   *this = x.ADBase(); }
+{  *this = x.ADBase(); }
 
 /*!
 Constructor from any other type, converts to Base type, and uses constructor
@@ -189,7 +190,7 @@ is the object that is being converted from T to AD<Base>.
 template <class Base>
 template <class T>
 AD<Base>::AD(const T &t)
-: value_(Base(t))
+: value_( Base(t) )
 , tape_id_(0)
 , taddr_(0)
 , ad_type_(constant_enum)
