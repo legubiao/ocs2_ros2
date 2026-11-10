@@ -33,6 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <unordered_set>
+#include <vector>
 
 #include <pinocchio/fwd.hpp>  // forward declarations must be included first.
 
@@ -47,7 +49,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/penalties/Penalties.h>
 #include <ocs2_core/soft_constraint/StateInputSoftBoxConstraint.h>
 #include <ocs2_core/soft_constraint/StateSoftConstraint.h>
-#include <ocs2_oc/synchronized_module/ReferenceManager.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematicsCppAd.h>
 #include <ocs2_self_collision/SelfCollisionConstraint.h>
@@ -57,7 +58,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_mobile_manipulator/MobileManipulatorPreComputation.h"
 #include "ocs2_mobile_manipulator/constraint/EndEffectorConstraint.h"
 #include "ocs2_mobile_manipulator/constraint/BodyRelativeConstraint.h"
+#include "ocs2_mobile_manipulator/constraint/HomeJointReferenceConstraint.h"
 #include "ocs2_mobile_manipulator/constraint/Joint67CouplingConstraint.h"
+#include "ocs2_mobile_manipulator/reference/MobileManipulatorReferenceManager.h"
 
 #include "ocs2_mobile_manipulator/constraint/MobileManipulatorSelfCollisionConstraint.h"
 #include "ocs2_mobile_manipulator/constraint/EnvironmentCollisionConstraint.h"
@@ -207,8 +210,8 @@ namespace ocs2::mobile_manipulator
             std::cerr << " #### SQP settings not found in task file, using defaults.\n";
         }
 
-        // Reference Manager
-        referenceManagerPtr_ = std::make_shared<ReferenceManager>();
+        // Reference Manager (HOME joint soft-reference state lives here)
+        referenceManagerPtr_ = std::make_shared<MobileManipulatorReferenceManager>();
 
         /*
          * Optimal control problem
@@ -262,6 +265,11 @@ namespace ocs2::mobile_manipulator
             {
                 problem_.stateSoftConstraintPtr->add("joint67Coupling", std::move(couplingCost));
             }
+        }
+
+        if (auto homeJointReference = getHomeJointReferenceConstraint(taskFile))
+        {
+            problem_.stateSoftConstraintPtr->add("homeJointReference", std::move(homeJointReference));
         }
 
         // environment collision avoidance constraint
@@ -811,6 +819,120 @@ namespace ocs2::mobile_manipulator
                 j6Deg, j7Deg, joint67CouplingConfig_));
         }
         return statuses;
+    }
+
+    std::unique_ptr<StateCost> MobileManipulatorInterface::getHomeJointReferenceConstraint(
+        const std::string& taskFile)
+    {
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_info(taskFile, pt);
+
+        bool activate = false;
+        loadData::loadPtreeValue(pt, activate, "homeJointReference.activate", false);
+        if (!activate)
+        {
+            hasHomeJointReference_ = false;
+            homeJointReferenceDefaultEnabled_ = false;
+            return nullptr;
+        }
+
+        scalar_t mu = 1e-3;
+        bool activateDefault = false;
+        loadData::loadPtreeValue(pt, mu, "homeJointReference.mu", false);
+        loadData::loadPtreeValue(pt, activateDefault, "homeJointReference.activateDefault", false);
+
+        const size_t armDim = manipulatorModelInfo_.armDim;
+        const size_t baseStateDim =
+            manipulatorModelInfo_.stateDim > armDim ? manipulatorModelInfo_.stateDim - armDim : 0;
+
+        std::vector<size_t> excludeJointIndices;
+        loadData::loadStdVector<size_t>(
+            taskFile, "homeJointReference.excludeJointIndices", excludeJointIndices, false);
+        std::unordered_set<size_t> excluded;
+        for (const auto index : excludeJointIndices)
+        {
+            if (index >= armDim)
+            {
+                throw std::runtime_error(
+                    "[MobileManipulatorInterface] homeJointReference.excludeJointIndices contains "
+                    "index outside armDim");
+            }
+            excluded.insert(index);
+        }
+
+        std::vector<size_t> trackedArmIndices;
+        trackedArmIndices.reserve(armDim);
+        for (size_t i = 0; i < armDim; ++i)
+        {
+            if (excluded.find(i) == excluded.end())
+            {
+                trackedArmIndices.push_back(i);
+            }
+        }
+        if (trackedArmIndices.empty())
+        {
+            std::cerr << "[MobileManipulatorInterface] homeJointReference.activate=true but all "
+                         "joints are excluded; skipped.\n";
+            hasHomeJointReference_ = false;
+            homeJointReferenceDefaultEnabled_ = false;
+            return nullptr;
+        }
+
+        hasHomeJointReference_ = true;
+        homeJointReferenceDefaultEnabled_ = activateDefault;
+        referenceManagerPtr_->setHomeJointReferenceEnabled(activateDefault);
+
+        std::cerr << " #### HOME joint reference added: tracked=" << trackedArmIndices.size()
+                  << "/" << armDim << " mu=" << mu
+                  << " default=" << (activateDefault ? "ON" : "OFF")
+                  << " exclude=";
+        if (excludeJointIndices.empty())
+        {
+            std::cerr << "(none)";
+        }
+        else
+        {
+            for (const auto index : excludeJointIndices)
+            {
+                std::cerr << " " << index;
+            }
+        }
+        std::cerr << "\n";
+
+        auto constraint = std::make_unique<HomeJointReferenceConstraint>(
+            *referenceManagerPtr_, baseStateDim, std::move(trackedArmIndices));
+        const size_t constraintDim = constraint->trackedJointCount();
+        std::vector<std::unique_ptr<PenaltyBase>> penaltyArray(constraintDim);
+        for (size_t i = 0; i < constraintDim; ++i)
+        {
+            penaltyArray[i] = std::make_unique<QuadraticPenalty>(mu);
+        }
+        return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penaltyArray));
+    }
+
+    void MobileManipulatorInterface::setHomeJointReferenceFromArmJoints(
+        const std::vector<double>& armJoints)
+    {
+        if (!referenceManagerPtr_)
+        {
+            return;
+        }
+        const size_t armDim = manipulatorModelInfo_.armDim;
+        vector_t qHome = vector_t::Zero(static_cast<Eigen::Index>(armDim));
+        const size_t n = std::min(armJoints.size(), armDim);
+        for (size_t i = 0; i < n; ++i)
+        {
+            qHome(static_cast<Eigen::Index>(i)) = armJoints[i];
+        }
+        referenceManagerPtr_->setHomeJointReference(qHome);
+    }
+
+    void MobileManipulatorInterface::setHomeJointReferenceEnabled(bool enabled)
+    {
+        if (referenceManagerPtr_)
+        {
+            referenceManagerPtr_->setHomeJointReferenceEnabled(enabled);
+        }
     }
 
     std::unique_ptr<StateCost> MobileManipulatorInterface::getBodyRelativeConstraint(
