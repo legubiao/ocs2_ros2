@@ -64,7 +64,17 @@ if(NOT _blasfeo_from_system)
     file(MAKE_DIRECTORY ${BLASFEO_LIB_DIR})
 
     set(BUILD_SHARED_LIBS ON CACHE STRING "Build shared libraries" FORCE)
-    set(TARGET X64_AUTOMATIC CACHE STRING "Target architecture" FORCE)
+    # X64_AUTOMATIC is only valid on x86_64. On aarch64 (Orin Cortex-A78AE) use the
+    # closest NEON kernel set; elsewhere fall back to portable C.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+        set(_blasfeo_host_target "X64_AUTOMATIC")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+        set(_blasfeo_host_target "ARMV8A_ARM_CORTEX_A76")
+    else()
+        set(_blasfeo_host_target "GENERIC")
+    endif()
+    set(TARGET "${_blasfeo_host_target}" CACHE STRING "Target architecture" FORCE)
+    message(STATUS "blasfeo_colcon: TARGET=${TARGET} (CPU=${CMAKE_SYSTEM_PROCESSOR})")
     set(BLASFEO_EXAMPLES OFF CACHE BOOL "Examples enabled")
 
     # BLASFEO: pin a recent master commit (upstream tags lag; latest release is 0.1.4.3).
