@@ -13,11 +13,11 @@ find_package(ament_cmake REQUIRED)
 find_package(blasfeo_colcon REQUIRED)   # provides blasfeo target + BLASFEO_PATH
 find_package(ocs2_qp_solver REQUIRED)   # transitively brings ocs2_core + ocs2_oc
 
-# HPIPM upstream has no release tags; we pin a recent commit on master.
-# Last reviewed: 2026-05-22 (HEAD at the time of the bump).
+# HPIPM: pin a recent master commit (upstream tags lag; latest release is 0.1.4).
+# Last reviewed: 2026-11-10 (master 196a8e6c).
 # To bump: pick a newer commit from https://github.com/giaf/hpipm/commits
 # then `rm -rf build/hpipm_colcon install/hpipm_colcon` and rebuild.
-set(HPIPM_GIT_TAG "ff6f47d0715afef77982cbd5570ee41319c6249e")
+set(HPIPM_GIT_TAG "196a8e6cbcb1378ce457003a3df5533cbb26d478")
 
 # HPIPM has no AUTOMATIC target detection (unlike BLASFEO's X64_AUTOMATIC). Its
 # CMake only ships two targets: AVX (Intel x86_64 assembly kernels) and GENERIC
