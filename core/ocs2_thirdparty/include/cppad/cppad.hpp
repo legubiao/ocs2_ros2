@@ -1,16 +1,9 @@
 # ifndef CPPAD_CPPAD_HPP
 # define CPPAD_CPPAD_HPP
-/* --------------------------------------------------------------------------
-CppAD: C++ Algorithmic Differentiation: Copyright (C) 2003-18 Bradley M. Bell
-
-CppAD is distributed under the terms of the
-             Eclipse Public License Version 2.0.
-
-This Source Code may also be made available under the following
-Secondary License when the conditions for such availability set forth
-in the Eclipse Public License, Version 2.0 are satisfied:
-      GNU General Public License, Version 2.0 or later.
----------------------------------------------------------------------------- */
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-FileCopyrightText: Bradley M. Bell <bradbell@seanet.com>
+// SPDX-FileContributor: 2003-23 Bradley M. Bell
+// ----------------------------------------------------------------------------
 /*!
 \file cppad.hpp
 \brief includes the entire CppAD package in the necessary order.
@@ -43,10 +36,7 @@ in the Eclipse Public License, Version 2.0 are satisfied:
 // vectors used with CppAD
 # include <cppad/core/testvector.hpp>
 
-// deprecated vectors used with CppAD
-# include <cppad/core/test_vector.hpp>
-
-// Declare classes and fucntions that are used before defined
+// Declare classes and functions that are used before defined
 # include <cppad/local/declare_ad.hpp>
 
 // ---------------------------------------------------------------------------
@@ -61,12 +51,22 @@ in the Eclipse Public License, Version 2.0 are satisfied:
 // so user_ad.hpp must come before op.hpp
 # include <cppad/local/op.hpp>       // executes taped operations
 # include <cppad/core/ad_fun.hpp>   // ADFun objects
+//
+// Putting these includes in ad_fun.hpp leads to circular including; i.e,
+// a file needs to include itself and the include guard stops it.
+# include <cppad/local/val_graph/fun2val.hpp>
+# include <cppad/local/val_graph/val2fun.hpp>
 
 // ---------------------------------------------------------------------------
 // library routines that require the rest of CppAD
 # include <cppad/core/lu_ratio.hpp>
 # include <cppad/core/bender_quad.hpp>
 # include <cppad/core/opt_val_hes.hpp>
+# include <cppad/local/graph/cpp_graph_op.hpp>
+# include <cppad/local/graph/json_lexer.hpp>
+# if CPPAD_HAS_IPOPT
+# include <cppad/ipopt/solve.hpp>
+# endif
 
 // undo definitions in Define.h
 # include <cppad/core/undef.hpp>

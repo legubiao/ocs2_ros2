@@ -327,7 +327,7 @@ public:
                 _ss << _spaces << _baseTypeName << " " << tmpArg[0].name << "[" << size << "];\n";
             }
         } else if (_temporary.size() > 0) {
-            for (const std::pair<size_t, Node*>& p : _temporary) {
+            for (const auto& p : _temporary) {
                 Node* var = p.second;
                 if (var->getName() == nullptr) {
                     var->setName(_nameGen->generateTemporary(*var, getVariableID(*var)));
@@ -518,6 +518,7 @@ public:
 
 #if CPPAD_USE_CPLUSPLUS_2011
     CPPAD_CG_C_LANG_FUNCNAME(erf)
+    CPPAD_CG_C_LANG_FUNCNAME(erfc)
     CPPAD_CG_C_LANG_FUNCNAME(asinh)
     CPPAD_CG_C_LANG_FUNCNAME(acosh)
     CPPAD_CG_C_LANG_FUNCNAME(atanh)
@@ -677,6 +678,7 @@ protected:
         _currentLoops.clear();
         _atomicFuncArrays.clear();
         _streamStack.clear();
+        _dependentIDs.clear();
 
         // save some info
         _info = std::move(info);
@@ -1314,6 +1316,7 @@ protected:
             case CGOpCode::Tan:
 #if CPPAD_USE_CPLUSPLUS_2011
             case CGOpCode::Erf:
+            case CGOpCode::Erfc:
             case CGOpCode::Asinh:
             case CGOpCode::Acosh:
             case CGOpCode::Atanh:
@@ -1479,6 +1482,9 @@ protected:
 #if CPPAD_USE_CPLUSPLUS_2011
             case CGOpCode::Erf:
                 _streamStack << erfFuncName();
+                break;
+            case CGOpCode::Erfc:
+                _streamStack << erfcFuncName();
                 break;
             case CGOpCode::Asinh:
                 _streamStack << asinhFuncName();
@@ -2153,6 +2159,7 @@ protected:
             case CGOpCode::Tan:
 #if CPPAD_USE_CPLUSPLUS_2011
             case CGOpCode::Erf:
+            case CGOpCode::Erfc:
             case CGOpCode::Asinh:
             case CGOpCode::Acosh:
             case CGOpCode::Atanh:

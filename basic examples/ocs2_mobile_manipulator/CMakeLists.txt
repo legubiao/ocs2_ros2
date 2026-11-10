@@ -27,6 +27,7 @@ add_library(${PROJECT_NAME}
         src/constraint/EndEffectorConstraint.cpp
         src/constraint/BodyRelativeConstraint.cpp
         src/constraint/Joint67CouplingConstraint.cpp
+        src/constraint/HomeJointReferenceConstraint.cpp
         src/constraint/EnvironmentCollisionConstraint.cpp
         src/collision/EnvironmentGeometryInterface.cpp
         src/dynamics/WheelBasedMobileManipulatorDynamics.cpp

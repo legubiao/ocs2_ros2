@@ -607,8 +607,7 @@ public:
         _sources = sources;
     }
 
-    inline virtual ~LanguageLatex() {
-    }
+    inline virtual ~LanguageLatex() = default;
 
     /***************************************************************************
      *                               STATIC
@@ -616,7 +615,7 @@ public:
     static inline void printIndexCondExpr(std::ostringstream& out,
                                           const std::vector<size_t>& info,
                                           const std::string& index) {
-        CPPADCG_ASSERT_KNOWN(info.size() > 1 && info.size() % 2 == 0, "Invalid number of information elements for an index condition expression operation");
+        CPPADCG_ASSERT_KNOWN(info.size() > 1 && info.size() % 2 == 0, "Invalid number of information elements for an index condition expression operation")
 
         size_t infoSize = info.size();
         for (size_t e = 0; e < infoSize; e += 2) {
@@ -694,6 +693,7 @@ protected:
         _inEquationEnv = false;
         auxArrayName_ = "";
         _currentLoops.clear();
+        _dependentIDs.clear();
 
 
         // save some info
@@ -747,10 +747,10 @@ protected:
         const std::vector<FuncArgument>& indArg = _nameGen->getIndependent();
         const std::vector<FuncArgument>& depArg = _nameGen->getDependent();
         const std::vector<FuncArgument>& tmpArg = _nameGen->getTemporary();
-        CPPADCG_ASSERT_KNOWN(indArg.size() > 0 && depArg.size() > 0,
-                             "There must be at least one dependent and one independent argument");
+        CPPADCG_ASSERT_KNOWN(!indArg.empty() && !depArg.empty(),
+                             "There must be at least one dependent and one independent argument")
         CPPADCG_ASSERT_KNOWN(tmpArg.size() == 3,
-                             "There must be three temporary variables");
+                             "There must be three temporary variables")
 
         auxArrayName_ = tmpArg[1].name + "p";
 
@@ -767,7 +767,7 @@ protected:
                 if (type != CGOpCode::Inv && type != CGOpCode::LoopEnd) {
                     size_t varID = getVariableID(*node);
                     if (varID > 0) {
-                        std::map<size_t, size_t>::const_iterator it2 = _dependentIDs.find(varID);
+                        auto it2 = _dependentIDs.find(varID);
                         if (it2 == _dependentIDs.end()) {
                             _dependentIDs[getVariableID(*node)] = i;
                         } else {
@@ -809,7 +809,6 @@ protected:
              */
             if (info->zeroDependents) {
                 // zero initial values
-                const std::vector<FuncArgument>& depArg = _nameGen->getDependent();
                 if (!depArg.empty())
                     checkEquationEnvStart();
                 for (size_t i = 0; i < depArg.size(); i++) {
@@ -846,7 +845,7 @@ protected:
                 assignCount += printAssignment(node);
             }
 
-            if (inputLatexFiles.size() > 0 && assignCount > 0) {
+            if (!inputLatexFiles.empty() && assignCount > 0) {
                 assignCount = 0;
                 saveLocalFunction(inputLatexFiles, false);
             }
@@ -857,16 +856,16 @@ protected:
              * Create the master latex file which inputs the other files
              */
             CPPADCG_ASSERT_KNOWN(tmpArg[0].array,
-                                 "The temporary variables must be saved in an array in order to generate multiple functions");
+                                 "The temporary variables must be saved in an array in order to generate multiple functions")
             printAlgorithmFileStart(_code);
-            for (size_t i = 0; i < inputLatexFiles.size(); i++) {
-                _code << "\\input{" << inputLatexFiles[i] << "}" << _endline;
+            for (auto & inputLatexFile : inputLatexFiles) {
+                _code << "\\input{" << inputLatexFile << "}" << _endline;
             }
             printAlgorithmFileEnd(_code);
         }
 
         // dependent duplicates
-        if (dependentDuplicates.size() > 0) {
+        if (!dependentDuplicates.empty()) {
             _code << "% variable duplicates: " << dependentDuplicates.size() << _endline;
 
             checkEquationEnvStart();
@@ -1133,14 +1132,14 @@ protected:
 
     inline const std::string& createVariableName(Node& var) {
         CGOpCode op = var.getOperationType();
-        CPPADCG_ASSERT_UNKNOWN(getVariableID(var) > 0);
-        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::AtomicForward);
-        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::AtomicReverse);
-        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::LoopStart);
-        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::LoopEnd);
-        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::Index);
-        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::IndexAssign);
-        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::IndexDeclaration);
+        CPPADCG_ASSERT_UNKNOWN(getVariableID(var) > 0)
+        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::AtomicForward)
+        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::AtomicReverse)
+        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::LoopStart)
+        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::LoopEnd)
+        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::Index)
+        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::IndexAssign)
+        CPPADCG_ASSERT_UNKNOWN(op != CGOpCode::IndexDeclaration)
 
         if (var.getName() == nullptr) {
             if (op == CGOpCode::ArrayCreation) {
@@ -1165,16 +1164,16 @@ protected:
 
             } else if (getVariableID(var) < _minTemporaryVarID) {
                 // dependent variable
-                std::map<size_t, size_t>::const_iterator it = _dependentIDs.find(getVariableID(var));
-                CPPADCG_ASSERT_UNKNOWN(it != _dependentIDs.end());
+                auto it = _dependentIDs.find(getVariableID(var));
+                CPPADCG_ASSERT_UNKNOWN(it != _dependentIDs.end())
 
                 size_t index = it->second;
                 var.setName(_nameGen->generateDependent(index));
 
             } else if (op == CGOpCode::LoopIndexedTmp || op == CGOpCode::Tmp) {
-                CPPADCG_ASSERT_KNOWN(var.getArguments().size() >= 1, "Invalid number of arguments for loop indexed temporary operation");
+                CPPADCG_ASSERT_KNOWN(var.getArguments().size() >= 1, "Invalid number of arguments for loop indexed temporary operation")
                 Node* tmpVar = var.getArguments()[0].getOperation();
-                CPPADCG_ASSERT_KNOWN(tmpVar != nullptr && tmpVar->getOperationType() == CGOpCode::TmpDcl, "Invalid arguments for loop indexed temporary operation");
+                CPPADCG_ASSERT_KNOWN(tmpVar != nullptr && tmpVar->getOperationType() == CGOpCode::TmpDcl, "Invalid arguments for loop indexed temporary operation")
                 return createVariableName(*tmpVar);
 
             } else {
@@ -1192,7 +1191,7 @@ protected:
     }
 
     virtual void printIndependentVariableName(Node& op) {
-        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 0, "Invalid number of arguments for independent variable");
+        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 0, "Invalid number of arguments for independent variable")
 
         _code << _startIndepVar << _nameGen->generateIndependent(op, getVariableID(op)) << _endIndepVar;
     }
@@ -1263,6 +1262,15 @@ protected:
             case CGOpCode::Sqrt:
             case CGOpCode::Tanh:
             case CGOpCode::Tan:
+#if CPPAD_USE_CPLUSPLUS_2011
+            case CGOpCode::Erf:
+            case CGOpCode::Erfc:
+            case CGOpCode::Asinh:
+            case CGOpCode::Acosh:
+            case CGOpCode::Atanh:
+            case CGOpCode::Expm1:
+            case CGOpCode::Log1p:
+#endif
                 printUnaryFunction(node);
                 break;
             case CGOpCode::AtomicForward: // atomicFunction.forward(q, p, vx, vy, tx, ty)
@@ -1368,13 +1376,13 @@ protected:
     }
 
     virtual unsigned printAssignOp(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() == 1, "Invalid number of arguments for assign operation");
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() == 1, "Invalid number of arguments for assign operation")
 
         return print(node.getArguments()[0]);
     }
 
     virtual void printUnaryFunction(Node& op) {
-        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 1, "Invalid number of arguments for unary function");
+        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 1, "Invalid number of arguments for unary function")
 
         switch (op.getOperationType()) {
             case CGOpCode::Abs:
@@ -1423,6 +1431,29 @@ protected:
             case CGOpCode::Tan:
                 _code << "\\tan";
                 break;
+#if CPPAD_USE_CPLUSPLUS_2011
+            case CGOpCode::Erf:
+                _code << "\\operatorname{erf}";
+                break;
+            case CGOpCode::Erfc:
+                _code << "\\operatorname{erfc}";
+                break;
+            case CGOpCode::Asinh:
+                _code << "\\operatorname{arcsinh}";
+                break;
+            case CGOpCode::Acosh:
+                _code << "\\operatorname{arccosh}";
+                break;
+            case CGOpCode::Atanh:
+                _code << "\\operatorname{arctanh}";
+                break;
+            case CGOpCode::Expm1:
+                _code << "\\operatorname{expm1}";
+                break;
+            case CGOpCode::Log1p:
+                _code << "\\operatorname{log1p}";
+                break;
+#endif
             default:
                 throw CGException("Unknown function name for operation code '", op.getOperationType(), "'.");
         }
@@ -1433,7 +1464,7 @@ protected:
     }
 
     virtual void printPowFunction(Node& op) {
-        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 2, "Invalid number of arguments for pow() function");
+        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 2, "Invalid number of arguments for pow() function")
 
         auto encloseInParentheses = [this](const Node* node) {
             while (node != nullptr) {
@@ -1468,12 +1499,12 @@ protected:
     }
 
     virtual unsigned printOperationAlias(Node& op) {
-        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 1, "Invalid number of arguments for alias");
+        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 1, "Invalid number of arguments for alias")
         return print(op.getArguments()[0]);
     }
 
     virtual void printOperationAdd(Node& op) {
-        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 2, "Invalid number of arguments for addition");
+        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 2, "Invalid number of arguments for addition")
 
         const Arg& left = op.getArguments()[0];
         const Arg& right = op.getArguments()[1];
@@ -1491,7 +1522,7 @@ protected:
     }
 
     virtual void printOperationMinus(Node& op) {
-        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 2, "Invalid number of arguments for subtraction");
+        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 2, "Invalid number of arguments for subtraction")
 
         const Arg& left = op.getArguments()[0];
         const Arg& right = op.getArguments()[1];
@@ -1517,7 +1548,7 @@ protected:
     }
 
     virtual void printOperationDiv(Node& op) {
-        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 2, "Invalid number of arguments for division");
+        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 2, "Invalid number of arguments for division")
 
         const Arg& left = op.getArguments()[0];
         const Arg& right = op.getArguments()[1];
@@ -1557,7 +1588,7 @@ protected:
     }
 
     virtual void printOperationMul(Node& op) {
-        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 2, "Invalid number of arguments for multiplication");
+        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 2, "Invalid number of arguments for multiplication")
 
         const Arg& left = op.getArguments()[0];
         const Arg& right = op.getArguments()[1];
@@ -1608,7 +1639,7 @@ protected:
     }
 
     virtual void printOperationUnaryMinus(Node& op) {
-        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 1, "Invalid number of arguments for unary minus");
+        CPPADCG_ASSERT_KNOWN(op.getArguments().size() == 1, "Invalid number of arguments for unary minus")
 
         const Arg& arg = op.getArguments()[0];
 
@@ -1625,7 +1656,7 @@ protected:
     }
 
     virtual void printConditionalAssignment(Node& node) {
-        CPPADCG_ASSERT_UNKNOWN(getVariableID(node) > 0);
+        CPPADCG_ASSERT_UNKNOWN(getVariableID(node) > 0)
 
         const std::vector<Arg>& args = node.getArguments();
         const Arg &left = args[0];
@@ -1706,12 +1737,12 @@ protected:
     virtual void printArrayElementOp(Node& op);
 
     virtual void printAtomicForwardOp(Node& atomicFor) {
-        CPPADCG_ASSERT_KNOWN(atomicFor.getInfo().size() == 3, "Invalid number of information elements for atomic forward operation");
+        CPPADCG_ASSERT_KNOWN(atomicFor.getInfo().size() == 3, "Invalid number of information elements for atomic forward operation")
         int q = atomicFor.getInfo()[1];
         int p = atomicFor.getInfo()[2];
         size_t p1 = p + 1;
         const std::vector<Arg>& opArgs = atomicFor.getArguments();
-        CPPADCG_ASSERT_KNOWN(opArgs.size() == p1 * 2, "Invalid number of arguments for atomic forward operation");
+        CPPADCG_ASSERT_KNOWN(opArgs.size() == p1 * 2, "Invalid number of arguments for atomic forward operation")
 
         size_t id = atomicFor.getInfo()[0];
         std::vector<Node*> tx(p1), ty(p1);
@@ -1720,9 +1751,9 @@ protected:
             ty[k] = opArgs[1 * p1 + k].getOperation();
         }
 
-        CPPADCG_ASSERT_KNOWN(tx[0]->getOperationType() == CGOpCode::ArrayCreation, "Invalid array type");
-        CPPADCG_ASSERT_KNOWN(p == 0 || tx[1]->getOperationType() == CGOpCode::SparseArrayCreation, "Invalid array type");
-        CPPADCG_ASSERT_KNOWN(ty[p]->getOperationType() == CGOpCode::ArrayCreation, "Invalid array type");
+        CPPADCG_ASSERT_KNOWN(tx[0]->getOperationType() == CGOpCode::ArrayCreation, "Invalid array type")
+        CPPADCG_ASSERT_KNOWN(p == 0 || tx[1]->getOperationType() == CGOpCode::SparseArrayCreation, "Invalid array type")
+        CPPADCG_ASSERT_KNOWN(ty[p]->getOperationType() == CGOpCode::ArrayCreation, "Invalid array type")
 
         // tx
         for (size_t k = 0; k < p1; k++) {
@@ -1745,11 +1776,11 @@ protected:
     }
 
     virtual void printAtomicReverseOp(Node& atomicRev) {
-        CPPADCG_ASSERT_KNOWN(atomicRev.getInfo().size() == 2, "Invalid number of information elements for atomic reverse operation");
+        CPPADCG_ASSERT_KNOWN(atomicRev.getInfo().size() == 2, "Invalid number of information elements for atomic reverse operation")
         int p = atomicRev.getInfo()[1];
         size_t p1 = p + 1;
         const std::vector<Arg>& opArgs = atomicRev.getArguments();
-        CPPADCG_ASSERT_KNOWN(opArgs.size() == p1 * 4, "Invalid number of arguments for atomic reverse operation");
+        CPPADCG_ASSERT_KNOWN(opArgs.size() == p1 * 4, "Invalid number of arguments for atomic reverse operation")
 
         size_t id = atomicRev.getInfo()[0];
         std::vector<Node*> tx(p1), px(p1), py(p1);
@@ -1759,13 +1790,13 @@ protected:
             py[k] = opArgs[3 * p1 + k].getOperation();
         }
 
-        CPPADCG_ASSERT_KNOWN(tx[0]->getOperationType() == CGOpCode::ArrayCreation, "Invalid array type");
-        CPPADCG_ASSERT_KNOWN(p == 0 || tx[1]->getOperationType() == CGOpCode::SparseArrayCreation, "Invalid array type");
+        CPPADCG_ASSERT_KNOWN(tx[0]->getOperationType() == CGOpCode::ArrayCreation, "Invalid array type")
+        CPPADCG_ASSERT_KNOWN(p == 0 || tx[1]->getOperationType() == CGOpCode::SparseArrayCreation, "Invalid array type")
 
-        CPPADCG_ASSERT_KNOWN(px[0]->getOperationType() == CGOpCode::ArrayCreation, "Invalid array type");
+        CPPADCG_ASSERT_KNOWN(px[0]->getOperationType() == CGOpCode::ArrayCreation, "Invalid array type")
 
-        CPPADCG_ASSERT_KNOWN(py[0]->getOperationType() == CGOpCode::SparseArrayCreation, "Invalid array type");
-        CPPADCG_ASSERT_KNOWN(p == 0 || py[1]->getOperationType() == CGOpCode::ArrayCreation, "Invalid array type");
+        CPPADCG_ASSERT_KNOWN(py[0]->getOperationType() == CGOpCode::SparseArrayCreation, "Invalid array type")
+        CPPADCG_ASSERT_KNOWN(p == 0 || py[1]->getOperationType() == CGOpCode::ArrayCreation, "Invalid array type")
 
         // tx
         for (size_t k = 0; k < p1; k++) {
@@ -1792,8 +1823,8 @@ protected:
     }
 
     virtual unsigned printDependentMultiAssign(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::DependentMultiAssign, "Invalid node type");
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() > 0, "Invalid number of arguments");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::DependentMultiAssign, "Invalid node type")
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() > 0, "Invalid number of arguments")
 
         const std::vector<Arg>& args = node.getArguments();
         for (size_t a = 0; a < args.size(); a++) {
@@ -1815,9 +1846,9 @@ protected:
     }
 
     virtual void printLoopStart(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::LoopStart, "Invalid node type");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::LoopStart, "Invalid node type")
 
-        LoopStartOperationNode<Base>& lnode = static_cast<LoopStartOperationNode<Base>&> (node);
+        auto& lnode = static_cast<LoopStartOperationNode<Base>&> (node);
         _currentLoops.push_back(&lnode);
 
         const std::string& jj = *lnode.getIndex().getName();
@@ -1835,7 +1866,7 @@ protected:
     }
 
     virtual void printLoopEnd(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::LoopEnd, "Invalid node type");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::LoopEnd, "Invalid node type")
 
         checkEquationEnvEnd();
 
@@ -1847,15 +1878,15 @@ protected:
     }
 
     virtual void printLoopIndexedDep(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() >= 1, "Invalid number of arguments for loop indexed dependent operation");
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() >= 1, "Invalid number of arguments for loop indexed dependent operation")
 
         // LoopIndexedDep
         print(node.getArguments()[0]);
     }
 
     virtual void printLoopIndexedIndep(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::LoopIndexedIndep, "Invalid node type");
-        CPPADCG_ASSERT_KNOWN(node.getInfo().size() == 1, "Invalid number of information elements for loop indexed independent operation");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::LoopIndexedIndep, "Invalid node type")
+        CPPADCG_ASSERT_KNOWN(node.getInfo().size() == 1, "Invalid number of information elements for loop indexed independent operation")
 
         // CGLoopIndexedIndepOp
         size_t pos = node.getInfo()[1];
@@ -1864,28 +1895,28 @@ protected:
     }
 
     virtual void printLoopIndexedTmp(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::LoopIndexedTmp, "Invalid node type");
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() == 2, "Invalid number of arguments for loop indexed temporary operation");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::LoopIndexedTmp, "Invalid node type")
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() == 2, "Invalid number of arguments for loop indexed temporary operation")
         Node* tmpVar = node.getArguments()[0].getOperation();
-        CPPADCG_ASSERT_KNOWN(tmpVar != nullptr && tmpVar->getOperationType() == CGOpCode::TmpDcl, "Invalid arguments for loop indexed temporary operation");
+        CPPADCG_ASSERT_KNOWN(tmpVar != nullptr && tmpVar->getOperationType() == CGOpCode::TmpDcl, "Invalid arguments for loop indexed temporary operation")
 
         print(node.getArguments()[1]);
     }
 
     virtual void printTmpVar(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::Tmp, "Invalid node type");
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() > 0, "Invalid number of arguments for temporary variable usage operation");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::Tmp, "Invalid node type")
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() > 0, "Invalid number of arguments for temporary variable usage operation")
         Node* tmpVar = node.getArguments()[0].getOperation();
-        CPPADCG_ASSERT_KNOWN(tmpVar != nullptr && tmpVar->getOperationType() == CGOpCode::TmpDcl, "Invalid arguments for loop indexed temporary operation");
+        CPPADCG_ASSERT_KNOWN(tmpVar != nullptr && tmpVar->getOperationType() == CGOpCode::TmpDcl, "Invalid arguments for loop indexed temporary operation")
 
         _code << _startVar << *tmpVar->getName() << _endVar;
     }
 
     virtual void printIndexAssign(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::IndexAssign, "Invalid node type");
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() > 0, "Invalid number of arguments for an index assignment operation");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::IndexAssign, "Invalid node type")
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() > 0, "Invalid number of arguments for an index assignment operation")
 
-        IndexAssignOperationNode<Base>& inode = static_cast<IndexAssignOperationNode<Base>&> (node);
+        auto& inode = static_cast<IndexAssignOperationNode<Base>&> (node);
 
         checkEquationEnvStart();
 
@@ -1897,14 +1928,14 @@ protected:
     }
 
     virtual void printIndexCondExprOp(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::IndexCondExpr, "Invalid node type");
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() == 1, "Invalid number of arguments for an index condition expression operation");
-        CPPADCG_ASSERT_KNOWN(node.getArguments()[0].getOperation() != nullptr, "Invalid argument for an index condition expression operation");
-        CPPADCG_ASSERT_KNOWN(node.getArguments()[0].getOperation()->getOperationType() == CGOpCode::Index, "Invalid argument for an index condition expression operation");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::IndexCondExpr, "Invalid node type")
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() == 1, "Invalid number of arguments for an index condition expression operation")
+        CPPADCG_ASSERT_KNOWN(node.getArguments()[0].getOperation() != nullptr, "Invalid argument for an index condition expression operation")
+        CPPADCG_ASSERT_KNOWN(node.getArguments()[0].getOperation()->getOperationType() == CGOpCode::Index, "Invalid argument for an index condition expression operation")
 
         const std::vector<size_t>& info = node.getInfo();
 
-        IndexOperationNode<Base>& iterationIndexOp = static_cast<IndexOperationNode<Base>&> (*node.getArguments()[0].getOperation());
+        auto& iterationIndexOp = static_cast<IndexOperationNode<Base>&> (*node.getArguments()[0].getOperation());
         const std::string& index = *iterationIndexOp.getIndex().getName();
 
         checkEquationEnvStart();
@@ -1917,9 +1948,9 @@ protected:
          * the first argument is the condition, following arguments are
          * just extra dependencies that must be defined outside the if
          */
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::StartIf, "Invalid node type");
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() >= 1, "Invalid number of arguments for an 'if start' operation");
-        CPPADCG_ASSERT_KNOWN(node.getArguments()[0].getOperation() != nullptr, "Invalid argument for an 'if start' operation");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::StartIf, "Invalid node type")
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() >= 1, "Invalid number of arguments for an 'if start' operation")
+        CPPADCG_ASSERT_KNOWN(node.getArguments()[0].getOperation() != nullptr, "Invalid argument for an 'if start' operation")
 
         checkEquationEnvEnd();
 
@@ -1940,10 +1971,10 @@ protected:
          * if start node, the following arguments are assignments in the
          * previous if branch
          */
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::ElseIf, "Invalid node type");
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() >= 2, "Invalid number of arguments for an 'else if' operation");
-        CPPADCG_ASSERT_KNOWN(node.getArguments()[0].getOperation() != nullptr, "Invalid argument for an 'else if' operation");
-        CPPADCG_ASSERT_KNOWN(node.getArguments()[1].getOperation() != nullptr, "Invalid argument for an 'else if' operation");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::ElseIf, "Invalid node type")
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() >= 2, "Invalid number of arguments for an 'else if' operation")
+        CPPADCG_ASSERT_KNOWN(node.getArguments()[0].getOperation() != nullptr, "Invalid argument for an 'else if' operation")
+        CPPADCG_ASSERT_KNOWN(node.getArguments()[1].getOperation() != nullptr, "Invalid argument for an 'else if' operation")
 
         checkEquationEnvEnd();
         _indentationLevel--;
@@ -1973,8 +2004,8 @@ protected:
          * the first argument is the  if start node, the following arguments
          * are assignments in the previous if branch
          */
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::Else, "Invalid node type");
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() >= 1, "Invalid number of arguments for an 'else' operation");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::Else, "Invalid node type")
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() >= 1, "Invalid number of arguments for an 'else' operation")
 
         checkEquationEnvEnd();
         _indentationLevel--;
@@ -1994,7 +2025,7 @@ protected:
     }
 
     virtual void printEndIf(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::EndIf, "Invalid node type for an 'end if' operation");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::EndIf, "Invalid node type for an 'end if' operation")
 
         _indentationLevel--;
 
@@ -2011,10 +2042,10 @@ protected:
     }
 
     virtual void printCondResult(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::CondResult, "Invalid node type");
-        CPPADCG_ASSERT_KNOWN(node.getArguments().size() == 2, "Invalid number of arguments for an assignment inside an if/else operation");
-        CPPADCG_ASSERT_KNOWN(node.getArguments()[0].getOperation() != nullptr, "Invalid argument for an an assignment inside an if/else operation");
-        CPPADCG_ASSERT_KNOWN(node.getArguments()[1].getOperation() != nullptr, "Invalid argument for an an assignment inside an if/else operation");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::CondResult, "Invalid node type")
+        CPPADCG_ASSERT_KNOWN(node.getArguments().size() == 2, "Invalid number of arguments for an assignment inside an if/else operation")
+        CPPADCG_ASSERT_KNOWN(node.getArguments()[0].getOperation() != nullptr, "Invalid argument for an an assignment inside an if/else operation")
+        CPPADCG_ASSERT_KNOWN(node.getArguments()[1].getOperation() != nullptr, "Invalid argument for an an assignment inside an if/else operation")
 
         // just follow the argument
         Node& nodeArg = *node.getArguments()[1].getOperation();
@@ -2022,7 +2053,7 @@ protected:
     }
 
     virtual void printUserCustom(Node& node) {
-        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::UserCustom, "Invalid node type");
+        CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::UserCustom, "Invalid node type")
 
         throw CGException("Unable to generate Latex for user custom operation nodes.");
     }
@@ -2106,6 +2137,15 @@ protected:
             case CGOpCode::Sign:
             case CGOpCode::Sinh:
             case CGOpCode::Sin:
+#if CPPAD_USE_CPLUSPLUS_2011
+            case CGOpCode::Erf:
+            case CGOpCode::Erfc:
+            case CGOpCode::Asinh:
+            case CGOpCode::Acosh:
+            case CGOpCode::Atanh:
+            case CGOpCode::Expm1:
+            case CGOpCode::Log1p:
+#endif
             case CGOpCode::Sqrt:
             case CGOpCode::Tanh:
             case CGOpCode::Tan:
@@ -2131,35 +2171,35 @@ protected:
 };
 
 template<class Base>
-const std::string LanguageLatex<Base>::_COMP_OP_LT = "<";
+const std::string LanguageLatex<Base>::_COMP_OP_LT = "<"; // NOLINT(cert-err58-cpp)
 template<class Base>
-const std::string LanguageLatex<Base>::_COMP_OP_LE = "\\le";
+const std::string LanguageLatex<Base>::_COMP_OP_LE = "\\le"; // NOLINT(cert-err58-cpp)
 template<class Base>
-const std::string LanguageLatex<Base>::_COMP_OP_EQ = "==";
+const std::string LanguageLatex<Base>::_COMP_OP_EQ = "=="; // NOLINT(cert-err58-cpp)
 template<class Base>
-const std::string LanguageLatex<Base>::_COMP_OP_GE = "\\ge";
+const std::string LanguageLatex<Base>::_COMP_OP_GE = "\\ge"; // NOLINT(cert-err58-cpp)
 template<class Base>
-const std::string LanguageLatex<Base>::_COMP_OP_GT = ">";
+const std::string LanguageLatex<Base>::_COMP_OP_GT = ">"; // NOLINT(cert-err58-cpp)
 template<class Base>
-const std::string LanguageLatex<Base>::_COMP_OP_NE = "\\ne";
+const std::string LanguageLatex<Base>::_COMP_OP_NE = "\\ne"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageLatex<Base>::_C_STATIC_INDEX_ARRAY = "index";
+const std::string LanguageLatex<Base>::_C_STATIC_INDEX_ARRAY = "index"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageLatex<Base>::_C_SPARSE_INDEX_ARRAY = "idx";
+const std::string LanguageLatex<Base>::_C_SPARSE_INDEX_ARRAY = "idx"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageLatex<Base>::_ATOMIC_TX = "atx";
+const std::string LanguageLatex<Base>::_ATOMIC_TX = "atx"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageLatex<Base>::_ATOMIC_TY = "aty";
+const std::string LanguageLatex<Base>::_ATOMIC_TY = "aty"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageLatex<Base>::_ATOMIC_PX = "apx";
+const std::string LanguageLatex<Base>::_ATOMIC_PX = "apx"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageLatex<Base>::_ATOMIC_PY = "apy";
+const std::string LanguageLatex<Base>::_ATOMIC_PY = "apy"; // NOLINT(cert-err58-cpp)
 
 } // END cg namespace
 } // END CppAD namespace

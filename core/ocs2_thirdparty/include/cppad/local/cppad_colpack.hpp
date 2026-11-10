@@ -1,16 +1,9 @@
 # ifndef CPPAD_LOCAL_CPPAD_COLPACK_HPP
 # define CPPAD_LOCAL_CPPAD_COLPACK_HPP
-/* --------------------------------------------------------------------------
-CppAD: C++ Algorithmic Differentiation: Copyright (C) 2003-16 Bradley M. Bell
-
-CppAD is distributed under the terms of the
-             Eclipse Public License Version 2.0.
-
-This Source Code may also be made available under the following
-Secondary License when the conditions for such availability set forth
-in the Eclipse Public License, Version 2.0 are satisfied:
-      GNU General Public License, Version 2.0 or later.
----------------------------------------------------------------------------- */
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-FileCopyrightText: Bradley M. Bell <bradbell@seanet.com>
+// SPDX-FileContributor: 2003-22 Bradley M. Bell
+// ----------------------------------------------------------------------------
 # if CPPAD_HAS_COLPACK
 
 namespace CppAD { namespace local { // BEGIN_CPPAD_LOCAL_NAMESPACE
@@ -59,11 +52,11 @@ it is not the case that both
 This routine tries to minimize, with respect to the choice of colors,
 the number of colors.
 */
-extern void cppad_colpack_general(
+CPPAD_LIB_EXPORT void cppad_colpack_general(
           CppAD::vector<size_t>&         color         ,
-    size_t                               m             ,
-    size_t                               n             ,
-    const CppAD::vector<unsigned int*>&  adolc_pattern
+   size_t                               m             ,
+   size_t                               n             ,
+   const CppAD::vector<unsigned int*>&  adolc_pattern
 );
 
 /*!
@@ -91,10 +84,10 @@ The properties of this coloring have not yet been determined; see
 Efficient Computation of Sparse Hessians Using Coloring
 and Automatic Differentiation (pdf/ad/gebemedhin14.pdf)
 */
-extern void cppad_colpack_symmetric(
+CPPAD_LIB_EXPORT void cppad_colpack_symmetric(
           CppAD::vector<size_t>&         color         ,
-    size_t                               n             ,
-    const CppAD::vector<unsigned int*>&  adolc_pattern
+   size_t                               n             ,
+   const CppAD::vector<unsigned int*>&  adolc_pattern
 );
 
 } } // END_CPPAD_LOCAL_NAMESPACE

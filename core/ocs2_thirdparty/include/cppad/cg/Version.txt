@@ -1,3 +1,4 @@
 CPPAD Codegen version:
 repository: https://github.com/joaoleal/CppADCodeGen
-commit_hash: f3680f154c32f269123e6eea1531bb9030ad40ba
+tag: v2.5.0
+commit_hash: 656d23e3c06e0e3d573f02336eb457e1f30896f2

@@ -545,6 +545,7 @@ protected:
         _currentLoops.clear();
         depConstIds_.clear();
         depIsIndepIds_.clear();
+        _dependentIDs.clear();
 
 
         // save some info
@@ -601,7 +602,7 @@ protected:
         const std::vector<FuncArgument>& indArg = _nameGen->getIndependent();
         const std::vector<FuncArgument>& depArg = _nameGen->getDependent();
         const std::vector<FuncArgument>& tmpArg = _nameGen->getTemporary();
-        CPPADCG_ASSERT_KNOWN(!indArg.empty() && depArg.size() > 0,
+        CPPADCG_ASSERT_KNOWN(!indArg.empty() && !depArg.empty(),
                              "There must be at least one dependent and one independent argument")
         CPPADCG_ASSERT_KNOWN(tmpArg.size() == 3,
                              "There must be three temporary variables")
@@ -1233,6 +1234,15 @@ protected:
             case CGOpCode::Sqrt:
             case CGOpCode::Tanh:
             case CGOpCode::Tan:
+#if CPPAD_USE_CPLUSPLUS_2011
+            case CGOpCode::Erf:
+            case CGOpCode::Erfc:
+            case CGOpCode::Asinh:
+            case CGOpCode::Acosh:
+            case CGOpCode::Atanh:
+            case CGOpCode::Expm1:
+            case CGOpCode::Log1p:
+#endif
                 printUnaryFunction(node);
                 break;
             case CGOpCode::AtomicForward: // atomicFunction.forward(q, p, vx, vy, tx, ty)
@@ -1391,6 +1401,29 @@ protected:
             case CGOpCode::Tan:
                 _code << "<mi>tan</mi>";
                 break;
+#if CPPAD_USE_CPLUSPLUS_2011
+            case CGOpCode::Erf:
+                _code << "<mi>erf</mi>";
+                break;
+            case CGOpCode::Erfc:
+                _code << "<mi>erfc</mi>";
+                break;
+            case CGOpCode::Asinh:
+                _code << "<mi>asinh</mi>";
+                break;
+            case CGOpCode::Acosh:
+                _code << "<mi>acosh</mi>";
+                break;
+            case CGOpCode::Atanh:
+                _code << "<mi>atanh</mi>";
+                break;
+            case CGOpCode::Expm1:
+                _code << "<mi>expm1</mi>";
+                break;
+            case CGOpCode::Log1p:
+                _code << "<mi>log1p</mi>";
+                break;
+#endif
             default:
                 throw CGException("Unknown function name for operation code '", op.getOperationType(), "'.");
         }
@@ -1874,7 +1907,7 @@ protected:
         CPPADCG_ASSERT_KNOWN(node.getOperationType() == CGOpCode::IndexAssign, "Invalid node type")
         CPPADCG_ASSERT_KNOWN(node.getArguments().size() > 0, "Invalid number of arguments for an index assignment operation")
 
-        IndexAssignOperationNode<Base>& inode = static_cast<IndexAssignOperationNode<Base>&> (node);
+        auto& inode = static_cast<IndexAssignOperationNode<Base>&> (node);
 
         const IndexPattern& ip = inode.getIndexPattern();
         _code << _startEq
@@ -2100,6 +2133,15 @@ protected:
             case CGOpCode::Sqrt:
             case CGOpCode::Tanh:
             case CGOpCode::Tan:
+#if CPPAD_USE_CPLUSPLUS_2011
+            case CGOpCode::Erf:
+            case CGOpCode::Erfc:
+            case CGOpCode::Asinh:
+            case CGOpCode::Acosh:
+            case CGOpCode::Atanh:
+            case CGOpCode::Expm1:
+            case CGOpCode::Log1p:
+#endif
                 return true;
             default:
                 return false;
@@ -2122,22 +2164,22 @@ protected:
 };
 
 template<class Base>
-const std::string LanguageMathML<Base>::_C_STATIC_INDEX_ARRAY = "index";
+const std::string LanguageMathML<Base>::_C_STATIC_INDEX_ARRAY = "index"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageMathML<Base>::_C_SPARSE_INDEX_ARRAY = "idx";
+const std::string LanguageMathML<Base>::_C_SPARSE_INDEX_ARRAY = "idx"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageMathML<Base>::_ATOMIC_TX = "atx";
+const std::string LanguageMathML<Base>::_ATOMIC_TX = "atx"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageMathML<Base>::_ATOMIC_TY = "aty";
+const std::string LanguageMathML<Base>::_ATOMIC_TY = "aty"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageMathML<Base>::_ATOMIC_PX = "apx";
+const std::string LanguageMathML<Base>::_ATOMIC_PX = "apx"; // NOLINT(cert-err58-cpp)
 
 template<class Base>
-const std::string LanguageMathML<Base>::_ATOMIC_PY = "apy";
+const std::string LanguageMathML<Base>::_ATOMIC_PY = "apy"; // NOLINT(cert-err58-cpp)
 
 } // END cg namespace
 } // END CppAD namespace
