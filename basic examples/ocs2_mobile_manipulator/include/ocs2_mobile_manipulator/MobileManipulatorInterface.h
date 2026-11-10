@@ -38,13 +38,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_ddp/DDP_Settings.h>
 #include <ocs2_mpc/MPC_Settings.h>
 #include <ocs2_oc/rollout/TimeTriggeredRollout.h>
-#include <ocs2_oc/synchronized_module/ReferenceManager.h>
+#include <ocs2_oc/synchronized_module/ReferenceManagerInterface.h>
 #include <ocs2_robotic_tools/common/RobotInterface.h>
 #include <ocs2_sqp/SqpSettings.h>
 
 #include <ocs2_mobile_manipulator/FactoryFunctions.h>
 #include <ocs2_mobile_manipulator/collision/EnvironmentGeometryInterface.h>
 #include <ocs2_mobile_manipulator/constraint/Joint67CouplingConstraint.h>
+#include <ocs2_mobile_manipulator/reference/MobileManipulatorReferenceManager.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_self_collision/PinocchioGeometryInterface.h>
 
@@ -166,6 +167,14 @@ namespace ocs2::mobile_manipulator
         std::vector<Joint67CouplingConstraint::CouplingStatus> checkJoint67Coupling(
             const vector_t& state) const;
 
+        bool hasHomeJointReference() const { return hasHomeJointReference_; }
+        bool homeJointReferenceDefaultEnabled() const { return homeJointReferenceDefaultEnabled_; }
+
+        /** Inject arm-local HOME joints (same order as controller joints / armDim). */
+        void setHomeJointReferenceFromArmJoints(const std::vector<double>& armJoints);
+
+        void setHomeJointReferenceEnabled(bool enabled);
+
         bool dual_arm_ = false;
 
     private:
@@ -191,6 +200,7 @@ namespace ocs2::mobile_manipulator
         std::unique_ptr<StateInputCost> getJointLimitSoftConstraint(const PinocchioInterface& pinocchioInterface,
                                                                     const std::string& taskFile);
         std::unique_ptr<StateCost> getJoint67CouplingConstraint(const std::string& taskFile);
+        std::unique_ptr<StateCost> getHomeJointReferenceConstraint(const std::string& taskFile);
         std::unique_ptr<StateCost> getEnvironmentCollisionConstraint(const PinocchioInterface& pinocchioInterface,
                                                                      const std::string& taskFile,
                                                                      const std::string& prefix);
@@ -201,7 +211,9 @@ namespace ocs2::mobile_manipulator
         sqp::Settings sqpSettings_;
 
         OptimalControlProblem problem_;
-        std::shared_ptr<ReferenceManager> referenceManagerPtr_;
+        std::shared_ptr<MobileManipulatorReferenceManager> referenceManagerPtr_;
+        bool hasHomeJointReference_{false};
+        bool homeJointReferenceDefaultEnabled_{false};
 
         std::unique_ptr<RolloutBase> rolloutPtr_;
         std::unique_ptr<Initializer> initializerPtr_;
