@@ -82,11 +82,14 @@ if(NOT _blasfeo_from_system)
     FetchContent_MakeAvailable(blasfeoDownload)
 
     # Upstream sgemv_support (#207) adds blasfeo_hp_cm/sgemv.c which calls
-    # kernel_sgemv_*_libc, but X64_* CMake KERNEL_SP_SRC lists omit
-    # kernel/generic/kernel_sgemv_4_lib.c (Makefile builds still work).
-    # Without this, linking ocs2/hpipm fails with undefined references.
-    target_sources(blasfeo PRIVATE
-            ${BLASFEO_DOWNLOAD_DIR}/kernel/generic/kernel_sgemv_4_lib.c)
+    # kernel_sgemv_*_libc. X64_* CMake KERNEL_SP_SRC lists omit
+    # kernel/generic/kernel_sgemv_4_lib.c (Makefile builds still work), so x86
+    # needs an explicit add. GENERIC/ARM already compile kernel_sgemv_4_lib4.c
+    # which defines the same *_libc symbols — adding both causes duplicates.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+        target_sources(blasfeo PRIVATE
+                ${BLASFEO_DOWNLOAD_DIR}/kernel/generic/kernel_sgemv_4_lib.c)
+    endif()
 
     # Mirror headers into the ament include layout. SOURCE holds the public API;
     # blasfeo_target.h is configure_file'd into BINARY_DIR/include since 0a3df868.
