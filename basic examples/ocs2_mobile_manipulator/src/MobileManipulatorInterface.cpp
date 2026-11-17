@@ -935,6 +935,11 @@ namespace ocs2::mobile_manipulator
         }
     }
 
+    bool MobileManipulatorInterface::isHomeJointReferenceEnabled() const
+    {
+        return referenceManagerPtr_ && referenceManagerPtr_->isHomeJointReferenceEnabled();
+    }
+
     std::unique_ptr<StateCost> MobileManipulatorInterface::getBodyRelativeConstraint(
         const PinocchioInterface& pinocchioInterface,
         const std::string& taskFile, const std::string& prefix,
