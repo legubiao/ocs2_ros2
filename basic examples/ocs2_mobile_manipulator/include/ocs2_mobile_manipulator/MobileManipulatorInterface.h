@@ -174,6 +174,7 @@ namespace ocs2::mobile_manipulator
         void setHomeJointReferenceFromArmJoints(const std::vector<double>& armJoints);
 
         void setHomeJointReferenceEnabled(bool enabled);
+        [[nodiscard]] bool isHomeJointReferenceEnabled() const;
 
         bool dual_arm_ = false;
 
